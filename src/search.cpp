@@ -598,10 +598,10 @@ namespace stoat {
                 goto skipSearch;
             }
 
-            if (!kRootNode && depth >= 7 && ply < thread.rootDepth * 2 && move == ttEntry.move && !curr.excluded
+            if (!kRootNode && depth >= 6 && ply < thread.rootDepth * 2 && move == ttEntry.move && !curr.excluded
                 && ttEntry.depth >= depth - 3 && ttEntry.flag != tt::Flag::kUpperBound)
             {
-                const auto sBeta = std::max(-kScoreInf + 1, ttEntry.score - depth * 2);
+                const auto sBeta = ttEntry.score - (60 + 80 * !kPvNode) * depth / 50;
                 const auto sDepth = (depth - 1) / 2;
 
                 curr.excluded = move;
@@ -614,6 +614,8 @@ namespace stoat {
                     } else {
                         extension = 1;
                     }
+
+                    depth++;
                 } else if (ttEntry.score >= beta) {
                     extension = -1;
                 }
