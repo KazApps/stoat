@@ -18,7 +18,22 @@
 
 #include "movepick.h"
 
+#include "see.h"
+
 namespace stoat {
+    namespace {
+        i32 capturePromotionScore(const Position& pos, Move move) {
+            i32 score = see::pieceValue(pos.pieceOn(move.to()).type());
+
+            if (move.isPromo()) {
+                score += see::pieceValue(pos.pieceOn(move.from()).type().promoted())
+                       - see::pieceValue(pos.pieceOn(move.from()).type());
+            }
+
+            return score;
+        }
+    }
+
     Move MoveGenerator::next() {
         switch (m_stage) {
             case MovegenStage::kTtMove: {
@@ -96,7 +111,7 @@ namespace stoat {
                 movegen::generateCaptures(m_moves, m_pos);
                 m_end = m_moves.size();
 
-                scoreCaptures();
+                scoreEvasionsCaptures();
 
                 ++m_stage;
                 [[fallthrough]];
@@ -158,12 +173,25 @@ namespace stoat {
             m_stage{initialStage}, m_pos{pos}, m_ttMove{ttMove}, m_history{history} {}
 
     i32 MoveGenerator::scoreCapture(Move move) {
-        return 100 * m_pos.pieceOn(move.to()).type().raw() - m_pos.pieceOn(move.from()).type().raw();
+        return capturePromotionScore(m_pos, move) * 7 + m_history.CaptureScore(move);
     }
 
     void MoveGenerator::scoreCaptures() {
         for (usize idx = m_idx; idx < m_end; ++idx) {
             m_scores[idx] = scoreCapture(m_moves[idx]);
+        }
+    }
+
+    i32 MoveGenerator::scoreEvasionCapture(Move move) {
+        i32 score = capturePromotionScore(m_pos, move)
+                  + see::pieceValue(m_pos.pieceOn(move.from()).type()) / 100 + (1 << 28);
+
+        return score;
+    }
+
+    void MoveGenerator::scoreEvasionsCaptures() {
+        for (usize idx = m_idx; idx < m_end; ++idx) {
+            m_scores[idx] = scoreEvasionCapture(m_moves[idx]);
         }
     }
 
