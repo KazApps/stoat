@@ -365,7 +365,7 @@ namespace stoat {
                     beta = std::min(score + window, kScoreInf);
                 }
 
-                window += window;
+                window += window * 16 / 19;
             }
 
             if (hasStopped()) {
