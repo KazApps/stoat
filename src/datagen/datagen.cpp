@@ -85,7 +85,7 @@ namespace stoat::datagen {
                 const auto sennichite = newPos.testSennichite(false, keyHistory);
                 keyHistory.pop_back();
 
-                if (sennichite != SennichiteStatus::kWin) {
+                if (sennichite != SennichiteStatus::kWin || sennichite != SennichiteStatus::kLose) {
                     return move;
                 }
 

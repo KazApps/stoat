@@ -239,9 +239,9 @@ namespace stoat {
         newPos.updateAttacks();
 
         if (newPos.isInCheck()) {
-            ++newPos.m_consecutiveChecks[newPos.stm().flip().idx()];
+            ++newPos.m_consecutiveChecks[newPos.stm().idx()];
         } else {
-            newPos.m_consecutiveChecks[newPos.stm().flip().idx()] = 0;
+            newPos.m_consecutiveChecks[newPos.stm().idx()] = 0;
         }
 
         return newPos;
@@ -314,9 +314,9 @@ namespace stoat {
                         return isInCheck() ? SennichiteStatus::kWin : SennichiteStatus::kDraw;
                     } else {
                         if (i / 2 <= m_consecutiveChecks[stm().idx()]) {
-                            return SennichiteStatus::kLose;
-                        } else if (i / 2 <= m_consecutiveChecks[stm().flip().idx()]) {
                             return SennichiteStatus::kWin;
+                        } else if (i / 2 <= m_consecutiveChecks[stm().flip().idx()]) {
+                            return SennichiteStatus::kLose;
                         } else {
                             return SennichiteStatus::kDraw;
                         }
