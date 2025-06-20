@@ -24,44 +24,5 @@
 #include "position.h"
 
 namespace stoat::see {
-    namespace values {
-        constexpr i32 kPawn = 100;
-        constexpr i32 kPromotedPawn = 300;
-        constexpr i32 kLance = 400;
-        constexpr i32 kKnight = 500;
-        constexpr i32 kPromotedLance = 550;
-        constexpr i32 kPromotedKnight = 600;
-        constexpr i32 kSilver = 650;
-        constexpr i32 kPromotedSilver = 700;
-        constexpr i32 kGold = 800;
-        constexpr i32 kBishop = 1100;
-        constexpr i32 kRook = 1300;
-        constexpr i32 kPromotedBishop = 1500;
-        constexpr i32 kPromotedRook = 1700;
-        constexpr i32 kKing = 0;
-    } // namespace values
-
-    [[nodiscard]] constexpr i32 pieceValue(PieceType pt) {
-        constexpr std::array kValues = {
-            values::kPawn,
-            values::kPromotedPawn,
-            values::kLance,
-            values::kKnight,
-            values::kPromotedLance,
-            values::kPromotedKnight,
-            values::kSilver,
-            values::kPromotedSilver,
-            values::kGold,
-            values::kBishop,
-            values::kRook,
-            values::kPromotedBishop,
-            values::kPromotedRook,
-            values::kKing,
-            0, // none
-        };
-
-        return kValues[pt.idx()];
-    }
-
     [[nodiscard]] bool see(const Position& pos, Move move, i32 threshold);
 } // namespace stoat::see

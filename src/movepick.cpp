@@ -18,6 +18,8 @@
 
 #include "movepick.h"
 
+#include "eval/eval.h"
+
 namespace stoat {
     Move MoveGenerator::next() {
         switch (m_stage) {
@@ -158,7 +160,7 @@ namespace stoat {
             m_stage{initialStage}, m_pos{pos}, m_ttMove{ttMove}, m_history{history} {}
 
     i32 MoveGenerator::scoreCapture(Move move) {
-        return 100 * m_pos.pieceOn(move.to()).type().raw() - m_pos.pieceOn(move.from()).type().raw();
+        return eval::pieceValue(m_pos.pieceOn(move.to()).type()) - eval::pieceValue(m_pos.pieceOn(move.from()).type());
     }
 
     void MoveGenerator::scoreCaptures() {

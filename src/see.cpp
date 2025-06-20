@@ -21,6 +21,7 @@
 #include <algorithm>
 
 #include "attacks/attacks.h"
+#include "eval/eval.h"
 
 namespace stoat::see {
     namespace {
@@ -32,7 +33,7 @@ namespace stoat::see {
             }
 
             const auto captured = pos.pieceOn(move.to());
-            auto gain = pieceValue(captured.typeOrNone());
+            auto gain = eval::pieceValue(captured.typeOrNone());
 
             return gain;
         }
@@ -47,7 +48,7 @@ namespace stoat::see {
                 std::ranges::sort(pieces, [](PieceType a, PieceType b) {
                     return b == PieceTypes::kKing
                         || (a != PieceTypes::kKing
-                            && (pieceValue(a) * 1000 + a.idx()) < (pieceValue(b) * 1000 + b.idx()));
+                            && (eval::pieceValue(a) * 1000 + a.idx()) < (eval::pieceValue(b) * 1000 + b.idx()));
                 });
                 return pieces;
             }();
@@ -90,7 +91,7 @@ namespace stoat::see {
 
         auto next = move.isDrop() ? move.dropPiece() : pos.pieceOn(move.from()).type();
 
-        score -= pieceValue(next);
+        score -= eval::pieceValue(next);
 
         if (score >= 0) {
             return true;
@@ -133,7 +134,7 @@ namespace stoat::see {
 
             attackers &= occ;
 
-            score = -score - 1 - pieceValue(next);
+            score = -score - 1 - eval::pieceValue(next);
             curr = curr.flip();
 
             if (score >= 0) {
