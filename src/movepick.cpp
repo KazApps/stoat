@@ -160,7 +160,8 @@ namespace stoat {
             m_stage{initialStage}, m_pos{pos}, m_ttMove{ttMove}, m_history{history} {}
 
     i32 MoveGenerator::scoreCapture(Move move) {
-        return eval::pieceValue(m_pos.pieceOn(move.to()).type()) - eval::pieceValue(m_pos.pieceOn(move.from()).type());
+        return eval::pieceValue(m_pos.pieceOn(move.to()).type())
+             - eval::pieceValue(m_pos.pieceOn(move.from()).type()) / 50;
     }
 
     void MoveGenerator::scoreCaptures() {
