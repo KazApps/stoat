@@ -90,9 +90,9 @@ namespace stoat::see {
 
         auto next = move.isDrop() ? move.dropPiece() : pos.pieceOn(move.from()).type();
 
-        score -= pieceValue(next);
+        score = pieceValue(next) - score;
 
-        if (score >= 0) {
+        if (score < 0) {
             return true;
         }
 
@@ -112,7 +112,8 @@ namespace stoat::see {
         auto curr = stm.flip();
 
         while (true) {
-            const auto currAttackers = attackers & pos.colorBb(curr);
+            attackers &= occ;
+            auto currAttackers = attackers & pos.colorBb(curr);
 
             if (currAttackers.empty()) {
                 break;
@@ -131,15 +132,17 @@ namespace stoat::see {
                 attackers |= rookAttacks & rooks;
             }
 
-            attackers &= occ;
-
-            score = -score - 1 - pieceValue(next);
-            curr = curr.flip();
-
-            if (score >= 0) {
-                if (next == PieceTypes::kKing && !(attackers & pos.colorBb(curr)).empty()) {
+            if (next == PieceTypes::kKing) {
+                if ((attackers & pos.colorBb(curr.flip())).empty()) {
                     curr = curr.flip();
                 }
+                break;
+            }
+
+            score = pieceValue(next) - score;
+            curr = curr.flip();
+
+            if (score < (curr == stm ? 0 : 1)) {
                 break;
             }
         }
