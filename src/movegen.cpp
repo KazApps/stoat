@@ -62,7 +62,7 @@ namespace stoat::movegen {
             }
         }
 
-        template <bool kCanPromote>
+        template <bool kCanPromote, bool kForcePromote = false>
         void generatePrecalculatedWithColorAndOcc(
             MoveList& dst,
             const Position& pos,
@@ -71,31 +71,36 @@ namespace stoat::movegen {
             Bitboard dstMask,
             Bitboard nonPromoMask = Bitboards::kAll
         ) {
-            const auto stm = pos.stm();
+            static_assert(kCanPromote || !kForcePromote);
 
+            const auto stm = pos.stm();
             const auto occ = pos.occupancy();
+            const auto promoArea = Bitboards::promoArea(stm);
 
             if constexpr (kCanPromote) {
-                const auto promoArea = Bitboards::promoArea(stm);
 
                 auto promotable = pieces;
                 while (!promotable.empty()) {
                     const auto piece = promotable.popLsb();
-                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & promoArea;
+                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask;
 
-                    serializePromotions(dst, piece, attacks);
+                    serializePromotions(dst, piece, attacks & promoArea);
+
+                    if constexpr (!kForcePromote) {
+                        serializeNormals(dst, piece, attacks & nonPromoMask);
+                    }
                 }
 
                 promotable = pieces & promoArea;
                 while (!promotable.empty()) {
                     const auto piece = promotable.popLsb();
-                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & ~promoArea;
+                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask;
 
-                    serializePromotions(dst, piece, attacks);
+                    serializePromotions(dst, piece, attacks & ~promoArea);
                 }
             }
 
-            auto movable = pieces;
+            auto movable = kForcePromote ? pieces & ~promoArea : pieces;
             while (!movable.empty()) {
                 const auto piece = movable.popLsb();
                 const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & nonPromoMask;
@@ -104,7 +109,7 @@ namespace stoat::movegen {
             }
         }
 
-        template <bool kCanPromote>
+        template <bool kCanPromote, bool kForcePromote = false>
         void generatePrecalculatedWithColor(
             MoveList& dst,
             const Position& pos,
@@ -113,7 +118,7 @@ namespace stoat::movegen {
             Bitboard dstMask,
             Bitboard nonPromoMask = Bitboards::kAll
         ) {
-            generatePrecalculatedWithColorAndOcc<kCanPromote>(
+            generatePrecalculatedWithColorAndOcc<kCanPromote, kForcePromote>(
                 dst,
                 pos,
                 pieces,
@@ -123,7 +128,7 @@ namespace stoat::movegen {
             );
         }
 
-        template <bool kCanPromote>
+        template <bool kCanPromote, bool kForcePromote = false>
         void generatePrecalculatedWithOcc(
             MoveList& dst,
             const Position& pos,
@@ -132,7 +137,7 @@ namespace stoat::movegen {
             Bitboard dstMask,
             Bitboard nonPromoMask = Bitboards::kAll
         ) {
-            generatePrecalculatedWithColorAndOcc<kCanPromote>(
+            generatePrecalculatedWithColorAndOcc<kCanPromote, kForcePromote>(
                 dst,
                 pos,
                 pieces,
@@ -142,7 +147,7 @@ namespace stoat::movegen {
             );
         }
 
-        template <bool kCanPromote>
+        template <bool kCanPromote, bool kForcePromote = false>
         void generatePrecalculated(
             MoveList& dst,
             const Position& pos,
@@ -151,7 +156,7 @@ namespace stoat::movegen {
             Bitboard dstMask,
             Bitboard nonPromoMask = Bitboards::kAll
         ) {
-            generatePrecalculatedWithColorAndOcc<kCanPromote>(
+            generatePrecalculatedWithColorAndOcc<kCanPromote, kForcePromote>(
                 dst,
                 pos,
                 pieces,
@@ -168,7 +173,7 @@ namespace stoat::movegen {
             const auto shifted = pawns.shiftNorthRelative(stm) & dstMask;
 
             const auto promos = shifted & Bitboards::promoArea(stm);
-            const auto nonPromos = shifted & ~Bitboards::relativeRank(stm, 8);
+            const auto nonPromos = shifted & ~Bitboards::promoArea(stm);
 
             const auto offset = offsets::relativeOffset(stm, offsets::kNorth);
 
@@ -184,7 +189,7 @@ namespace stoat::movegen {
                 lances,
                 attacks::lanceAttacks,
                 dstMask,
-                ~Bitboards::relativeRank(pos.stm(), 8)
+                ~(Bitboards::relativeRank(pos.stm(), 8) | Bitboards::relativeRank(pos.stm(), 7))
             );
         }
 
@@ -216,12 +221,12 @@ namespace stoat::movegen {
 
         void generateBishops(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto bishops = pos.pieceBb(PieceTypes::kBishop, pos.stm());
-            generatePrecalculatedWithOcc<true>(dst, pos, bishops, attacks::bishopAttacks, dstMask);
+            generatePrecalculatedWithOcc<true, true>(dst, pos, bishops, attacks::bishopAttacks, dstMask);
         }
 
         void generateRooks(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto rooks = pos.pieceBb(PieceTypes::kRook, pos.stm());
-            generatePrecalculatedWithOcc<true>(dst, pos, rooks, attacks::rookAttacks, dstMask);
+            generatePrecalculatedWithOcc<true, true>(dst, pos, rooks, attacks::rookAttacks, dstMask);
         }
 
         void generatePromotedBishops(MoveList& dst, const Position& pos, Bitboard dstMask) {
