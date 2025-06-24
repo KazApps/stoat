@@ -19,6 +19,39 @@
 #include "movepick.h"
 
 namespace stoat {
+    namespace {
+        [[nodiscard]] bool isUnlikelyMove(const Position& pos, Move move) {
+            const auto pt = pos.pieceOn(move.from()).type();
+            const auto promoArea = Bitboards::promoArea(pos.stm());
+
+            if (move.isDrop() || move.isPromo()) {
+                return false;
+            }
+
+            if (pt != PieceTypes::kPawn && pt != PieceTypes::kLance && pt != PieceTypes::kBishop && pt != PieceTypes::kRook) {
+                return false;
+            }
+
+            if (promoArea.getSquare(move.from())) {
+                return true;
+            }
+
+            if (pt != PieceTypes::kLance && promoArea.getSquare(move.to())) {
+                return true;
+            }
+
+            if (pt == PieceTypes::kLance && move.to().relative(pos.stm()).rank() == 7) {
+                return true;
+            }
+
+            return false;
+        }
+
+        [[nodiscard]] i32 penaltyUnlikelyMove(const Position& pos, Move move) {
+            return 100000 * isUnlikelyMove(pos, move);
+        }
+    } // namespace
+
     Move MoveGenerator::next() {
         switch (m_stage) {
             case MovegenStage::kTtMove: {
@@ -158,7 +191,8 @@ namespace stoat {
             m_stage{initialStage}, m_pos{pos}, m_ttMove{ttMove}, m_history{history} {}
 
     i32 MoveGenerator::scoreCapture(Move move) {
-        return 100 * m_pos.pieceOn(move.to()).type().raw() - m_pos.pieceOn(move.from()).type().raw();
+        return 100 * m_pos.pieceOn(move.to()).type().raw() - m_pos.pieceOn(move.from()).type().raw()
+             - penaltyUnlikelyMove(m_pos, move);
     }
 
     void MoveGenerator::scoreCaptures() {
@@ -168,7 +202,7 @@ namespace stoat {
     }
 
     i32 MoveGenerator::scoreNonCapture(Move move) {
-        return m_history.nonCaptureScore(move);
+        return m_history.nonCaptureScore(move) - penaltyUnlikelyMove(m_pos, move);
     }
 
     void MoveGenerator::scoreNonCaptures() {
