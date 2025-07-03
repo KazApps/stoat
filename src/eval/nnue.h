@@ -39,7 +39,7 @@ namespace stoat::eval::nnue {
     constexpr u32 kColorStride = kHandOffset + kHandFeatures;
 
     [[nodiscard]] constexpr Square transformRelativeSquare(Square kingSq, Square sq) {
-        return kingSq.file() > 4 ? sq.flipFile() : sq;
+        return sq;
     }
 
     [[nodiscard]] constexpr u32 psqtFeatureIndex(Color perspective, KingPair kings, Piece piece, Square sq) {
@@ -200,6 +200,7 @@ namespace stoat::eval::nnue {
         const bool flip = kingSq.relative(c).file() > 4;
         const bool prevFlip = prevKingSq.relative(c).file() > 4;
 
-        return flip != prevFlip;
+        // return flip != prevFlip;
+        return false;
     }
 } // namespace stoat::eval::nnue
