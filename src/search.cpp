@@ -79,6 +79,33 @@ namespace stoat {
         [[nodiscard]] constexpr Score drawScore(usize nodes) {
             return 2 - static_cast<Score>(nodes % 4);
         }
+
+        [[nodiscard]] bool isUnlikelyMove(const Position& pos, Move move) {
+            const auto pt = pos.pieceOn(move.from()).type();
+            const auto promoArea = Bitboards::promoArea(pos.stm());
+
+            if (move.isDrop() || move.isPromo()) {
+                return false;
+            }
+
+            if (pt != PieceTypes::kPawn && pt != PieceTypes::kLance && pt != PieceTypes::kBishop && pt != PieceTypes::kRook) {
+                return false;
+            }
+
+            if (promoArea.getSquare(move.from())) {
+                return true;
+            }
+
+            if (pt != PieceTypes::kLance && promoArea.getSquare(move.to())) {
+                return true;
+            }
+
+            if (pt == PieceTypes::kLance && move.to().relative(pos.stm()).rank() == 7) {
+                return true;
+            }
+
+            return false;
+        }
     } // namespace
 
     Searcher::Searcher(usize ttSizeMb) :
@@ -686,6 +713,7 @@ namespace stoat {
                 auto r = baseLmr;
 
                 r += !kPvNode;
+                r += isUnlikelyMove(pos, move) * 10;
                 r -= pos.isInCheck();
                 r -= move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3;
                 r += !improving;
@@ -858,6 +886,10 @@ namespace stoat {
             assert(pos.isPseudolegal(move));
 
             if (!pos.isLegal(move)) {
+                continue;
+            }
+
+            if (isUnlikelyMove(pos, move)) {
                 continue;
             }
 
