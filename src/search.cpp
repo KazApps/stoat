@@ -684,7 +684,7 @@ namespace stoat {
                 score = kScoreWin - kMaxDepth;
                 goto skipSearch;
             } else if (pos.isEnteringKingsWin()) {
-                score = kScoreWin - ply - 1;
+                score = kScoreMate - ply - 1;
                 goto skipSearch;
             }
 
