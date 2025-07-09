@@ -69,7 +69,7 @@ namespace stoat::datagen {
         [[nodiscard]] Move selectRandomLegal(
             util::rng::Jsf64Rng& rng,
             const Position& pos,
-            std::vector<u64>& keyHistory,
+            std::vector<std::reference_wrapper<const Position>>& posHistory,
             movegen::MoveList& moves
         ) {
             for (usize start = 0; start < moves.size(); ++start) {
@@ -80,12 +80,12 @@ namespace stoat::datagen {
                     continue;
                 }
 
-                keyHistory.push_back(pos.key());
+                posHistory.push_back(pos);
                 const auto newPos = pos.applyMove(move);
-                const auto sennichite = newPos.testSennichite(false, keyHistory);
-                keyHistory.pop_back();
+                const auto sennichite = newPos.testRepetition(false, posHistory);
+                posHistory.pop_back();
 
-                if (sennichite != SennichiteStatus::kWin) {
+                if (sennichite != RepetitionState::kPerpetualCheck) {
                     return move;
                 }
 
@@ -97,7 +97,7 @@ namespace stoat::datagen {
 
         [[nodiscard]] Position getStartpos(
             util::rng::Jsf64Rng& rng,
-            std::vector<u64>& keyHistory,
+            std::vector<std::reference_wrapper<const Position>>& posHistory,
             format::IDataFormat& format
         ) {
             util::StaticVector<Move, kBaseRandomMoves + kRandomizeStartSide> randomMoves{};
@@ -120,7 +120,7 @@ namespace stoat::datagen {
                     moves.clear();
                     movegen::generateAll(moves, pos);
 
-                    const auto move = selectRandomLegal(rng, pos, keyHistory, moves);
+                    const auto move = selectRandomLegal(rng, pos, posHistory, moves);
 
                     if (!move) {
                         failed = true;
@@ -137,8 +137,6 @@ namespace stoat::datagen {
                     break;
                 }
             }
-
-            std::ranges::copy(newKeys, std::back_inserter(keyHistory));
 
             for (const auto move : randomMoves) {
                 format.pushUnscored(move);
@@ -163,8 +161,8 @@ namespace stoat::datagen {
             Searcher searcher{kDatagenTtSizeMib};
             searcher.setLimiter(std::make_unique<limit::SoftNodeLimiter>(kSoftNodes, kHardNodes));
 
-            std::vector<u64> keyHistory{};
-            keyHistory.reserve(1024);
+            std::vector<std::reference_wrapper<const Position>> posHistory{};
+            posHistory.reserve(1024);
 
             auto& thread = searcher.mainThread();
 
@@ -201,9 +199,9 @@ namespace stoat::datagen {
                 searcher.newGame();
 
                 format.startStandard();
-                keyHistory.clear();
+                posHistory.clear();
 
-                auto pos = getStartpos(rng, keyHistory, format);
+                auto pos = getStartpos(rng, posHistory, format);
                 thread.nnueState.reset(pos);
 
                 u32 winPlies{};
@@ -213,7 +211,7 @@ namespace stoat::datagen {
                 std::optional<format::Outcome> outcome{};
 
                 while (!outcome) {
-                    thread.reset(pos, keyHistory);
+                    thread.reset(pos, posHistory);
                     searcher.runDatagenSearch();
 
                     const auto& rootMove = thread.pvMove();
@@ -234,15 +232,15 @@ namespace stoat::datagen {
 
                     const auto oldPos = pos;
 
-                    keyHistory.push_back(pos.key());
+                    posHistory.push_back(pos);
                     pos = pos.applyMove<NnueUpdateAction::kApplyInPlace>(move, &thread.nnueState);
 
-                    const auto sennichite = pos.testSennichite(false, keyHistory, 999999999);
+                    const auto repetition = pos.testRepetition(false, posHistory, 999999999);
 
-                    if (sennichite == SennichiteStatus::kDraw) {
+                    if (repetition == RepetitionState::kSennichite) {
                         outcome = format::Outcome::kDraw;
                         break;
-                    } else if (sennichite == SennichiteStatus::kWin) {
+                    } else if (repetition == RepetitionState::kPerpetualCheck) {
                         const std::scoped_lock lock{s_printMutex};
 
                         auto& errStream = getErrStream(outDir);
@@ -250,8 +248,8 @@ namespace stoat::datagen {
                         fmt::println(errStream, "thread {}: illegal perpetual as best move?", id);
 
                         fmt::print(errStream, "Keys:");
-                        for (usize i = 0; i < keyHistory.size() - 1; ++i) {
-                            fmt::print(errStream, " {:016x}", keyHistory[i]);
+                        for (usize i = 0; i < posHistory.size() - 1; ++i) {
+                            fmt::print(errStream, " {:016x}", posHistory[i].get().key());
                         }
                         fmt::println(errStream, "");
 

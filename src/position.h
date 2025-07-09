@@ -49,6 +49,11 @@ namespace stoat {
 
         void set(PieceType pt, u32 count);
 
+        [[nodiscard]] bool isSuperior(const Hand& other) const;
+        [[nodiscard]] bool isInferior(const Hand& other) const {
+            return other.isSuperior(*this);
+        }
+
         [[nodiscard]] static Hand fromRaw(u32 raw);
 
         [[nodiscard]] std::string sfen(bool uppercase) const;
@@ -76,7 +81,7 @@ namespace stoat {
     };
 
     struct PositionKeys {
-        u64 all{};
+        u64 boardKey{}, handKey{};
 
         void clear();
 
@@ -97,10 +102,12 @@ namespace stoat {
         kApplyInPlace,
     };
 
-    enum class SennichiteStatus {
+    enum class RepetitionState {
         kNone = 0,
-        kDraw,
-        kWin, // perpetual check by opponent
+        kSennichite,
+        kPerpetualCheck,
+        kSuperior,
+        kInferior,
     };
 
     namespace eval::nnue {
@@ -172,7 +179,15 @@ namespace stoat {
         }
 
         [[nodiscard]] inline u64 key() const {
-            return m_keys.all;
+            return m_keys.boardKey ^ m_keys.handKey;
+        }
+
+        [[nodiscard]] inline u64 boardKey() const {
+            return m_keys.boardKey;
+        }
+
+        [[nodiscard]] inline u64 handKey() const {
+            return m_keys.handKey;
         }
 
         [[nodiscard]] u64 keyAfter(Move move) const;
@@ -206,9 +221,9 @@ namespace stoat {
             return m_kingSquares;
         }
 
-        [[nodiscard]] SennichiteStatus testSennichite(
+        [[nodiscard]] RepetitionState testRepetition(
             bool cuteChessWorkaround,
-            std::span<const u64> keyHistory,
+            std::span<std::reference_wrapper<const Position>> keyHistory,
             i32 limit = 16
         ) const;
 

@@ -72,7 +72,7 @@ namespace stoat {
 
         void startSearch(
             const Position& pos,
-            std::span<const u64> keyHistory,
+            std::span<std::reference_wrapper<const Position>> keyHistory,
             util::Instant startTime,
             bool infinite,
             i32 maxDepth,

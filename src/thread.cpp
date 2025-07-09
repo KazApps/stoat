@@ -22,19 +22,19 @@
 
 namespace stoat {
     ThreadData::ThreadData() {
-        keyHistory.reserve(1024);
+        posHistory.reserve(1024);
 
         stack.resize(kMaxDepth + 1);
         conthist.resize(kMaxDepth + 1);
     }
 
-    void ThreadData::reset(const Position& newRootPos, std::span<const u64> newKeyHistory) {
+    void ThreadData::reset(const Position& newRootPos, std::span<std::reference_wrapper<const Position>> newPosHistory) {
         rootPos = newRootPos;
 
-        keyHistory.clear();
-        keyHistory.reserve(newKeyHistory.size());
+        posHistory.clear();
+        posHistory.reserve(newPosHistory.size());
 
-        std::ranges::copy(newKeyHistory, std::back_inserter(keyHistory));
+        std::ranges::copy(newPosHistory, std::back_inserter(posHistory));
 
         stats.seldepth.store(0);
         stats.nodes.store(0);
@@ -44,12 +44,12 @@ namespace stoat {
         stack[ply].move = move;
         conthist[ply] = &history.contTable(pos, move);
 
-        keyHistory.push_back(pos.key());
+        posHistory.push_back(pos);
 
         return std::pair<Position, ThreadPosGuard<true>>{
             std::piecewise_construct,
             std::forward_as_tuple(pos.applyMove<NnueUpdateAction::kPush>(move, &nnueState)),
-            std::forward_as_tuple(keyHistory, nnueState)
+            std::forward_as_tuple(posHistory, nnueState)
         };
     }
 
@@ -57,12 +57,12 @@ namespace stoat {
         stack[ply].move = kNullMove;
         conthist[ply] = nullptr;
 
-        keyHistory.push_back(pos.key());
+        posHistory.push_back(pos);
 
         return std::pair<Position, ThreadPosGuard<false>>{
             std::piecewise_construct,
             std::forward_as_tuple(pos.applyNullMove()),
-            std::forward_as_tuple(keyHistory, nnueState)
+            std::forward_as_tuple(posHistory, nnueState)
         };
     }
 

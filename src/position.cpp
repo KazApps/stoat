@@ -31,13 +31,13 @@
 
 namespace stoat {
     namespace {
-        constexpr i32 kPawnHandBits = 5;
-        constexpr i32 kLanceHandBits = 3;
-        constexpr i32 kKnightHandBits = 3;
-        constexpr i32 kSilverHandBits = 3;
-        constexpr i32 kGoldHandBits = 3;
-        constexpr i32 kBishopHandBits = 2;
-        constexpr i32 kRookHandBits = 2;
+        constexpr i32 kPawnHandBits = 5 + 1;
+        constexpr i32 kLanceHandBits = 3 + 1;
+        constexpr i32 kKnightHandBits = 3 + 1;
+        constexpr i32 kSilverHandBits = 3 + 1;
+        constexpr i32 kGoldHandBits = 3 + 1;
+        constexpr i32 kBishopHandBits = 2 + 1;
+        constexpr i32 kRookHandBits = 2 + 1;
 
         constexpr i32 kPawnHandOffset = 0;
         constexpr i32 kLanceHandOffset = kPawnHandOffset + kPawnHandBits;
@@ -118,6 +118,15 @@ namespace stoat {
         m_hand = (m_hand & ~mask) | (count << offset);
     }
 
+    bool Hand::isSuperior(const Hand& other) const {
+        constexpr auto kBorrowMask = 1 << (kLanceHandOffset - 1) | 1 << (kKnightHandOffset - 1)
+                                   | 1 << (kSilverHandOffset - 1) | 1 << (kGoldHandOffset - 1)
+                                   | 1 << (kBishopHandOffset - 1) | 1 << (kRookHandOffset - 1)
+                                   | 1 << (kRookHandOffset + kRookHandBits - 1);
+
+        return this->raw() != other.raw() && ((this->raw() | kBorrowMask) - other.raw() & kBorrowMask) == kBorrowMask;
+    }
+
     Hand Hand::fromRaw(u32 raw) {
         return Hand{raw};
     }
@@ -155,31 +164,31 @@ namespace stoat {
     }
 
     void PositionKeys::clear() {
-        all = 0;
+        boardKey = handKey = 0;
     }
 
     void PositionKeys::flipPiece(Piece piece, Square sq) {
         assert(piece);
         assert(sq);
-        all ^= keys::pieceSquare(piece, sq);
+        boardKey ^= keys::pieceSquare(piece, sq);
     }
 
     void PositionKeys::movePiece(Piece piece, Square from, Square to) {
         assert(piece);
         assert(from);
         assert(to);
-        all ^= keys::pieceSquare(piece, from) ^ keys::pieceSquare(piece, to);
+        boardKey ^= keys::pieceSquare(piece, from) ^ keys::pieceSquare(piece, to);
     }
 
     void PositionKeys::flipStm() {
-        all ^= keys::stm();
+        boardKey ^= keys::stm();
     }
 
     void PositionKeys::flipHandCount(Color c, PieceType pt, u32 count) {
         assert(c);
         assert(pt);
         assert(count <= maxPiecesInHand(pt));
-        all ^= keys::pieceInHand(c, pt, count);
+        handKey ^= keys::pieceInHand(c, pt, count);
     }
 
     void PositionKeys::switchHandCount(Color c, PieceType pt, u32 before, u32 after) {
@@ -187,7 +196,7 @@ namespace stoat {
         assert(pt);
         assert(before <= maxPiecesInHand(pt));
         assert(after <= maxPiecesInHand(pt));
-        all ^= keys::pieceInHand(c, pt, before) ^ keys::pieceInHand(c, pt, after);
+        handKey ^= keys::pieceInHand(c, pt, before) ^ keys::pieceInHand(c, pt, after);
     }
 
     template Position Position::applyMove<NnueUpdateAction::kNone>(Move, eval::nnue::NnueState*) const;
@@ -261,7 +270,7 @@ namespace stoat {
     }
 
     u64 Position::keyAfter(Move move) const {
-        auto key = m_keys.all ^ keys::stm();
+        auto key = this->key() ^ keys::stm();
 
         const auto& hand = this->hand(m_stm);
 
@@ -298,28 +307,40 @@ namespace stoat {
         return key;
     }
 
-    SennichiteStatus Position::testSennichite(bool cuteChessWorkaround, std::span<const u64> keyHistory, i32 limit)
-        const {
-        const auto end = std::max(0, static_cast<i32>(keyHistory.size()) - limit - 1);
+    RepetitionState Position::testRepetition(
+        bool cuteChessWorkaround,
+        std::span<std::reference_wrapper<const Position>> posHistory,
+        i32 limit
+    ) const {
+        const auto end = std::max(0, static_cast<i32>(posHistory.size()) - limit - 1);
+
+        const auto stm = this->stm();
 
         i32 repetitions = 1;
 
-        for (i32 i = static_cast<i32>(keyHistory.size()) - 4; i >= end; i -= 2) {
-            if (keyHistory[i] == key()) {
-                --repetitions;
-                if (repetitions == 0) {
-                    // Older cutechess versions do not handle perpetuals
-                    // properly - work around that to avoid illegal moves
-                    if (cuteChessWorkaround) {
-                        return isInCheck() ? SennichiteStatus::kWin : SennichiteStatus::kDraw;
-                    } else {
-                        return m_consecutiveChecks[stm().idx()] >= 2 ? SennichiteStatus::kWin : SennichiteStatus::kDraw;
+        for (i32 i = static_cast<i32>(posHistory.size()) - 4; i >= end; i -= 2) {
+            if (posHistory[i].get().boardKey() == boardKey()) {
+                if (posHistory[i].get().hand(stm).isSuperior(hand(stm))) {
+                    return RepetitionState::kSuperior;
+                } else if (posHistory[i].get().hand(stm).isInferior(hand(stm))) {
+                    return RepetitionState::kInferior;
+                } else if (posHistory[i].get().hand(stm) == hand(stm)) {
+                    --repetitions;
+                    if (repetitions == 0) {
+                        // Older cutechess versions do not handle perpetuals
+                        // properly - work around that to avoid illegal moves
+                        if (cuteChessWorkaround) {
+                            return isInCheck() ? RepetitionState::kPerpetualCheck : RepetitionState::kSennichite;
+                        } else {
+                            return m_consecutiveChecks[stm.idx()] >= 2 ? RepetitionState::kPerpetualCheck
+                                                                       : RepetitionState::kSennichite;
+                        }
                     }
                 }
             }
         }
 
-        return SennichiteStatus::kNone;
+        return RepetitionState::kNone;
     }
 
     bool Position::isEnteringKingsWin() const {
@@ -350,7 +371,8 @@ namespace stoat {
         score += 5 * (promoZone & bishopsRooks).popcount();
         score += (promoZone & colorBb(stm) ^ king ^ bishopsRooks).popcount();
         score += hand.count(PieceTypes::kPawn) + hand.count(PieceTypes::kLance) + hand.count(PieceTypes::kKnight)
-               + hand.count(PieceTypes::kSilver) + hand.count(PieceTypes::kGold) + (hand.count(PieceTypes::kBishop) + hand.count(PieceTypes::kRook)) * 5;
+               + hand.count(PieceTypes::kSilver) + hand.count(PieceTypes::kGold)
+               + (hand.count(PieceTypes::kBishop) + hand.count(PieceTypes::kRook)) * 5;
         score += stm == Colors::kWhite;
 
         return score >= 28;
@@ -1083,8 +1105,10 @@ namespace stoat {
     }
 } // namespace stoat
 
-fmt::format_context::iterator fmt::formatter<stoat::Position>::format(const stoat::Position& value, format_context& ctx)
-    const {
+fmt::format_context::iterator fmt::formatter<stoat::Position>::format(
+    const stoat::Position& value,
+    format_context& ctx
+) const {
     using namespace stoat;
 
     format_to(ctx.out(), "   9   8   7   6   5   4   3   2   1\n");

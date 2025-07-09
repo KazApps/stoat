@@ -164,7 +164,7 @@ namespace stoat {
 
     void Searcher::startSearch(
         const Position& pos,
-        std::span<const u64> keyHistory,
+        std::span<std::reference_wrapper<const Position>> posHistory,
         util::Instant startTime,
         bool infinite,
         i32 maxDepth,
@@ -210,7 +210,7 @@ namespace stoat {
         m_multiPv = std::min<u32>(m_targetMultiPv, m_rootMoveList.size());
 
         for (auto& thread : m_threads) {
-            thread.reset(pos, keyHistory);
+            thread.reset(pos, posHistory);
             thread.maxDepth = maxDepth;
 
             thread.nnueState.reset(pos);
@@ -662,7 +662,7 @@ namespace stoat {
             m_ttable.prefetch(pos.keyAfter(move));
 
             const auto [newPos, guard] = thread.applyMove(ply, pos, move);
-            const auto sennichite = newPos.testSennichite(m_cuteChessWorkaround, thread.keyHistory);
+            const auto repetition = newPos.testRepetition(m_cuteChessWorkaround, thread.posHistory);
 
             const bool givesCheck = newPos.isInCheck();
 
@@ -670,12 +670,18 @@ namespace stoat {
 
             Score score;
 
-            if (sennichite == SennichiteStatus::kWin) {
+            if (repetition == RepetitionState::kPerpetualCheck) {
                 // illegal perpetual
                 --legalMoves;
                 continue;
-            } else if (sennichite == SennichiteStatus::kDraw) {
+            } else if (repetition == RepetitionState::kSennichite) {
                 score = drawScore(thread.loadNodes());
+                goto skipSearch;
+            } else if (alpha < kScoreMate - kMaxDepth && repetition == RepetitionState::kSuperior) {
+                score = kScoreMate - kMaxDepth;
+                goto skipSearch;
+            } else if (alpha > -kScoreMate + kMaxDepth && repetition == RepetitionState::kInferior) {
+                score = kScoreMate - kMaxDepth;
                 goto skipSearch;
             } else if (pos.isEnteringKingsWin()) {
                 score = kScoreMate - ply - 1;
@@ -891,14 +897,14 @@ namespace stoat {
             ++legalMoves;
 
             const auto [newPos, guard] = thread.applyMove(ply, pos, move);
-            const auto sennichite = newPos.testSennichite(m_cuteChessWorkaround, thread.keyHistory);
+            const auto sennichite = newPos.testRepetition(m_cuteChessWorkaround, thread.posHistory);
 
             Score score;
 
-            if (sennichite == SennichiteStatus::kWin) {
+            if (sennichite == RepetitionState::kPerpetualCheck) {
                 // illegal perpetual
                 continue;
-            } else if (sennichite == SennichiteStatus::kDraw) {
+            } else if (sennichite == RepetitionState::kSennichite) {
                 score = drawScore(thread.loadNodes());
             } else {
                 score = -qsearch<kPvNode>(thread, newPos, ply + 1, -beta, -alpha);

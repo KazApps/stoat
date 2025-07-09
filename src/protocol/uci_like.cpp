@@ -204,7 +204,7 @@ namespace stoat::protocol {
 
         if (args[0] == "startpos") {
             m_state.pos = Position::startpos();
-            m_state.keyHistory.clear();
+            m_state.posHistory.clear();
 
             next = 1;
         } else {
@@ -217,7 +217,7 @@ namespace stoat::protocol {
 
             if (auto parsed = parsePosition(args.subspan(0, count))) {
                 m_state.pos = parsed.take();
-                m_state.keyHistory.clear();
+                m_state.posHistory.clear();
             } else {
                 if (const auto err = parsed.takeErr()) {
                     fmt::println("{}", *err);
@@ -236,7 +236,7 @@ namespace stoat::protocol {
 
         for (usize i = next + 1; i < args.size(); ++i) {
             if (auto parsedMove = parseMove(args[i])) {
-                m_state.keyHistory.push_back(m_state.pos.key());
+                m_state.posHistory.push_back(m_state.pos);
                 m_state.pos = m_state.pos.applyMove(parsedMove.take());
             } else {
                 fmt::println(stderr, "Invalid move '{}'", args[i]);
@@ -407,7 +407,7 @@ namespace stoat::protocol {
         }
 
         m_state.searcher
-            ->startSearch(m_state.pos, m_state.keyHistory, startTime, infinite, maxDepth, std::move(limiter));
+            ->startSearch(m_state.pos, m_state.posHistory, startTime, infinite, maxDepth, std::move(limiter));
     }
 
     void UciLikeHandler::handle_stop(std::span<std::string_view> args, [[maybe_unused]] util::Instant startTime) {
