@@ -677,14 +677,14 @@ namespace stoat {
             } else if (repetition == RepetitionState::kSennichite) {
                 score = drawScore(thread.loadNodes());
                 goto skipSearch;
-            } else if (alpha < kScoreMate - kMaxDepth && repetition == RepetitionState::kSuperior) {
-                score = kScoreMate - kMaxDepth;
+            } else if (alpha < kScoreWin - kMaxDepth && repetition == RepetitionState::kSuperior) {
+                score = kScoreWin - kMaxDepth;
                 goto skipSearch;
-            } else if (alpha > -kScoreMate + kMaxDepth && repetition == RepetitionState::kInferior) {
-                score = kScoreMate - kMaxDepth;
+            } else if (alpha > -kScoreWin + kMaxDepth && repetition == RepetitionState::kInferior) {
+                score = kScoreWin - kMaxDepth;
                 goto skipSearch;
             } else if (pos.isEnteringKingsWin()) {
-                score = kScoreMate - ply - 1;
+                score = kScoreWin - ply - 1;
                 goto skipSearch;
             }
 
