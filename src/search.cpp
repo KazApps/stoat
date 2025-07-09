@@ -680,8 +680,8 @@ namespace stoat {
             } else if (alpha < kScoreWin - kMaxDepth && repetition == RepetitionState::kSuperior) {
                 score = kScoreWin - kMaxDepth;
                 goto skipSearch;
-            } else if (alpha > -kScoreWin + kMaxDepth && repetition == RepetitionState::kInferior) {
-                score = kScoreWin - kMaxDepth;
+            } else if (alpha >= -kScoreWin + kMaxDepth && repetition == RepetitionState::kInferior) {
+                score = -kScoreWin + kMaxDepth;
                 goto skipSearch;
             } else if (pos.isEnteringKingsWin()) {
                 score = kScoreMate - ply - 1;
