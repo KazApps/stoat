@@ -342,11 +342,8 @@ namespace stoat {
         return key;
     }
 
-    SennichiteStatus Position::testSennichite(
-        bool cuteChessWorkaround,
-        std::span<const u64> keyHistory,
-        i32 limit
-    ) const {
+    SennichiteStatus Position::testSennichite(bool cuteChessWorkaround, std::span<const u64> keyHistory, i32 limit)
+        const {
         const auto end = std::max(0, static_cast<i32>(keyHistory.size()) - limit - 1);
 
         i32 repetitions = 1;
