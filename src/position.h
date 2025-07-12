@@ -79,7 +79,7 @@ namespace stoat {
         u64 all{};
         u64 castle{};
         u64 major{};
-        u64 minorHandKey{};
+        u64 nonPawnMinorHand{};
 
         void clear();
 
@@ -186,8 +186,8 @@ namespace stoat {
             return m_keys.major;
         }
 
-        [[nodiscard]] inline u64 minorHandKey() const {
-            return m_keys.minorHandKey;
+        [[nodiscard]] inline u64 nonPawnMinorHandKey() const {
+            return m_keys.nonPawnMinorHand;
         }
 
         [[nodiscard]] u64 keyAfter(Move move) const;

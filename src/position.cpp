@@ -158,7 +158,7 @@ namespace stoat {
         all = 0;
         castle = 0;
         major = 0;
-        minorHandKey = 0;
+        nonPawnMinorHand = 0;
     }
 
     void PositionKeys::flipPiece(Piece piece, Square sq) {
@@ -216,8 +216,8 @@ namespace stoat {
         if (pt == PieceTypes::kBishop || pt == PieceTypes::kRook)
         {
             major ^= key;
-        } else {
-            minorHandKey ^= key;
+        } else if (pt != PieceTypes::kPawn) {
+            nonPawnMinorHand ^= key;
         }
     }
 
@@ -234,8 +234,8 @@ namespace stoat {
         if (pt == PieceTypes::kBishop || pt == PieceTypes::kRook)
         {
             major ^= key;
-        } else {
-            minorHandKey ^= key;
+        } else if (pt != PieceTypes::kPawn) {
+            nonPawnMinorHand ^= key;
         }
     }
 
