@@ -20,7 +20,7 @@
 
 namespace stoat {
     void CorrectionHistoryTable::clear() {
-        std::memset(&m_handTable, 0, sizeof(m_majorTable));
+        std::memset(&m_handTable, 0, sizeof(m_handTable));
         std::memset(&m_castleTable, 0, sizeof(m_castleTable));
         std::memset(&m_majorTable, 0, sizeof(m_majorTable));
     }
