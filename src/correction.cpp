@@ -22,12 +22,14 @@ namespace stoat {
     void CorrectionHistoryTable::clear() {
         std::memset(&m_castleTable, 0, sizeof(m_castleTable));
         std::memset(&m_majorTable, 0, sizeof(m_majorTable));
+        std::memset(&m_minorHandTable, 0, sizeof(m_minorHandTable));
     }
 
     void CorrectionHistoryTable::update(const Position& pos, i32 depth, Score searchScore, Score staticEval) {
         const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
         m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries].update(bonus);
         m_majorTable[pos.stm().idx()][pos.majorKey() % kEntries].update(bonus);
+        m_minorHandTable[pos.stm().idx()][pos.minorHandKey() % kEntries].update(bonus);
     }
 
     i32 CorrectionHistoryTable::correction(const Position& pos) const {
@@ -35,6 +37,7 @@ namespace stoat {
 
         correction += m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries];
         correction += m_majorTable[pos.stm().idx()][pos.majorKey() % kEntries];
+        correction += m_minorHandTable[pos.stm().idx()][pos.minorHandKey() % kEntries];
 
         return correction / 16;
     }
