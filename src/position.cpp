@@ -212,8 +212,7 @@ namespace stoat {
 
         all ^= key;
 
-        if (pt == PieceTypes::kBishop || pt == PieceTypes::kRook || pt == PieceTypes::kPromotedBishop
-            || pt == PieceTypes::kPromotedRook)
+        if (pt == PieceTypes::kBishop || pt == PieceTypes::kRook)
         {
             major ^= key;
         }
@@ -229,8 +228,7 @@ namespace stoat {
 
         all ^= key;
 
-        if (pt == PieceTypes::kBishop || pt == PieceTypes::kRook || pt == PieceTypes::kPromotedBishop
-            || pt == PieceTypes::kPromotedRook)
+        if (pt == PieceTypes::kBishop || pt == PieceTypes::kRook)
         {
             major ^= key;
         }
