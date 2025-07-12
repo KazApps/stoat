@@ -76,7 +76,8 @@ namespace stoat {
     };
 
     struct PositionKeys {
-        u64 all{};
+        u64 board{};
+        u64 hand{};
         u64 castle{};
         u64 major{};
 
@@ -174,7 +175,11 @@ namespace stoat {
         }
 
         [[nodiscard]] inline u64 key() const {
-            return m_keys.all;
+            return m_keys.board ^ m_keys.hand;
+        }
+
+        [[nodiscard]] inline u64 handKey() const {
+            return m_keys.hand;
         }
 
         [[nodiscard]] inline u64 castleKey() const {

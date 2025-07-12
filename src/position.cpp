@@ -155,7 +155,8 @@ namespace stoat {
     }
 
     void PositionKeys::clear() {
-        all = 0;
+        board = 0;
+        hand = 0;
         castle = 0;
         major = 0;
     }
@@ -166,7 +167,7 @@ namespace stoat {
 
         const auto key = keys::pieceSquare(piece, sq);
 
-        all ^= key;
+        board ^= key;
 
         if (piece.type() == PieceTypes::kKing || piece.type() == PieceTypes::kSilver
             || piece.type() == PieceTypes::kGold)
@@ -186,7 +187,7 @@ namespace stoat {
 
         const auto key = keys::pieceSquare(piece, from) ^ keys::pieceSquare(piece, to);
 
-        all ^= key;
+        board ^= key;
 
         if (piece.type() == PieceTypes::kKing || piece.type() == PieceTypes::kSilver
             || piece.type() == PieceTypes::kGold)
@@ -200,7 +201,7 @@ namespace stoat {
     }
 
     void PositionKeys::flipStm() {
-        all ^= keys::stm();
+        board ^= keys::stm();
     }
 
     void PositionKeys::flipHandCount(Color c, PieceType pt, u32 count) {
@@ -210,7 +211,7 @@ namespace stoat {
 
         const auto key = keys::pieceInHand(c, pt, count);
 
-        all ^= key;
+        hand ^= key;
 
         if (pt == PieceTypes::kBishop || pt == PieceTypes::kRook || pt == PieceTypes::kPromotedBishop
             || pt == PieceTypes::kPromotedRook)
@@ -227,7 +228,7 @@ namespace stoat {
 
         const auto key = keys::pieceInHand(c, pt, before) ^ keys::pieceInHand(c, pt, after);
 
-        all ^= key;
+        hand ^= key;
 
         if (pt == PieceTypes::kBishop || pt == PieceTypes::kRook || pt == PieceTypes::kPromotedBishop
             || pt == PieceTypes::kPromotedRook)
@@ -307,7 +308,7 @@ namespace stoat {
     }
 
     u64 Position::keyAfter(Move move) const {
-        auto key = m_keys.all ^ keys::stm();
+        auto key = this->key() ^ keys::stm();
 
         const auto& hand = this->hand(m_stm);
 

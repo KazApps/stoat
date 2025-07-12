@@ -54,6 +54,7 @@ namespace stoat {
             }
         };
 
+        util::MultiArray<Entry, 2, kEntries> m_handTable{};
         util::MultiArray<Entry, 2, kEntries> m_castleTable{};
         util::MultiArray<Entry, 2, kEntries> m_majorTable{};
     };
