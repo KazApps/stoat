@@ -158,6 +158,7 @@ namespace stoat {
         all = 0;
         castle = 0;
         major = 0;
+        nonPawnHand = 0;
     }
 
     void PositionKeys::flipPiece(Piece piece, Square sq) {
@@ -217,6 +218,10 @@ namespace stoat {
         {
             major ^= key;
         }
+
+        if (pt != PieceTypes::kPawn) {
+            nonPawnHand ^= key;
+        }
     }
 
     void PositionKeys::switchHandCount(Color c, PieceType pt, u32 before, u32 after) {
@@ -233,6 +238,10 @@ namespace stoat {
             || pt == PieceTypes::kPromotedRook)
         {
             major ^= key;
+        }
+
+        if (pt != PieceTypes::kPawn) {
+            nonPawnHand ^= key;
         }
     }
 
