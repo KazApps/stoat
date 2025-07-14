@@ -172,8 +172,11 @@ namespace stoat {
             || piece.type() == PieceTypes::kGold)
         {
             castle ^= key;
-        } else if (piece.type() == PieceTypes::kBishop || piece.type() == PieceTypes::kRook
-                   || piece.type() == PieceTypes::kPromotedBishop || piece.type() == PieceTypes::kPromotedRook)
+        }
+
+        if (piece.type() == PieceTypes::kKing || piece.type() == PieceTypes::kBishop
+                   || piece.type() == PieceTypes::kRook || piece.type() == PieceTypes::kPromotedBishop
+                   || piece.type() == PieceTypes::kPromotedRook)
         {
             major ^= key;
         }
@@ -192,8 +195,11 @@ namespace stoat {
             || piece.type() == PieceTypes::kGold)
         {
             castle ^= key;
-        } else if (piece.type() == PieceTypes::kBishop || piece.type() == PieceTypes::kRook
-                   || piece.type() == PieceTypes::kPromotedBishop || piece.type() == PieceTypes::kPromotedRook)
+        }
+
+        if (piece.type() == PieceTypes::kKing || piece.type() == PieceTypes::kBishop
+                   || piece.type() == PieceTypes::kRook || piece.type() == PieceTypes::kPromotedBishop
+                   || piece.type() == PieceTypes::kPromotedRook)
         {
             major ^= key;
         }
