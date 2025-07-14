@@ -169,7 +169,7 @@ namespace stoat {
         all ^= key;
 
         if (piece.type() == PieceTypes::kKing || piece.type() == PieceTypes::kSilver
-            || piece.type() == PieceTypes::kGold)
+            || piece.type() == PieceTypes::kGold || piece.type() == PieceTypes::kKnight)
         {
             castle ^= key;
         } else if (piece.type() == PieceTypes::kBishop || piece.type() == PieceTypes::kRook
@@ -189,7 +189,7 @@ namespace stoat {
         all ^= key;
 
         if (piece.type() == PieceTypes::kKing || piece.type() == PieceTypes::kSilver
-            || piece.type() == PieceTypes::kGold)
+            || piece.type() == PieceTypes::kGold || piece.type() == PieceTypes::kKnight)
         {
             castle ^= key;
         } else if (piece.type() == PieceTypes::kBishop || piece.type() == PieceTypes::kRook
