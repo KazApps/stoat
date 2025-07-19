@@ -88,6 +88,8 @@ namespace stoat {
             return std::abs(score) > kScoreWin;
         }
 
+        constexpr Score kUnlikelyMargin = 1500;
+
         [[nodiscard]] bool isUnlikelyMove(const Position& pos, Move move) {
             const auto pt = pos.pieceOn(move.from()).type();
             const auto promoArea = Bitboards::promoArea(pos.stm());
@@ -668,8 +670,10 @@ namespace stoat {
                 continue;
             }
 
-            if (isUnlikelyMove(pos, move) && curr.staticEval - 500 <= alpha) {
-                continue;
+            if (isUnlikelyMove(pos, move)) {
+                if (alpha > -kUnlikelyMargin && beta < kUnlikelyMargin) {
+                    continue;
+                }
             }
 
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
@@ -950,8 +954,14 @@ namespace stoat {
         while (const auto move = generator.next()) {
             assert(pos.isPseudolegal(move));
 
-            if (!pos.isLegal(move) || isUnlikelyMove(pos, move)) {
+            if (!pos.isLegal(move)) {
                 continue;
+            }
+
+            if (isUnlikelyMove(pos, move)) {
+                if (alpha > -kUnlikelyMargin && beta < kUnlikelyMargin) {
+                    continue;
+                }
             }
 
             if (bestScore > -kScoreWin) {
