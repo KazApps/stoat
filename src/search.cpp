@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "attacks/attacks.h"
 #include "core.h"
 #include "eval/eval.h"
 #include "history.h"
@@ -764,6 +765,10 @@ namespace stoat {
                 r += !ttPv;
                 r -= pos.isInCheck();
                 r -= move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3;
+                r -= move.isDrop()
+                  && !(attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
+                       & pos.colorBb(pos.stm().flip()))
+                          .empty();
                 r += !improving;
                 r -= history / 8192;
 
