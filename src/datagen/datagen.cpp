@@ -166,7 +166,7 @@ namespace stoat::datagen {
             std::vector<u64> keyHistory{};
             keyHistory.reserve(1024);
 
-            auto& thread = searcher.mainThread();
+            auto& thread = searcher.take();
 
             thread.maxDepth = kMaxDepth;
             thread.datagen = true;

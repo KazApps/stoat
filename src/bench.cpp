@@ -49,13 +49,17 @@ namespace stoat::bench {
         usize totalNodes{};
         f64 totalTime{};
 
+        auto& thread = searcher.take();
+
+        thread.maxDepth = depth;
+
         for (const auto sfen : kBenchSfens) {
             fmt::println("SFEN: {}", sfen);
 
-            const auto pos = Position::fromSfen(sfen).take();
+            thread.reset(Position::fromSfen(sfen).take(), {});
 
             BenchInfo info{};
-            searcher.runBenchSearch(info, pos, depth);
+            searcher.runBenchSearch(info);
 
             totalNodes += info.nodes;
             totalTime += info.time;

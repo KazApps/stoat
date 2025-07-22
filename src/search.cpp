@@ -135,9 +135,9 @@ namespace stoat {
             m_ttable.clear();
         }
 
-        for (auto& thread : m_threads) {
-            thread.history.clear();
-            thread.correctionHistory.clear();
+        for (auto& thread : m_threadData) {
+            thread->history.clear();
+            thread->correctionHistory.clear();
         }
     }
 
@@ -154,12 +154,17 @@ namespace stoat {
 
         if (!m_threads.empty()) {
             stopThreads();
-            m_quit.store(false);
         }
 
         m_threads.clear();
         m_threads.shrink_to_fit();
         m_threads.reserve(threadCount);
+
+        m_threadData.clear();
+        m_threadData.resize(threadCount);
+        m_threadData.shrink_to_fit();
+
+        m_initBarrier.reset(threadCount + 1);
 
         m_resetBarrier.reset(threadCount + 1);
         m_idleBarrier.reset(threadCount + 1);
@@ -167,11 +172,10 @@ namespace stoat {
         m_searchEndBarrier.reset(threadCount);
 
         for (u32 threadId = 0; threadId < threadCount; ++threadId) {
-            auto& thread = m_threads.emplace_back();
-
-            thread.id = threadId;
-            thread.thread = std::thread{[this, &thread] { runThread(thread); }};
+            m_threads.emplace_back([this, threadId] { runThread(threadId); });
         }
+
+        m_initBarrier.arriveAndWait();
     }
 
     void Searcher::setTtSize(usize mib) {
@@ -240,11 +244,11 @@ namespace stoat {
 
         m_multiPv = std::min<u32>(m_targetMultiPv, m_rootMoveList.size());
 
-        for (auto& thread : m_threads) {
-            thread.reset(pos, keyHistory);
-            thread.maxDepth = maxDepth;
+        for (auto& thread : m_threadData) {
+            thread->reset(pos, keyHistory);
+            thread->maxDepth = maxDepth;
 
-            thread.nnueState.reset(pos);
+            thread->nnueState.reset(pos);
         }
 
         m_startTime = startTime;
@@ -264,14 +268,31 @@ namespace stoat {
         if (m_runningThreads.load() > 0) {
             m_stopSignal.wait(lock, [this] { return m_runningThreads.load() == 0; });
         }
+
+        m_stop.store(false);
     }
 
-    ThreadData& Searcher::mainThread() {
-        return m_threads[0];
+    ThreadData& Searcher::take() {
+        stopThreads();
+
+        m_resetBarrier.reset(1);
+        m_idleBarrier.reset(1);
+
+        m_threads.clear();
+        m_threads.shrink_to_fit();
+
+        m_threadData.resize(1);
+        m_threadData.shrink_to_fit();
+
+        m_threadData[0] = std::make_unique<ThreadData>();
+
+        return *m_threadData[0];
     }
 
-    void Searcher::runBenchSearch(BenchInfo& info, const Position& pos, i32 depth) {
-        if (initRootMoves(m_rootMoveList, pos) == RootStatus::kNoLegalMoves) {
+    void Searcher::runBenchSearch(BenchInfo& info) {
+        auto& thread = *m_threadData[0];
+
+        if (initRootMoves(m_rootMoveList, thread.rootPos) == RootStatus::kNoLegalMoves) {
             protocol::currHandler().printInfoString("no legal moves");
             return;
         }
@@ -283,11 +304,7 @@ namespace stoat {
         m_multiPv = 1;
         m_infinite = false;
 
-        auto& thread = m_threads[0];
-
-        thread.reset(pos, {});
-        thread.maxDepth = depth;
-        thread.nnueState.reset(pos);
+        thread.nnueState.reset(thread.rootPos);
 
         m_runningThreads.store(1);
         m_stop.store(false);
@@ -308,12 +325,7 @@ namespace stoat {
             return;
         }
 
-        if (m_threads.size() > 1) {
-            fmt::println(stderr, "Too many datagen threads");
-            return;
-        }
-
-        auto& thread = mainThread();
+        auto& thread = *m_threadData[0];
 
         if (initRootMoves(m_rootMoveList, thread.rootPos) == RootStatus::kNoLegalMoves) {
             return;
@@ -346,7 +358,14 @@ namespace stoat {
         return dst.empty() ? Searcher::RootStatus::kNoLegalMoves : Searcher::RootStatus::kGenerated;
     }
 
-    void Searcher::runThread(ThreadData& thread) {
+    void Searcher::runThread(u32 id) {
+        m_threadData[id] = std::make_unique<ThreadData>();
+
+        auto& thread = *m_threadData[id];
+        thread.id = id;
+
+        m_initBarrier.arriveAndWait();
+
         while (true) {
             m_resetBarrier.arriveAndWait();
             m_idleBarrier.arriveAndWait();
@@ -360,14 +379,18 @@ namespace stoat {
     }
 
     void Searcher::stopThreads() {
+        stop();
+
         m_quit.store(true);
 
         m_resetBarrier.arriveAndWait();
         m_idleBarrier.arriveAndWait();
 
         for (auto& thread : m_threads) {
-            thread.thread.join();
+            thread.join();
         }
+
+        m_quit.store(false);
     }
 
     void Searcher::runSearch(ThreadData& thread) {
@@ -1026,8 +1049,8 @@ namespace stoat {
 
         usize totalNodes = 0;
 
-        for (const auto& thread : m_threads) {
-            totalNodes += thread.loadNodes();
+        for (const auto& thread : m_threadData) {
+            totalNodes += thread->loadNodes();
         }
 
         auto bound = protocol::ScoreBound::kExact;
@@ -1082,7 +1105,7 @@ namespace stoat {
             return;
         }
 
-        const auto& bestThread = m_threads[0];
+        const auto& bestThread = *m_threadData[0];
 
         report(bestThread, bestThread.depthCompleted, time);
         protocol::currHandler().printBestMove(bestThread.pvMove().pv.moves[0]);

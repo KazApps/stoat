@@ -80,17 +80,18 @@ namespace stoat {
         );
         void stop();
 
-        // THIS REFERENCE WILL BE DANGLING IF setThreads
-        // IS CALLED OR THE SEARCHER IS DESTROYED
-        [[nodiscard]] ThreadData& mainThread();
+        // Clears all threads, and reallocates main thread data on the current NUMA node.
+        // Makes this object unusable for normal searches, just for benching or datagen
+        [[nodiscard]] ThreadData& take();
 
-        void runBenchSearch(BenchInfo& info, const Position& pos, i32 depth);
+        void runBenchSearch(BenchInfo& info);
         void runDatagenSearch();
 
         [[nodiscard]] bool isSearching() const;
 
     private:
-        std::vector<ThreadData> m_threads{};
+        std::vector<std::thread> m_threads{};
+        std::vector<std::unique_ptr<ThreadData>> m_threadData{};
 
         bool m_silent{};
         bool m_cuteChessWorkaround{};
@@ -99,6 +100,8 @@ namespace stoat {
         bool m_searching{};
 
         util::Instant m_startTime{util::Instant::now()};
+
+        util::Barrier m_initBarrier{2};
 
         util::Barrier m_resetBarrier{2};
         util::Barrier m_idleBarrier{2};
@@ -130,7 +133,7 @@ namespace stoat {
 
         RootStatus initRootMoves(movegen::MoveList& dst, const Position& pos);
 
-        void runThread(ThreadData& thread);
+        void runThread(u32 id);
 
         [[nodiscard]] inline bool hasStopped() const {
             return m_stop.load(std::memory_order::relaxed);

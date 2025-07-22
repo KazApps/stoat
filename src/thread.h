@@ -94,7 +94,6 @@ namespace stoat {
         ThreadData();
 
         u32 id{};
-        std::thread thread{};
 
         i32 maxDepth{};
 
