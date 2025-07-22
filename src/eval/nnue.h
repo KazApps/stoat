@@ -42,13 +42,39 @@ namespace stoat::eval::nnue {
         return kingSq.file() > 4 ? sq.flipFile() : sq;
     }
 
+    [[nodiscard]] constexpr u32 kingBucket(Square kingSq) {
+        constexpr std::array kBuckets = {
+            0,  1,  2,  3,  4,  0, 0, 0, 0, //
+            5,  6,  7,  8,  9,  0, 0, 0, 0, //
+            10, 10, 10, 10, 10, 0, 0, 0, 0, //
+            11, 11, 11, 11, 11, 0, 0, 0, 0, //
+            12, 12, 12, 12, 12, 0, 0, 0, 0, //
+            13, 13, 13, 13, 13, 0, 0, 0, 0, //
+            14, 14, 14, 14, 14, 0, 0, 0, 0, //
+            15, 15, 15, 15, 15, 0, 0, 0, 0, //
+            15, 15, 15, 15, 15, 0, 0, 0, 0, //
+        };
+        return kBuckets[transformRelativeSquare(kingSq, kingSq).idx()];
+    }
+
+    [[nodiscard]] constexpr u32 inputBucketIndex(Square kingSq) {
+        return kFtSize * kingBucket(kingSq);
+    }
+
     [[nodiscard]] constexpr u32 psqtFeatureIndex(Color perspective, KingPair kings, Piece piece, Square sq) {
         sq = sq.relative(perspective);
         sq = transformRelativeSquare(kings.relativeKingSq(perspective), sq);
-        return kColorStride * (piece.color() != perspective) + kPieceStride * piece.type().idx() + sq.idx();
+        return inputBucketIndex(kings.relativeKingSq(perspective)) + kColorStride * (piece.color() != perspective)
+             + kPieceStride * piece.type().idx() + sq.idx();
     }
 
-    [[nodiscard]] constexpr u32 handFeatureIndex(Color perspective, PieceType pt, Color handColor, u32 countMinusOne) {
+    [[nodiscard]] constexpr u32 handFeatureIndex(
+        Color perspective,
+        KingPair kings,
+        PieceType pt,
+        Color handColor,
+        u32 countMinusOne
+    ) {
         constexpr auto kPieceOffsets = [] {
             std::array<u32, PieceTypes::kCount> offsets{};
             offsets.fill(std::numeric_limits<u32>::max());
@@ -64,7 +90,8 @@ namespace stoat::eval::nnue {
             return offsets;
         }();
 
-        return kColorStride * (handColor != perspective) + kHandOffset + kPieceOffsets[pt.idx()] + countMinusOne;
+        return inputBucketIndex(kings.relativeKingSq(perspective)) + kColorStride * (handColor != perspective)
+             + kHandOffset + kPieceOffsets[pt.idx()] + countMinusOne;
     }
 
     struct NnueUpdates {
@@ -99,10 +126,20 @@ namespace stoat::eval::nnue {
             const auto whiteCapturedFeature = psqtFeatureIndex(Colors::kWhite, kings, captured, sq);
             subs.push({blackCapturedFeature, whiteCapturedFeature});
 
-            const auto blackHandFeature =
-                handFeatureIndex(Colors::kBlack, captured.type().unpromoted(), captured.color().flip(), currHandCount);
-            const auto whiteHandFeature =
-                handFeatureIndex(Colors::kWhite, captured.type().unpromoted(), captured.color().flip(), currHandCount);
+            const auto blackHandFeature = handFeatureIndex(
+                Colors::kBlack,
+                kings,
+                captured.type().unpromoted(),
+                captured.color().flip(),
+                currHandCount
+            );
+            const auto whiteHandFeature = handFeatureIndex(
+                Colors::kWhite,
+                kings,
+                captured.type().unpromoted(),
+                captured.color().flip(),
+                currHandCount
+            );
             adds.push({blackHandFeature, whiteHandFeature});
         }
 
@@ -116,9 +153,9 @@ namespace stoat::eval::nnue {
             adds.push({blackDroppedFeature, whiteDroppedFeature});
 
             const auto blackHandFeature =
-                handFeatureIndex(Colors::kBlack, piece.type(), piece.color(), currHandCount - 1);
+                handFeatureIndex(Colors::kBlack, kings, piece.type(), piece.color(), currHandCount - 1);
             const auto whiteHandFeature =
-                handFeatureIndex(Colors::kWhite, piece.type(), piece.color(), currHandCount - 1);
+                handFeatureIndex(Colors::kWhite, kings, piece.type(), piece.color(), currHandCount - 1);
             subs.push({blackHandFeature, whiteHandFeature});
         }
 
@@ -200,6 +237,6 @@ namespace stoat::eval::nnue {
         const bool flip = kingSq.relative(c).file() > 4;
         const bool prevFlip = prevKingSq.relative(c).file() > 4;
 
-        return flip != prevFlip;
+        return flip != prevFlip || kingBucket(kingSq.relative(c)) != kingBucket(prevKingSq.relative(c));
     }
 } // namespace stoat::eval::nnue
