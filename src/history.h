@@ -49,8 +49,9 @@ namespace stoat {
 
         inline void update(HistoryScore bonus) {
             constexpr int kMaxBonus = 16384;
+            const int sign = bonus < 0 ? -1 : 1;
 
-            value += bonus - (value * std::abs(bonus) + kMaxBonus / 2) / kMaxBonus;
+            value += bonus - (value * std::abs(bonus) + sign * kMaxBonus / 2) / kMaxBonus;
         }
     };
 
