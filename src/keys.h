@@ -36,7 +36,7 @@ namespace stoat::keys {
         constexpr usize kGoldsInHand = (maxPiecesInHand(PieceTypes::kGold) + 1) * Colors::kCount;
         constexpr usize kBishopsInHand = (maxPiecesInHand(PieceTypes::kBishop) + 1) * Colors::kCount;
         constexpr usize kRooksInHand = (maxPiecesInHand(PieceTypes::kRook) + 1) * Colors::kCount;
-        constexpr usize kKingZone = 25;
+        constexpr usize kKingZone = 9;
 
         constexpr auto kTotal = kPieceSquares + kStm + kPawnsInHand + kLancesInHand + kKnightsInHand + kSilversInHand
                               + kGoldsInHand + kBishopsInHand + kRooksInHand + kKingZone;
@@ -109,6 +109,6 @@ namespace stoat::keys {
     [[nodiscard]] constexpr u64 kingZone(Square sq) {
         assert(sq);
 
-        return kKeys[offsets::kKingZone + sq.file() / 2 * 5 + sq.rank() / 2];
+        return kKeys[offsets::kKingZone + sq.file() / 3 * 3 + sq.rank() / 3];
     }
 } // namespace stoat::keys
