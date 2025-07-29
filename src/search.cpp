@@ -671,7 +671,7 @@ namespace stoat {
 
         auto generator = MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply);
 
-        util::StaticVector<Move, 64> capturesTried{};
+        util::StaticVector<Move, 16> capturesTried{};
         util::StaticVector<Move, 64> nonCapturesTried{};
 
         u32 legalMoves{};
@@ -902,7 +902,7 @@ namespace stoat {
 
             for (const auto prevCapture : capturesTried) {
                 const auto captured = pos.pieceOn(prevCapture.to()).type();
-                thread.history.updateCaptureScore(prevCapture, captured, -bonus);
+                thread.history.updateCaptureScore(prevCapture, captured, -bonus * 2 / 3);
             }
         }
 
