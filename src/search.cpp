@@ -456,6 +456,7 @@ namespace stoat {
                     }
 
                     if (score <= alpha) {
+                        fmt::println("reduction={}", reduction);
                         reduction = 0;
                         alpha = std::max(score - window, -kScoreInf);
                     } else { // score >= beta
@@ -463,7 +464,7 @@ namespace stoat {
                         beta = std::min(score + window, kScoreInf);
                     }
 
-                    window += window;
+                    window += window * 8 / (12 - reduction);
                 }
 
                 std::ranges::stable_sort(thread.rootMoves, [](const RootMove& a, const RootMove& b) {
