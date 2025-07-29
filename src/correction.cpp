@@ -17,8 +17,15 @@
  */
 
 #include "correction.h"
+#include "keys.h"
 
 namespace stoat {
+    namespace {
+        u64 kingZoneKey(const Position& pos) {
+            return keys::kingZone(pos.kingSq(Colors::kBlack)) ^ keys::kingZone(pos.kingSq(Colors::kWhite));
+        }
+    } // namespace
+
     void CorrectionHistoryTable::clear() {
         std::memset(&m_castleTable, 0, sizeof(m_castleTable));
         std::memset(&m_cavalryTable, 0, sizeof(m_cavalryTable));
@@ -27,14 +34,14 @@ namespace stoat {
     void CorrectionHistoryTable::update(const Position& pos, i32 depth, Score searchScore, Score staticEval) {
         const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
         m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries].update(bonus);
-        m_cavalryTable[pos.stm().idx()][pos.cavalryKey() % kEntries].update(bonus);
+        m_cavalryTable[pos.stm().idx()][(pos.cavalryKey() ^ kingZoneKey(pos)) % kEntries].update(bonus);
     }
 
     i32 CorrectionHistoryTable::correction(const Position& pos) const {
         i32 correction{};
 
         correction += m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries];
-        correction += m_cavalryTable[pos.stm().idx()][pos.cavalryKey() % kEntries];
+        correction += m_cavalryTable[pos.stm().idx()][(pos.cavalryKey() ^ kingZoneKey(pos)) % kEntries];
 
         return correction / 16;
     }

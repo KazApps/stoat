@@ -36,9 +36,10 @@ namespace stoat::keys {
         constexpr usize kGoldsInHand = (maxPiecesInHand(PieceTypes::kGold) + 1) * Colors::kCount;
         constexpr usize kBishopsInHand = (maxPiecesInHand(PieceTypes::kBishop) + 1) * Colors::kCount;
         constexpr usize kRooksInHand = (maxPiecesInHand(PieceTypes::kRook) + 1) * Colors::kCount;
+        constexpr usize kKingZone = 25;
 
         constexpr auto kTotal = kPieceSquares + kStm + kPawnsInHand + kLancesInHand + kKnightsInHand + kSilversInHand
-                              + kGoldsInHand + kBishopsInHand + kRooksInHand;
+                              + kGoldsInHand + kBishopsInHand + kRooksInHand + kKingZone;
     } // namespace sizes
 
     namespace offsets {
@@ -51,6 +52,7 @@ namespace stoat::keys {
         constexpr auto kGoldsInHand = kSilversInHand + sizes::kSilversInHand;
         constexpr auto kBishopsInHand = kGoldsInHand + sizes::kGoldsInHand;
         constexpr auto kRooksInHand = kBishopsInHand + sizes::kBishopsInHand;
+        constexpr auto kKingZone = kRooksInHand + sizes::kRooksInHand;
     } // namespace offsets
 
     constexpr auto kKeys = [] {
@@ -102,5 +104,11 @@ namespace stoat::keys {
         assert(offset != -1);
 
         return kKeys[offset + count * Colors::kCount + c.idx()];
+    }
+
+    [[nodiscard]] constexpr u64 kingZone(Square sq) {
+        assert(sq);
+
+        return kKeys[offsets::kKingZone + sq.file() / 2 * 5 + sq.rank() / 2];
     }
 } // namespace stoat::keys
