@@ -456,7 +456,6 @@ namespace stoat {
                     }
 
                     if (score <= alpha) {
-                        fmt::println("reduction={}", reduction);
                         reduction = 0;
                         alpha = std::max(score - window, -kScoreInf);
                     } else { // score >= beta
