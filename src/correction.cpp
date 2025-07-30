@@ -34,7 +34,7 @@ namespace stoat {
     void CorrectionHistoryTable::update(const Position& pos, i32 depth, Score searchScore, Score staticEval) {
         const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
         m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries].update(bonus);
-        m_cavalryTable[pos.stm().idx()][(pos.cavalryKey() ^ kingZoneKey(pos)) % kEntries].update(bonus);
+        m_cavalryTable[pos.stm().idx()][(pos.cavalryKey() ^ kingZoneKey(pos)) % kEntries].update(bonus * 3 / 2);
     }
 
     i32 CorrectionHistoryTable::correction(const Position& pos) const {
