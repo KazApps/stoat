@@ -787,6 +787,7 @@ namespace stoat {
 
                 r += !ttPv;
                 r -= pos.isInCheck();
+                r -= pos.isCapture(move);
                 r -= move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3;
                 r -= move.isDrop()
                   && !(attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
