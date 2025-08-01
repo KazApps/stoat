@@ -618,7 +618,7 @@ namespace stoat {
         const auto ttMove =
             (kRootNode && thread.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
 
-        const bool improving = [&] {
+        bool improving = [&] {
             if (pos.isInCheck()) {
                 return false;
             }
@@ -630,6 +630,10 @@ namespace stoat {
             }
             return true;
         }();
+
+        if (complexity > 250 && complexity & 1) {
+            improving = false;
+        }
 
         if (!ttPv && !pos.isInCheck() && !curr.excluded && complexity <= 20) {
             if (parent && depth >= 2 && parent->reduction >= 1 && curr.staticEval + parent->staticEval >= 200) {
