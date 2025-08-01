@@ -704,8 +704,8 @@ namespace stoat {
                     generator.skipNonCaptures();
                 }
 
-                const auto seeThreshold = (pos.isCapture(move) ? -100 * depth * depth : -20 * depth * depth)
-                                        + complexity / (30 - std::max(depth, 1));
+                const auto seeThreshold = pos.isCapture(move) ? -(100 - complexity / 10) * depth * depth
+                                                              : -(20 - std::min(complexity / 25, 10)) * depth * depth;
 
                 if (!see::see(pos, move, seeThreshold)) {
                     continue;
