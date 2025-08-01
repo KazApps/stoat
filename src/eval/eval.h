@@ -33,6 +33,7 @@ namespace stoat::eval {
         const Position& pos,
         const nnue::NnueState& nnueState,
         const CorrectionHistoryTable& correction,
-        const i32 ply
+        const i32 ply,
+        const i32 depth
     );
 } // namespace stoat::eval
