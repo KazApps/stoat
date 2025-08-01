@@ -795,6 +795,7 @@ namespace stoat {
                           .empty();
                 r += !improving;
                 r -= history / 8192;
+                r += expectedCutnode * 3;
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
                 curr.reduction = newDepth - reduced;
