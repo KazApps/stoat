@@ -797,6 +797,12 @@ namespace stoat {
                 r -= history / 8192;
                 r += expectedCutnode * 3;
 
+                if (complexity > 150) {
+                    r -= std::min((complexity - 150) / 75, 4);
+                } else if (complexity != 0 && complexity <= 70) {
+                    r += std::min(complexity / 20, 3);
+                }
+
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
                 curr.reduction = newDepth - reduced;
                 score = -search(thread, newPos, curr.pv, reduced, ply + 1, -alpha - 1, -alpha, true);
