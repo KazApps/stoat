@@ -53,8 +53,8 @@ namespace stoat {
 
         // [depth][move index]
         const auto s_lmrTable = [] {
-            constexpr f64 kBase = 0.5;
-            constexpr f64 kDivisor = 2.5;
+            constexpr f64 kBase = 2.5;
+            constexpr f64 kDivisor = 0.5;
 
             util::MultiArray<i32, kMaxDepth, kLmrTableMoves> reductions{};
 
@@ -785,18 +785,18 @@ namespace stoat {
             {
                 auto r = baseLmr;
 
-                r += !ttPv;
-                r -= pos.isInCheck();
-                r -= pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
-                r -= move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3;
-                r -= move.isDrop()
+                r += !ttPv * 8;
+                r -= pos.isInCheck() * 6;
+                r -= (pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250) * 5;
+                r -= (move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3) * 5;
+                r -= (move.isDrop()
                   && !(attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
                        & pos.colorBb(pos.stm().flip()))
-                          .empty();
-                r += !improving;
-                r -= history / 8192;
+                          .empty()) * 3;
+                r += !improving * 9;
+                r -= history / 8192 * 5;
 
-                const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
+                const auto reduced = std::min(std::max(newDepth - r / 5, 1), newDepth - 1) + kPvNode;
                 curr.reduction = newDepth - reduced;
                 score = -search(thread, newPos, curr.pv, reduced, ply + 1, -alpha - 1, -alpha, true);
                 curr.reduction = 0;
