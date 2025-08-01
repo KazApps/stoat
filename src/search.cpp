@@ -798,7 +798,7 @@ namespace stoat {
                 r += expectedCutnode * 3;
 
                 if (complexity > 200) {
-                    r -= std::min((complexity - 150) / 50, 4);
+                    r -= std::min((complexity - 200) / 50, 4);
                 } else if (complexity != 0 && complexity <= 80) {
                     r += complexity / 20;
                 }
