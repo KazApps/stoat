@@ -25,6 +25,7 @@
 #include "core.h"
 #include "eval/eval.h"
 #include "history.h"
+#include "keys.h"
 #include "movepick.h"
 #include "protocol/handler.h"
 #include "see.h"
@@ -652,6 +653,8 @@ namespace stoat {
             }
 
             if (depth >= 4 && curr.staticEval >= beta + 70 && !parent->move.isNull()) {
+                m_ttable.prefetch(pos.key() ^ keys::stm());
+
                 const auto r = 3 + depth / 5;
 
                 const auto [newPos, guard] = thread.applyNullMove(ply, pos);
