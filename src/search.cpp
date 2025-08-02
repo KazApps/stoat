@@ -651,7 +651,7 @@ namespace stoat {
                 }
             }
 
-            if (depth >= 4 && curr.staticEval >= beta + 70 && !parent->move.isNull()) {
+            if (depth >= 4 && curr.staticEval >= beta + complexity / 5 && !parent->move.isNull()) {
                 const auto r = 3 + depth / 5;
 
                 const auto [newPos, guard] = thread.applyNullMove(ply, pos);
