@@ -651,7 +651,7 @@ namespace stoat {
                 }
             }
 
-            if (depth >= 4 && curr.staticEval >= beta + 50 + (complexity == 0) * 20 + complexity
+            if (depth >= 4 && curr.staticEval >= beta + 45 + (complexity == 0) * 25 + complexity * complexity / 10
                 && !parent->move.isNull())
             {
                 const auto r = 3 + depth / 5;
