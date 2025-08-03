@@ -603,6 +603,12 @@ namespace stoat {
                                 : eval::correctedStaticEval(pos, thread.nnueState, thread.correctionHistory, ply);
         }
 
+        if (!kPvNode && !pos.isInCheck() && ttHit && ttEntry.depth >= depth && ttEntry.score >= beta
+            && std::abs(ttEntry.score) < kScoreMaxMate)
+        {
+            return ttEntry.score;
+        }
+
         const bool ttPv = ttEntry.pv || kPvNode;
 
         const auto complexity = [&] {
