@@ -35,10 +35,11 @@ namespace stoat::eval {
         const Position& pos,
         const nnue::NnueState& nnueState,
         const CorrectionHistoryTable& corrhist,
-        const i32 ply
+        const i32 ply,
+        const i32 depth
     ) {
         const auto eval = staticEval(pos, nnueState);
-        const Score scaledEval = eval * (1024 + ply) / 1024;
+        const Score scaledEval = eval * 1024 / (1024 + ply + depth);
         const auto correction = corrhist.correction(pos);
         return std::clamp(scaledEval + correction, -kScoreWin + 1, kScoreWin - 1);
     }
