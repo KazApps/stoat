@@ -39,7 +39,7 @@ namespace stoat::eval {
         const i32 depth
     ) {
         const auto eval = staticEval(pos, nnueState);
-        const Score scaledEval = eval * (512 + ply) / (512 + depth);
+        const Score scaledEval = eval * (1536 + ply) / (1536 + depth);
         const auto correction = corrhist.correction(pos);
         return std::clamp(scaledEval + correction, -kScoreWin + 1, kScoreWin - 1);
     }
