@@ -40,6 +40,6 @@ namespace stoat::eval {
     ) {
         const auto eval = staticEval(pos, nnueState);
         const auto correction = corrhist.correction(pos);
-        return std::clamp(eval + correction * 16384 / (16512 - (ply + depth) * 16), -kScoreWin + 1, kScoreWin - 1);
+        return std::clamp(eval + correction * 1024 / (1024 - (ply + depth) * 4), -kScoreWin + 1, kScoreWin - 1);
     }
 } // namespace stoat::eval
