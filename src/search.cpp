@@ -640,7 +640,7 @@ namespace stoat {
                 depth++;
             }
 
-            if (depth <= 10 && curr.staticEval - 80 * (depth - improving) >= beta) {
+            if (depth <= 10 && curr.staticEval - 80 * (depth - improving) >= beta && std::abs(beta) < kScoreMaxMate) {
                 return curr.staticEval;
             }
 
@@ -651,7 +651,7 @@ namespace stoat {
                 }
             }
 
-            if (depth >= 4 && curr.staticEval >= beta + 70 && !parent->move.isNull()) {
+            if (depth >= 4 && curr.staticEval >= beta + 70 && !parent->move.isNull() && std::abs(beta) < kScoreMaxMate) {
                 const auto r = 3 + depth / 5;
 
                 const auto [newPos, guard] = thread.applyNullMove(ply, pos);
