@@ -696,6 +696,11 @@ namespace stoat {
                 continue;
             }
 
+            if (depth <= 3 && !pos.isInCheck() && !pos.isCapture(move) && curr.staticEval + 200 * depth + 200 <= alpha)
+            {
+                generator.skipNonCaptures();
+            }
+
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
             const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(move);
 
