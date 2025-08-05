@@ -666,15 +666,14 @@ namespace stoat {
 
         auto bestMove = kNullMove;
         auto bestScore = -kScoreInf;
+        auto bestMoveReduction = 0;
 
         auto ttFlag = tt::Flag::kUpperBound;
 
         auto generator = MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply);
 
         util::StaticVector<Move, 64> capturesTried{};
-
-        // include the bestMove
-        util::StaticVector<std::pair<Move, int>, 64> nonCapturesTried{};
+        util::StaticVector<Move, 64> nonCapturesTried{};
 
         u32 legalMoves{};
 
@@ -700,8 +699,8 @@ namespace stoat {
 
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
             auto r = baseLmr;
-            const auto lmrHistory = pos.isCapture(move) ? 0 : thread.history.lmr(move);
             const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(move);
+            const auto lmrHistory = pos.isCapture(move) ? 0 : thread.history.lmr(move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
                 if (legalMoves >= kLmpTable[improving][std::min<usize>(depth, kLmpTableSize - 1)]) {
@@ -797,7 +796,7 @@ namespace stoat {
                           .empty();
                 r += !improving;
                 r -= history / 8192;
-                r -= lmrHistory / 16384;
+                r -= lmrHistory / 8192;
                 r += expectedCutnode * 3;
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
@@ -863,6 +862,7 @@ namespace stoat {
             if (score > alpha) {
                 alpha = score;
                 bestMove = move;
+                bestMoveReduction = r;
 
                 if constexpr (kPvNode) {
                     assert(curr.pv.length + 1 <= kMaxDepth);
@@ -877,10 +877,12 @@ namespace stoat {
                 break;
             }
 
-            if (!pos.isCapture(move)) {
-                nonCapturesTried.tryPush({move, r});
-            } else if (move != bestMove) {
-                capturesTried.tryPush(move);
+            if (move != bestMove) {
+                if (pos.isCapture(move)) {
+                    capturesTried.tryPush(move);
+                } else {
+                    nonCapturesTried.tryPush(move);
+                }
             }
         }
 
@@ -892,15 +894,13 @@ namespace stoat {
         if (bestMove) {
             const auto bonus = historyBonus(depth);
 
+            thread.history.updateLmr(bestMove, lmrBonus(bestMoveReduction));
+
             if (!pos.isCapture(bestMove)) {
-                for (const auto [prevNonCapture, r] : nonCapturesTried) {
-                    if (prevNonCapture != bestMove) {
-                        thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
-                        thread.history.updateLmr(prevNonCapture, -lmrBonus(r));
-                    } else {
-                        thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
-                        thread.history.updateLmr(bestMove, lmrBonus(r));
-                    }
+                thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
+
+                for (const auto prevNonCapture : nonCapturesTried) {
+                    thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
                 }
             } else {
                 const auto captured = pos.pieceOn(bestMove.to()).type();
