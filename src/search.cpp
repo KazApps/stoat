@@ -894,14 +894,14 @@ namespace stoat {
 
             if (!pos.isCapture(bestMove)) {
                 for (const auto [prevNonCapture, r] : nonCapturesTried) {
-                    const auto lmrBonus = std::max(r, -kMaxReduction) + kMaxReduction;
+                    const auto rBonus = lmrBonus(std::max(r, -kMaxReduction) + kMaxReduction);
 
                     if (prevNonCapture == bestMove) {
                         thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
-                        thread.history.updateLmr(bestMove, lmrBonus);
+                        thread.history.updateLmr(bestMove, rBonus);
                     } else {
                         thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
-                        thread.history.updateLmr(prevNonCapture, -lmrBonus);
+                        thread.history.updateLmr(prevNonCapture, -rBonus);
                     }
                 }
             } else {
