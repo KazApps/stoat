@@ -82,6 +82,10 @@ namespace stoat {
         return static_cast<HistoryScore>(std::clamp(depth * 300 - 300, 0, 2500));
     }
 
+    [[nodiscard]] constexpr HistoryScore lmrBonus(i32 r) {
+        return static_cast<HistoryScore>(std::clamp(r * 300 - 300, 0, 2500));
+    }
+
     class HistoryTables {
     public:
         void clear();
@@ -122,6 +126,10 @@ namespace stoat {
         [[nodiscard]] i32 captureScore(Move move, PieceType captured) const;
         void updateCaptureScore(Move move, PieceType captured, HistoryScore bonus);
 
+        void updateLmr(Move move, HistoryScore bonus);
+
+        [[nodiscard]] i32 lmr(Move move) const;
+
     private:
         // [promo][from][to]
         util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount> m_nonCaptureNonDrop{};
@@ -133,5 +141,10 @@ namespace stoat {
 
         // [promo][from][to][captured]
         util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount, PieceTypes::kCount> m_capture{};
+
+        // [promo][from][to]
+        util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount> m_nonCaptureDropLmr{};
+        // [dropped piece type][drop square]
+        util::MultiArray<HistoryEntry, PieceTypes::kCount, Squares::kCount> m_dropLmr{};
     };
 } // namespace stoat

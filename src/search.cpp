@@ -672,7 +672,9 @@ namespace stoat {
         auto generator = MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply);
 
         util::StaticVector<Move, 64> capturesTried{};
-        util::StaticVector<Move, 64> nonCapturesTried{};
+
+        // include the bestMove
+        util::StaticVector<std::pair<Move, int>, 64> nonCapturesTried{};
 
         u32 legalMoves{};
 
@@ -697,6 +699,8 @@ namespace stoat {
             }
 
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
+            auto r = baseLmr;
+            const auto lmrHistory = pos.isCapture(move) ? 0 : thread.history.lmr(move);
             const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
@@ -783,8 +787,7 @@ namespace stoat {
             if (depth >= 2 && legalMoves >= 3 + 2 * kRootNode && !givesCheck
                 && generator.stage() >= MovegenStage::kNonCaptures)
             {
-                auto r = baseLmr;
-
+                r -= lmrHistory / 8192;
                 r += !ttPv;
                 r -= pos.isInCheck();
                 r -= pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
@@ -874,12 +877,10 @@ namespace stoat {
                 break;
             }
 
-            if (move != bestMove) {
-                if (pos.isCapture(move)) {
-                    capturesTried.tryPush(move);
-                } else {
-                    nonCapturesTried.tryPush(move);
-                }
+            if (!pos.isCapture(move)) {
+                nonCapturesTried.tryPush({move, r});
+            } else if (move != bestMove) {
+                capturesTried.tryPush(move);
             }
         }
 
@@ -894,8 +895,13 @@ namespace stoat {
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
 
-                for (const auto prevNonCapture : nonCapturesTried) {
-                    thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
+                for (const auto [prevNonCapture, r] : nonCapturesTried) {
+                    if (prevNonCapture != bestMove) {
+                        thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
+                        thread.history.updateLmr(prevNonCapture, -lmrBonus(r));
+                    } else {
+                        thread.history.updateLmr(bestMove, lmrBonus(r));
+                    }
                 }
             } else {
                 const auto captured = pos.pieceOn(bestMove.to()).type();
