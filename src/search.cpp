@@ -797,7 +797,7 @@ namespace stoat {
                           .empty();
                 r += !improving;
                 r -= history / 8192;
-                r -= lmrHistory / 4096;
+                r -= lmrHistory / 8192 + 1;
                 r += expectedCutnode * 3;
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
@@ -893,14 +893,13 @@ namespace stoat {
             const auto bonus = historyBonus(depth);
 
             if (!pos.isCapture(bestMove)) {
-                thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
-
                 for (const auto [prevNonCapture, r] : nonCapturesTried) {
                     if (prevNonCapture != bestMove) {
                         thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
-                        thread.history.updateLmr(prevNonCapture, -lmrBonus(r, depth));
+                        thread.history.updateLmr(prevNonCapture, -lmrBonus(r));
                     } else {
-                        thread.history.updateLmr(bestMove, lmrBonus(r, depth));
+                        thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
+                        thread.history.updateLmr(bestMove, lmrBonus(r));
                     }
                 }
             } else {
