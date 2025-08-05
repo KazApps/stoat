@@ -53,8 +53,8 @@ namespace stoat {
 
         // [depth][move index]
         const auto s_lmrTable = [] {
-            constexpr f64 kBase = 1.5;
-            constexpr f64 kDivisor = 0.3;
+            constexpr f64 kBase = 1.6;
+            constexpr f64 kDivisor = 0.2;
 
             util::MultiArray<i32, kMaxDepth, kLmrTableMoves> reductions{};
 
@@ -786,18 +786,18 @@ namespace stoat {
             if (depth >= 2 && legalMoves >= 3 + 2 * kRootNode && !givesCheck
                 && generator.stage() >= MovegenStage::kNonCaptures)
             {
-                r += !ttPv * 6;
-                r -= pos.isInCheck() * 4;
+                r += !ttPv * 8;
+                r -= pos.isInCheck() * 6;
                 r -= (pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250) * 3;
-                r -= (move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3) * 3;
+                r -= (move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3) * 4;
                 r -= (move.isDrop()
                   && !(attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
                        & pos.colorBb(pos.stm().flip()))
                           .empty()) * 2;
-                r += !improving * 5;
-                r -= history / 8192 * 3;
+                r += !improving * 7;
+                r -= history / 8192 * 5;
                 r -= lmrHistory / 8192;
-                r += expectedCutnode * 15;
+                r += expectedCutnode * 20;
 
                 const auto reduced = std::min(std::max(newDepth - r / 5, 1), newDepth - 1) + kPvNode;
                 curr.reduction = newDepth - reduced;
