@@ -83,7 +83,7 @@ namespace stoat {
     }
 
     [[nodiscard]] constexpr HistoryScore lmrBonus(i32 r) {
-        return static_cast<HistoryScore>(std::clamp(r  * 1000 - 1500, 0, 2500));
+        return static_cast<HistoryScore>(std::clamp(r  * 300 - 600, 0, 2500));
     }
 
     class HistoryTables {
