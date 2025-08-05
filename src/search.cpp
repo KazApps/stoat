@@ -53,8 +53,8 @@ namespace stoat {
 
         // [depth][move index]
         const auto s_lmrTable = [] {
-            constexpr f64 kBase = 0.5;
-            constexpr f64 kDivisor = 2.5;
+            constexpr f64 kBase = 1.5;
+            constexpr f64 kDivisor = 0.3;
 
             util::MultiArray<i32, kMaxDepth, kLmrTableMoves> reductions{};
 
@@ -786,20 +786,20 @@ namespace stoat {
             if (depth >= 2 && legalMoves >= 3 + 2 * kRootNode && !givesCheck
                 && generator.stage() >= MovegenStage::kNonCaptures)
             {
-                r += !ttPv;
-                r -= pos.isInCheck();
-                r -= pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
-                r -= move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3;
-                r -= move.isDrop()
+                r += !ttPv * 6;
+                r -= pos.isInCheck() * 4;
+                r -= (pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250) * 3;
+                r -= (move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3) * 3;
+                r -= (move.isDrop()
                   && !(attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
                        & pos.colorBb(pos.stm().flip()))
-                          .empty();
-                r += !improving;
-                r -= history / 8192;
-                r += expectedCutnode * 3;
+                          .empty()) * 2;
+                r += !improving * 5;
+                r -= history / 8192 * 3;
                 r -= lmrHistory / 8192;
+                r += expectedCutnode * 15;
 
-                const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
+                const auto reduced = std::min(std::max(newDepth - r / 5, 1), newDepth - 1) + kPvNode;
                 curr.reduction = newDepth - reduced;
                 score = -search(thread, newPos, curr.pv, reduced, ply + 1, -alpha - 1, -alpha, true);
                 curr.reduction = 0;
