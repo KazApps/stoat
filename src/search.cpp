@@ -896,7 +896,7 @@ namespace stoat {
 
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
-                thread.history.updateLmr(bestMove, lmrBonus(bestMoveReduction) * 3);
+                thread.history.updateLmr(bestMove, lmrBonus(bestMoveReduction) * 3 / 2);
 
                 for (const auto [prevNonCapture, r] : nonCapturesTried) {
                     thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
