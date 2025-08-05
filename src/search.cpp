@@ -900,7 +900,7 @@ namespace stoat {
 
                 for (const auto [prevNonCapture, r] : nonCapturesTried) {
                     thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
-                    thread.history.updateLmr(prevNonCapture, lmrBonus(r));
+                    thread.history.updateLmr(prevNonCapture, lmrBonus(r) * 2 / 3);
                 }
             } else {
                 const auto captured = pos.pieceOn(bestMove.to()).type();
