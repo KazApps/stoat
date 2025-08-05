@@ -697,7 +697,7 @@ namespace stoat {
             }
 
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
-            const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(move);
+            const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(pos, move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
                 if (legalMoves >= kLmpTable[improving][std::min<usize>(depth, kLmpTableSize - 1)]) {
@@ -789,10 +789,6 @@ namespace stoat {
                 r -= pos.isInCheck();
                 r -= pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
                 r -= move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3;
-                r -= move.isDrop()
-                  && !(attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
-                       & pos.colorBb(pos.stm().flip()))
-                          .empty();
                 r += !improving;
                 r -= history / 8192;
                 r += expectedCutnode * 3;
