@@ -63,7 +63,7 @@ namespace stoat {
         std::memset(m_drop.data(), 0, sizeof(m_drop));
         std::memset(m_continuation.data(), 0, sizeof(m_continuation));
         std::memset(m_capture.data(), 0, sizeof(m_capture));
-        std::memset(m_nonCaptureDropLmr.data(), 0, sizeof(m_nonCaptureDropLmr));
+        std::memset(m_nonCaptureNonDropLmr.data(), 0, sizeof(m_nonCaptureNonDropLmr));
         std::memset(m_dropLmr.data(), 0, sizeof(m_dropLmr));
     }
 
@@ -122,7 +122,7 @@ namespace stoat {
         if (move.isDrop()) {
             m_dropLmr[move.dropPiece().idx()][move.to().idx()].update(bonus);
         } else {
-            m_nonCaptureDropLmr[move.isPromo()][move.from().idx()][move.to().idx()].update(bonus);
+            m_nonCaptureNonDropLmr[move.isPromo()][move.from().idx()][move.to().idx()].update(bonus);
         }
     }
 
@@ -130,7 +130,7 @@ namespace stoat {
         if (move.isDrop()) {
             return m_dropLmr[move.dropPiece().idx()][move.to().idx()];
         } else {
-            return m_nonCaptureDropLmr[move.isPromo()][move.from().idx()][move.to().idx()];
+            return m_nonCaptureNonDropLmr[move.isPromo()][move.from().idx()][move.to().idx()];
         }
     }
 } // namespace stoat

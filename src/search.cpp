@@ -898,9 +898,9 @@ namespace stoat {
                 for (const auto [prevNonCapture, r] : nonCapturesTried) {
                     if (prevNonCapture != bestMove) {
                         thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
-                        thread.history.updateLmr(prevNonCapture, -lmrBonus(r));
+                        thread.history.updateLmr(prevNonCapture, -lmrBonus(r, depth));
                     } else {
-                        thread.history.updateLmr(bestMove, lmrBonus(r));
+                        thread.history.updateLmr(bestMove, lmrBonus(r, depth));
                     }
                 }
             } else {

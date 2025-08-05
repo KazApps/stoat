@@ -82,8 +82,8 @@ namespace stoat {
         return static_cast<HistoryScore>(std::clamp(depth * 300 - 300, 0, 2500));
     }
 
-    [[nodiscard]] constexpr HistoryScore lmrBonus(i32 r) {
-        return static_cast<HistoryScore>(std::clamp(r * 300 - 300, 0, 2500));
+    [[nodiscard]] constexpr HistoryScore lmrBonus(i32 r, i32 depth) {
+        return static_cast<HistoryScore>(std::clamp(r * 250 - 200 + depth * 25, 0, 2500));
     }
 
     class HistoryTables {
@@ -143,7 +143,7 @@ namespace stoat {
         util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount, PieceTypes::kCount> m_capture{};
 
         // [promo][from][to]
-        util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount> m_nonCaptureDropLmr{};
+        util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount> m_nonCaptureNonDropLmr{};
         // [dropped piece type][drop square]
         util::MultiArray<HistoryEntry, PieceTypes::kCount, Squares::kCount> m_dropLmr{};
     };
