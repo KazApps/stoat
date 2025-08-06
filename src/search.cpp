@@ -896,11 +896,11 @@ namespace stoat {
 
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
-                thread.history.updateLmr(bestMove, lmrBonus(bestMoveReduction) * 4);
+                thread.history.updateLmr(bestMove, lmrBonus(bestMoveReduction) * 3 / 2);
 
                 for (const auto [prevNonCapture, r] : nonCapturesTried) {
                     thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
-                    thread.history.updateLmr(prevNonCapture, lmrBonus(r) / 2);
+                    thread.history.updateLmr(prevNonCapture, lmrBonus(r) * 2 / 3);
                 }
             } else {
                 const auto captured = pos.pieceOn(bestMove.to()).type();
