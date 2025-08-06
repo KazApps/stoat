@@ -789,6 +789,7 @@ namespace stoat {
                 r -= pos.isInCheck();
                 r -= pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
                 r -= move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3;
+                r -= move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 2;
                 r -= move.isDrop()
                   && !(attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
                        & pos.colorBb(pos.stm().flip()))
