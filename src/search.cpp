@@ -905,7 +905,7 @@ namespace stoat {
                     thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
 
                     if (r > 0) {
-                        thread.history.updateLmr(prevNonCapture, lmrBonus(-r));
+                        thread.history.updateLmr(prevNonCapture, -lmrBonus(r));
                     }
                 }
             } else {
