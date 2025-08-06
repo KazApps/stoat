@@ -31,6 +31,9 @@
 namespace stoat {
     using HistoryScore = i16;
 
+    constexpr i32 kMaxReduction = 8;
+    constexpr i32 kLmrScale = 8192;
+
     struct HistoryEntry {
         i16 value{};
 
@@ -83,7 +86,9 @@ namespace stoat {
     }
 
     [[nodiscard]] constexpr HistoryScore lmrBonus(i32 r) {
-        return static_cast<HistoryScore>(std::clamp(r * 150, 0, 2500));
+        return static_cast<HistoryScore>(
+            std::clamp((std::max(r, -kMaxReduction) + kMaxReduction) * 150 - 300, 0, 2500)
+        );
     }
 
     class HistoryTables {
