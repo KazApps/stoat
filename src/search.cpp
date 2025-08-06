@@ -699,6 +699,7 @@ namespace stoat {
 
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
             auto r = baseLmr;
+            const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(move);
             const auto lmrHistory = pos.isCapture(move) ? 0 : thread.history.lmr(move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
@@ -794,7 +795,8 @@ namespace stoat {
                       & pos.colorBb(pos.stm().flip()))
                          .empty();
                 r += !improving;
-                r -= lmrHistory / 4096;
+                r -= history / 8192;
+                r += (lmrHistory > 0 ? -1 : 1) * std::abs(lmrHistory) / 16384;
                 r += expectedCutnode;
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
@@ -895,14 +897,14 @@ namespace stoat {
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
 
-                if (bestMoveReduction >= 0) {
+                if (bestMoveReduction > 0) {
                     thread.history.updateLmr(bestMove, lmrBonus(bestMoveReduction));
                 }
 
                 for (const auto [prevNonCapture, r] : nonCapturesTried) {
                     thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
 
-                    if (r >= 0) {
+                    if (r > 0) {
                         thread.history.updateLmr(prevNonCapture, -lmrBonus(r));
                     }
                 }
