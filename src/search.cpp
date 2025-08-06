@@ -699,7 +699,6 @@ namespace stoat {
 
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
             auto r = baseLmr;
-            const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(move);
             const auto lmrHistory = pos.isCapture(move) ? 0 : thread.history.lmr(move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
@@ -795,7 +794,6 @@ namespace stoat {
                       & pos.colorBb(pos.stm().flip()))
                          .empty();
                 r += !improving;
-                r -= history / 8192;
                 r -= lmrHistory / 8192;
                 r += expectedCutnode;
 
