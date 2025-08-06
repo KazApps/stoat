@@ -794,7 +794,7 @@ namespace stoat {
                       & pos.colorBb(pos.stm().flip()))
                          .empty();
                 r += !improving;
-                r -= lmrHistory / 8192;
+                r -= lmrHistory / 4096;
                 r += expectedCutnode;
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
