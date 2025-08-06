@@ -32,7 +32,7 @@ namespace stoat {
     using HistoryScore = i16;
 
     constexpr i32 kMaxReduction = 8;
-    constexpr i32 kLmrScale = 8192;
+    constexpr i32 kLmrScale = 4096;
 
     struct HistoryEntry {
         i16 value{};
