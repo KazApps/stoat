@@ -799,7 +799,7 @@ namespace stoat {
                            & pos.colorBb(pos.stm().flip()))
                               .empty();
                     r -= move.dropPiece() == PieceTypes::kLance
-                      && attacks::lanceAttacks(move.to(), pos.stm(), pos.occupancy()).popcount() >= 3;
+                      && attacks::lanceAttacks(move.to(), pos.stm(), pos.occupancy()).popcount() >= 5;
                 }
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
