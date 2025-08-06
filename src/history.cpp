@@ -128,10 +128,10 @@ namespace stoat {
 
     i32 HistoryTables::lmr(Move move) const {
         if (move.isDrop()) {
-            return m_dropLmr[move.dropPiece().idx()][move.to().idx()] - kLmrScale * kMaxReduction / 8;
+            return m_dropLmr[move.dropPiece().idx()][move.to().idx()] - kLmrScale * (kMaxReduction + 1) / 8;
         } else {
             return m_nonCaptureNonDropLmr[move.isPromo()][move.from().idx()][move.to().idx()]
-                 - kLmrScale * kMaxReduction / 8;
+                 - kLmrScale * (kMaxReduction + 1) / 8;
         }
     }
 } // namespace stoat

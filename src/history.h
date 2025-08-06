@@ -87,7 +87,7 @@ namespace stoat {
 
     [[nodiscard]] constexpr HistoryScore lmrBonus(i32 r) {
         return static_cast<HistoryScore>(
-            std::clamp((std::max(r, -kMaxReduction) + kMaxReduction) * 150 - 300, 0, 2500)
+            std::clamp((std::max(r, -kMaxReduction) + kMaxReduction + 1) * 150 - 300, 0, 2500)
         );
     }
 
