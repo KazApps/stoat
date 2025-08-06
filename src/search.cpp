@@ -795,11 +795,9 @@ namespace stoat {
                 if (move.isDrop()) {
                     r -= Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3
                       && !pos.attackersTo(move.to(), pos.stm()).empty();
-                    r -= !(attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
-                           & pos.colorBb(pos.stm().flip()))
-                              .empty();
-                    r -= move.dropPiece() == PieceTypes::kLance
-                      && attacks::lanceAttacks(move.to(), pos.stm(), pos.occupancy()).popcount() >= 5;
+                    r -= (attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
+                          & pos.colorBb(pos.stm().flip()))
+                             .popcount();
                 }
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
