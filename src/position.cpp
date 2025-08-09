@@ -210,14 +210,7 @@ namespace stoat {
         assert(pt);
         assert(count <= maxPiecesInHand(pt));
 
-        const auto key = keys::pieceInHand(c, pt, count);
-
-        all ^= key;
-
-        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook)
-        {
-            cavalry ^= key;
-        }
+        all ^= keys::pieceInHand(c, pt, count);
     }
 
     void PositionKeys::switchHandCount(Color c, PieceType pt, u32 before, u32 after) {
@@ -226,14 +219,7 @@ namespace stoat {
         assert(before <= maxPiecesInHand(pt));
         assert(after <= maxPiecesInHand(pt));
 
-        const auto key = keys::pieceInHand(c, pt, before) ^ keys::pieceInHand(c, pt, after);
-
-        all ^= key;
-
-        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook)
-        {
-            cavalry ^= key;
-        }
+        all ^= keys::pieceInHand(c, pt, before) ^ keys::pieceInHand(c, pt, after);
     }
 
     template Position Position::applyMove<NnueUpdateAction::kNone>(Move, eval::nnue::NnueState*) const;
