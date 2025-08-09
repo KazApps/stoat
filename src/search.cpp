@@ -788,14 +788,17 @@ namespace stoat {
                 r += !ttPv;
                 r -= pos.isInCheck();
                 r -= pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
-                r -= move.isDrop() && Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3;
-                r -= move.isDrop()
-                  && !(attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
-                       & pos.colorBb(pos.stm().flip()))
-                          .empty();
                 r += !improving;
                 r -= history / 8192;
                 r += expectedCutnode * 3;
+
+                if (move.isDrop()) {
+                    r -= Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3
+                      && !pos.attackersTo(move.to(), pos.stm()).empty();
+                    r -= (attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
+                          & pos.colorBb(pos.stm().flip()))
+                             .popcount();
+                }
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
                 curr.reduction = newDepth - reduced;
