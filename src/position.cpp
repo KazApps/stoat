@@ -169,12 +169,11 @@ namespace stoat {
         all ^= key;
 
         if (piece.type() == PieceTypes::kKing || piece.type() == PieceTypes::kSilver
-            || piece.type() == PieceTypes::kGold)
+            || piece.type() == PieceTypes::kGold || piece.type() == PieceTypes::kPawn)
         {
             castle ^= key;
-        } else if (piece.type() == PieceTypes::kKnight || piece.type() == PieceTypes::kBishop
-                   || piece.type() == PieceTypes::kRook || piece.type() == PieceTypes::kPromotedBishop
-                   || piece.type() == PieceTypes::kPromotedRook)
+        } else if (piece.type() == PieceTypes::kKnight || piece.type().unpromoted() == PieceTypes::kBishop
+                   || piece.type().unpromoted() == PieceTypes::kRook)
         {
             cavalry ^= key;
         }
@@ -190,12 +189,11 @@ namespace stoat {
         all ^= key;
 
         if (piece.type() == PieceTypes::kKing || piece.type() == PieceTypes::kSilver
-            || piece.type() == PieceTypes::kGold)
+            || piece.type() == PieceTypes::kGold || piece.type() == PieceTypes::kPawn)
         {
             castle ^= key;
-        } else if (piece.type() == PieceTypes::kKnight || piece.type() == PieceTypes::kBishop
-                   || piece.type() == PieceTypes::kRook || piece.type() == PieceTypes::kPromotedBishop
-                   || piece.type() == PieceTypes::kPromotedRook)
+        } else if (piece.type() == PieceTypes::kKnight || piece.type().unpromoted() == PieceTypes::kBishop
+                   || piece.type().unpromoted() == PieceTypes::kRook)
         {
             cavalry ^= key;
         }
@@ -214,8 +212,7 @@ namespace stoat {
 
         all ^= key;
 
-        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook)
-        {
+        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
             cavalry ^= key;
         }
     }
@@ -230,8 +227,7 @@ namespace stoat {
 
         all ^= key;
 
-        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook)
-        {
+        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
             cavalry ^= key;
         }
     }
@@ -344,8 +340,11 @@ namespace stoat {
         return key;
     }
 
-    SennichiteStatus Position::testSennichite(bool cuteChessWorkaround, std::span<const u64> keyHistory, i32 limit)
-        const {
+    SennichiteStatus Position::testSennichite(
+        bool cuteChessWorkaround,
+        std::span<const u64> keyHistory,
+        i32 limit
+    ) const {
         const auto end = std::max(0, static_cast<i32>(keyHistory.size()) - limit - 1);
 
         i32 repetitions = 1;
@@ -1130,8 +1129,10 @@ namespace stoat {
     }
 } // namespace stoat
 
-fmt::format_context::iterator fmt::formatter<stoat::Position>::format(const stoat::Position& value, format_context& ctx)
-    const {
+fmt::format_context::iterator fmt::formatter<stoat::Position>::format(
+    const stoat::Position& value,
+    format_context& ctx
+) const {
     using namespace stoat;
 
     format_to(ctx.out(), "   9   8   7   6   5   4   3   2   1\n");
