@@ -49,8 +49,6 @@ namespace stoat {
             return result;
         }();
 
-        constexpr usize kLmrTableMoves = 64;
-
         // [depth][move index]
         const auto s_lmrTable = [] {
             constexpr f64 kBase = 0.5;
@@ -69,6 +67,11 @@ namespace stoat {
 
             return reductions;
         }();
+
+        i32 correctedLmr(i32 depth, u32 moveNumber, const LmrCorrectionHistoryTable& correction) {
+            moveNumber = std::min<u32>(moveNumber, kLmrTableMoves - 1);
+            return s_lmrTable[depth][moveNumber] + correction.correction(depth, moveNumber);
+        }
 
         void generateLegal(movegen::MoveList& dst, const Position& pos) {
             movegen::MoveList generated{};
@@ -90,12 +93,12 @@ namespace stoat {
         }
 
         [[nodiscard]] bool isUnlikelyMove(const Position& pos, Move move) {
-            const auto pt = pos.pieceOn(move.from()).type();
-            const auto promoArea = Bitboards::promoArea(pos.stm());
-
             if (move.isDrop() || move.isPromo()) {
                 return false;
             }
+
+            const auto pt = pos.pieceOn(move.from()).type();
+            const auto promoArea = Bitboards::promoArea(pos.stm());
 
             if (pt != PieceTypes::kPawn && pt != PieceTypes::kLance && pt != PieceTypes::kBishop
                 && pt != PieceTypes::kRook)
@@ -137,7 +140,8 @@ namespace stoat {
 
         for (auto& thread : m_threadData) {
             thread->history.clear();
-            thread->correctionHistory.clear();
+            thread->evalCorrectionHistory.clear();
+            thread->lmrCorrectionHistory.clear();
         }
     }
 
@@ -573,8 +577,9 @@ namespace stoat {
         }
 
         if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0
-                                   : eval::correctedStaticEval(pos, thread.nnueState, thread.correctionHistory, ply);
+            return pos.isInCheck()
+                     ? 0
+                     : eval::correctedStaticEval(pos, thread.nnueState, thread.evalCorrectionHistory, ply);
         }
 
         auto& curr = thread.stack[ply];
@@ -600,7 +605,7 @@ namespace stoat {
 
             curr.staticEval = pos.isInCheck()
                                 ? kScoreNone
-                                : eval::correctedStaticEval(pos, thread.nnueState, thread.correctionHistory, ply);
+                                : eval::correctedStaticEval(pos, thread.nnueState, thread.evalCorrectionHistory, ply);
         }
 
         const bool ttPv = ttEntry.pv || kPvNode;
@@ -666,6 +671,7 @@ namespace stoat {
 
         auto bestMove = kNullMove;
         auto bestScore = -kScoreInf;
+        auto bestMoveReduction = 0;
 
         auto ttFlag = tt::Flag::kUpperBound;
 
@@ -673,6 +679,7 @@ namespace stoat {
 
         util::StaticVector<Move, 64> capturesTried{};
         util::StaticVector<Move, 64> nonCapturesTried{};
+        util::StaticVector<std::tuple<Move, u32, i32>, 64> lmrTried{};
 
         u32 legalMoves{};
 
@@ -696,7 +703,6 @@ namespace stoat {
                 continue;
             }
 
-            const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
             const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
@@ -759,6 +765,7 @@ namespace stoat {
             const bool givesCheck = newPos.isInCheck();
 
             auto newDepth = depth - 1;
+            auto r = correctedLmr(depth, legalMoves, thread.lmrCorrectionHistory);
 
             Score score;
 
@@ -783,14 +790,15 @@ namespace stoat {
             if (depth >= 2 && legalMoves >= 3 + 2 * kRootNode && !givesCheck
                 && generator.stage() >= MovegenStage::kNonCaptures)
             {
-                auto r = baseLmr;
-
                 r += !ttPv;
                 r -= pos.isInCheck();
-                r -= pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
                 r += !improving;
                 r -= history / 8192;
                 r += expectedCutnode * 3;
+
+                if (pos.isCapture(move)) {
+                    r -= (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250 + 1;
+                }
 
                 if (move.isDrop()) {
                     r -= Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3
@@ -863,6 +871,7 @@ namespace stoat {
             if (score > alpha) {
                 alpha = score;
                 bestMove = move;
+                bestMoveReduction = r;
 
                 if constexpr (kPvNode) {
                     assert(curr.pv.length + 1 <= kMaxDepth);
@@ -884,6 +893,8 @@ namespace stoat {
                     nonCapturesTried.tryPush(move);
                 }
             }
+
+            lmrTried.tryPush({move, legalMoves, r});
         }
 
         if (legalMoves == 0) {
@@ -911,6 +922,12 @@ namespace stoat {
             }
         }
 
+        for (const auto [mv, mn, r] : lmrTried) {
+            if (mv != bestMove) {
+                thread.lmrCorrectionHistory.update(depth, std::min<u32>(mn, kLmrTableMoves - 1), bestMoveReduction, r);
+            }
+        }
+
         if (bestScore >= beta && !isWin(bestScore) && !isWin(beta)) {
             bestScore = (bestScore * depth + beta) / (depth + 1);
         }
@@ -921,7 +938,7 @@ namespace stoat {
                     || ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval //
                     || ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval))
             {
-                thread.correctionHistory.update(pos, depth, bestScore, curr.staticEval);
+                thread.evalCorrectionHistory.update(pos, depth, bestScore, curr.staticEval);
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
@@ -954,8 +971,9 @@ namespace stoat {
         }
 
         if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0
-                                   : eval::correctedStaticEval(pos, thread.nnueState, thread.correctionHistory, ply);
+            return pos.isInCheck()
+                     ? 0
+                     : eval::correctedStaticEval(pos, thread.nnueState, thread.evalCorrectionHistory, ply);
         }
 
         Score staticEval;
@@ -963,7 +981,7 @@ namespace stoat {
         if (pos.isInCheck()) {
             staticEval = -kScoreMate + ply;
         } else {
-            staticEval = eval::correctedStaticEval(pos, thread.nnueState, thread.correctionHistory, ply);
+            staticEval = eval::correctedStaticEval(pos, thread.nnueState, thread.evalCorrectionHistory, ply);
 
             if (staticEval >= beta) {
                 return staticEval;

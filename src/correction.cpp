@@ -19,22 +19,44 @@
 #include "correction.h"
 
 namespace stoat {
-    void CorrectionHistoryTable::clear() {
+    void EvalCorrectionHistoryTable::clear() {
         std::memset(&m_castleTable, 0, sizeof(m_castleTable));
         std::memset(&m_cavalryTable, 0, sizeof(m_cavalryTable));
     }
 
-    void CorrectionHistoryTable::update(const Position& pos, i32 depth, Score searchScore, Score staticEval) {
+    void EvalCorrectionHistoryTable::update(const Position& pos, i32 depth, Score searchScore, Score staticEval) {
         const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
         m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries].update(bonus);
         m_cavalryTable[pos.stm().idx()][pos.cavalryKey() % kEntries].update(bonus);
     }
 
-    i32 CorrectionHistoryTable::correction(const Position& pos) const {
+    i32 EvalCorrectionHistoryTable::correction(const Position& pos) const {
         i32 correction{};
 
         correction += m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries];
         correction += m_cavalryTable[pos.stm().idx()][pos.cavalryKey() % kEntries];
+
+        return correction / 16;
+    }
+
+    void LmrCorrectionHistoryTable::clear() {
+        std::memset(&m_lmrTable, 0, sizeof(m_lmrTable));
+    }
+
+    void LmrCorrectionHistoryTable::update(i32 depth, u32 moveNumber, i32 bestMoveReduction, i32 reduction) {
+        assert(moveNumber < kLmrTableMoves);
+
+        const auto bonus =
+            std::clamp<i32>(bestMoveReduction + static_cast<i32>(moveNumber) - 1 - reduction, -kMaxBonus, kMaxBonus);
+        m_lmrTable[depth][moveNumber].update(bonus);
+    }
+
+    i32 LmrCorrectionHistoryTable::correction(const i32 depth, const u32 moveNumber) const {
+        assert(moveNumber < kLmrTableMoves);
+
+        i32 correction{};
+
+        correction += m_lmrTable[depth][moveNumber];
 
         return correction / 16;
     }

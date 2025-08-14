@@ -28,7 +28,9 @@
 #include "util/multi_array.h"
 
 namespace stoat {
-    class CorrectionHistoryTable {
+    constexpr usize kLmrTableMoves = 64;
+
+    class EvalCorrectionHistoryTable {
     public:
         void clear();
 
@@ -56,5 +58,32 @@ namespace stoat {
 
         util::MultiArray<Entry, 2, kEntries> m_castleTable{};
         util::MultiArray<Entry, 2, kEntries> m_cavalryTable{};
+    };
+
+    class LmrCorrectionHistoryTable {
+    public:
+        void clear();
+
+        void update(i32 depth, u32 moveNumber, i32 bestMoveReduction, i32 reduction);
+
+        [[nodiscard]] i32 correction(const i32 depth, const u32 moveNumber) const;
+
+    private:
+        static constexpr i32 kLimit = 16;
+        static constexpr i32 kMaxBonus = kLimit / 2;
+
+        struct Entry {
+            i16 value{};
+
+            inline void update(i32 bonus) {
+                value += bonus - value * std::abs(bonus) / kLimit;
+            }
+
+            [[nodiscard]] inline operator i32() const {
+                return value;
+            }
+        };
+
+        util::MultiArray<Entry, kMaxDepth, kLmrTableMoves> m_lmrTable{};
     };
 } // namespace stoat

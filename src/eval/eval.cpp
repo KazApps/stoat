@@ -34,7 +34,7 @@ namespace stoat::eval {
     Score correctedStaticEval(
         const Position& pos,
         const nnue::NnueState& nnueState,
-        const CorrectionHistoryTable& corrhist,
+        const EvalCorrectionHistoryTable& corrhist,
         const i32 ply
     ) {
         const auto eval = staticEval(pos, nnueState);
