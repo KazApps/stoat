@@ -49,6 +49,8 @@ namespace stoat {
             return result;
         }();
 
+        constexpr usize kLmrTableMoves = 64;
+
         // [depth][move index]
         const auto s_lmrTable = [] {
             constexpr f64 kBase = 0.5;
@@ -69,8 +71,8 @@ namespace stoat {
         }();
 
         i32 correctedLmr(i32 depth, u32 moveNumber, const LmrCorrectionHistoryTable& correction) {
-            moveNumber = std::min<u32>(moveNumber, kLmrTableMoves - 1);
-            return s_lmrTable[depth][moveNumber] + correction.correction(depth, moveNumber);
+            return s_lmrTable[depth][std::min<u32>(moveNumber, kLmrTableMoves - 1)]
+                 + correction.correction(depth, moveNumber);
         }
 
         void generateLegal(movegen::MoveList& dst, const Position& pos) {
@@ -924,7 +926,7 @@ namespace stoat {
 
         for (const auto [mv, mn, r] : lmrTried) {
             if (mv != bestMove) {
-                thread.lmrCorrectionHistory.update(depth, std::min<u32>(mn, kLmrTableMoves - 1), bestMoveReduction, r);
+                thread.lmrCorrectionHistory.update(depth, mn, bestMoveReduction, r);
             }
         }
 

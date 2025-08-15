@@ -28,8 +28,6 @@
 #include "util/multi_array.h"
 
 namespace stoat {
-    constexpr usize kLmrTableMoves = 64;
-
     class EvalCorrectionHistoryTable {
     public:
         void clear();
@@ -66,9 +64,10 @@ namespace stoat {
 
         void update(i32 depth, u32 moveNumber, i32 bestMoveReduction, i32 reduction);
 
-        [[nodiscard]] i32 correction(const i32 depth, const u32 moveNumber) const;
+        [[nodiscard]] i32 correction(i32 depth, u32 moveNumber) const;
 
     private:
+        static constexpr usize kTableSize = 16;
         static constexpr i32 kLimit = 16;
         static constexpr i32 kMaxBonus = kLimit / 2;
 
@@ -84,6 +83,6 @@ namespace stoat {
             }
         };
 
-        util::MultiArray<Entry, kMaxDepth, kLmrTableMoves> m_lmrTable{};
+        util::MultiArray<Entry, kMaxDepth, kTableSize> m_lmrTable{};
     };
 } // namespace stoat

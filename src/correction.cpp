@@ -44,15 +44,15 @@ namespace stoat {
     }
 
     void LmrCorrectionHistoryTable::update(i32 depth, u32 moveNumber, i32 bestMoveReduction, i32 reduction) {
-        assert(moveNumber < kLmrTableMoves);
+        moveNumber = std::min<u32>(moveNumber, kTableSize - 1);
 
         const auto bonus =
             std::clamp<i32>(bestMoveReduction + static_cast<i32>(moveNumber) - 1 - reduction, -kMaxBonus, kMaxBonus);
         m_lmrTable[depth][moveNumber].update(bonus);
     }
 
-    i32 LmrCorrectionHistoryTable::correction(const i32 depth, const u32 moveNumber) const {
-        assert(moveNumber < kLmrTableMoves);
+    i32 LmrCorrectionHistoryTable::correction(i32 depth, u32 moveNumber) const {
+        moveNumber = std::min<u32>(moveNumber, kTableSize - 1);
 
         i32 correction{};
 
