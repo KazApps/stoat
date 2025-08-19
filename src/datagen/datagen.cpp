@@ -39,13 +39,13 @@
 
 namespace stoat::datagen {
     namespace {
-        constexpr usize kDatagenTtSizeMib = 16;
+        constexpr usize kDatagenTtSizeMib = 1024;
         constexpr usize kReportInterval = 512;
 
         constexpr usize kBaseRandomMoves = 7;
         constexpr bool kRandomizeStartSide = true;
 
-        constexpr usize kSoftNodes = 7000;
+        constexpr usize kSoftNodes = 15000;
         constexpr usize kHardNodes = 8388608;
 
         std::mutex s_printMutex{};
@@ -147,7 +147,7 @@ namespace stoat::datagen {
             return pos;
         }
 
-        void runThread(u32 id, u64 seed, const std::filesystem::path& outDir) {
+        void runThread(u32 id, u64 seed, const std::filesystem::path& outDir, Score evalLimit) {
             const auto filename = fmt::format("{}.spk", id);
             const auto outFile = outDir / filename;
 
@@ -208,7 +208,6 @@ namespace stoat::datagen {
 
                 u32 winPlies{};
                 u32 lossPlies{};
-                u32 drawPlies{};
 
                 std::optional<format::Outcome> outcome{};
 
@@ -272,30 +271,21 @@ namespace stoat::datagen {
                         break;
                     }
 
-                    if (blackScore >= 1000) {
+                    if (blackScore >= evalLimit) {
                         ++winPlies;
                         lossPlies = 0;
-                        drawPlies = 0;
-                    } else if (blackScore <= -1000) {
+                    } else if (blackScore <= -evalLimit) {
                         winPlies = 0;
                         ++lossPlies;
-                        drawPlies = 0;
-                    } else if (pos.moveCount() >= 40 && std::abs(blackScore) <= 10) {
-                        winPlies = 0;
-                        lossPlies = 0;
-                        ++drawPlies;
                     } else {
                         winPlies = 0;
                         lossPlies = 0;
-                        drawPlies = 0;
                     }
 
                     if (winPlies >= 6) {
                         outcome = format::Outcome::kBlackWin;
                     } else if (lossPlies >= 6) {
                         outcome = format::Outcome::kBlackLoss;
-                    } else if (drawPlies >= 10) {
-                        outcome = format::Outcome::kDraw;
                     }
 
                     format.push(move, blackScore);
@@ -319,7 +309,7 @@ namespace stoat::datagen {
         }
     } // namespace
 
-    i32 run(std::string_view output, u32 threadCount) {
+    i32 run(std::string_view output, u32 threadCount, Score evalLimit) {
         initCtrlCHandler();
 
         const auto outDir = std::filesystem::path{output};
@@ -333,6 +323,8 @@ namespace stoat::datagen {
             return 1;
         }
 
+        fmt::println("Eval limit: {}", evalLimit);
+
         const auto baseSeed = util::rng::generateSingleSeed();
         fmt::println("Base seed: {}", baseSeed);
 
@@ -345,7 +337,7 @@ namespace stoat::datagen {
 
         for (u32 id = 0; id < threadCount; ++id) {
             const auto seed = seedGenerator.nextSeed();
-            threads.emplace_back([&, id, seed] { runThread(id, seed, outDir); });
+            threads.emplace_back([&, id, seed] { runThread(id, seed, outDir, evalLimit); });
         }
 
         for (auto& thread : threads) {

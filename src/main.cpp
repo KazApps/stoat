@@ -38,7 +38,7 @@ namespace stoat {
         }
 
         i32 runDatagen(std::span<const std::string_view> args) {
-            const auto printUsage = [&] { fmt::println(stderr, "usage: {} datagen <path> [threads]", args[0]); };
+            const auto printUsage = [&] { fmt::println(stderr, "usage: {} datagen <path> [threads] [eval limit]", args[0]); };
 
             if (args.size() < 3) {
                 printUsage();
@@ -46,6 +46,7 @@ namespace stoat {
             }
 
             u32 threads = 1;
+            Score evalLimit = 2000;
 
             if (args.size() >= 4 && !util::tryParse(threads, args[3])) {
                 fmt::println(stderr, "invalid thread count \"{}\"", args[3]);
@@ -53,7 +54,13 @@ namespace stoat {
                 return 1;
             }
 
-            return datagen::run(args[2], threads);
+            if (args.size() >= 5 && !util::tryParse(evalLimit, args[4])) {
+                fmt::println(stderr, "invalid eval limit \"{}\"", args[4]);
+                printUsage();
+                return 1;
+            }
+
+            return datagen::run(args[2], threads, evalLimit);
         }
 
         // :doom:

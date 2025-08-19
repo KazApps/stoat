@@ -18,10 +18,11 @@
 
 #pragma once
 
+#include "../core.h"
 #include "../types.h"
 
 #include <string_view>
 
 namespace stoat::datagen {
-    i32 run(std::string_view output, u32 threadCount);
+    i32 run(std::string_view output, u32 threadCount, Score evalLimit);
 }
