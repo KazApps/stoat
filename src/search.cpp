@@ -90,12 +90,12 @@ namespace stoat {
         }
 
         [[nodiscard]] bool isUnlikelyMove(const Position& pos, Move move) {
-            const auto pt = pos.pieceOn(move.from()).type();
-            const auto promoArea = Bitboards::promoArea(pos.stm());
-
             if (move.isDrop() || move.isPromo()) {
                 return false;
             }
+
+            const auto pt = pos.pieceOn(move.from()).type();
+            const auto promoArea = Bitboards::promoArea(pos.stm());
 
             if (pt != PieceTypes::kPawn && pt != PieceTypes::kLance && pt != PieceTypes::kBishop
                 && pt != PieceTypes::kRook)
@@ -787,10 +787,13 @@ namespace stoat {
 
                 r += !ttPv;
                 r -= pos.isInCheck();
-                r -= pos.isCapture(move) + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
                 r += !improving;
                 r -= history / 8192;
                 r += expectedCutnode * 3;
+
+                if (pos.isCapture(move)) {
+                    r -= 1 + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
+                }
 
                 if (move.isDrop()) {
                     r -= Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3
