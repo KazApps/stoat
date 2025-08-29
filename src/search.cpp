@@ -798,7 +798,7 @@ namespace stoat {
                 r += expectedCutnode * 3;
 
                 if (pos.isCapture(move)) {
-                    r -= 1 + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
+                    r -= 1 + (see::pieceValue(pos.pieceOn(move.to()).type()) + 100) / 200;
                 }
 
                 if (move.isDrop()) {
