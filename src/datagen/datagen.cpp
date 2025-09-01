@@ -39,7 +39,7 @@
 
 namespace stoat::datagen {
     namespace {
-        constexpr usize kDatagenTtSizeMib = 1024;
+        constexpr usize kDatagenTtSizeMib = 256;
         constexpr usize kReportInterval = 512;
 
         constexpr usize kBaseRandomMoves = 7;
