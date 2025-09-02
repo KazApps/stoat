@@ -97,6 +97,10 @@ namespace stoat {
             const auto pt = pos.pieceOn(move.from()).type();
             const auto promoArea = Bitboards::promoArea(pos.stm());
 
+            if (pt == PieceTypes::kLance) {
+                return true;
+            }
+
             if (pt != PieceTypes::kPawn && pt != PieceTypes::kLance && pt != PieceTypes::kBishop
                 && pt != PieceTypes::kRook)
             {
