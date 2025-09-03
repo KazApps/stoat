@@ -117,6 +117,16 @@ namespace stoat {
 
             return false;
         }
+
+        [[nodiscard]] u32 calculatePhase(const Position& pos) {
+            return pos.moveCount();
+        }
+
+        [[nodiscard]] f64 estimateStdDev(u32 phase, const Position& pos) {
+            f64 base = 2.9 * phase + 95.0;
+
+            return std::max(50.0, base);
+        }
     } // namespace
 
     Searcher::Searcher(usize ttSizeMb) :
@@ -668,6 +678,29 @@ namespace stoat {
             && ttEntry.score >= beta + 300 && ttEntry.depth >= depth - 4 && pos.isPseudolegal(ttEntry.move))
         {
             return ttEntry.score;
+        }
+
+        if (!kPvNode && depth >= 8 && !pos.isInCheck() && !curr.excluded) {
+            const auto phase = calculatePhase(pos);
+            const auto stdDev = estimateStdDev(phase, pos);
+            const auto probCutBeta = static_cast<Score>(beta + 3.0 * stdDev);
+
+            if (probCutBeta < kScoreWin) {
+                const auto r = depth / 2;
+                const auto score = search<false>(thread, pos, curr.pv, r, ply, probCutBeta - 1, probCutBeta, true);
+                if (score >= probCutBeta) {
+                    return score;
+                }
+            }
+
+            const auto probCutAlpha = static_cast<Score>(alpha - 3.0 * stdDev);
+            if (probCutAlpha > -kScoreWin) {
+                const auto r = depth / 2;
+                const auto score = search<false>(thread, pos, curr.pv, r, ply, probCutAlpha - 1, probCutAlpha, true);
+                if (score <= probCutAlpha) {
+                    return score;
+                }
+            }
         }
 
         auto bestMove = kNullMove;
