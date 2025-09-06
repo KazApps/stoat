@@ -45,7 +45,7 @@ namespace {
 namespace stoat::eval::nnue {
     namespace {
         struct Network {
-            alignas(64) util::MultiArray<i16, kFtSize, kL1Size> ftWeights;
+            alignas(64) util::MultiArray<i16, kKingBuckets * kFtSize, kL1Size> ftWeights;
             alignas(64) util::MultiArray<i16, kL1Size> ftBiases;
             alignas(64) util::MultiArray<i8, kL1Size * kL2Size> l1Weights;
             alignas(64) util::MultiArray<i32, kL2Size> l1Biases;
@@ -404,7 +404,7 @@ namespace stoat::eval::nnue {
             {
                 const auto count = hand.count(pt);
                 for (u32 featureCount = 0; featureCount < count; ++featureCount) {
-                    const auto feature = handFeatureIndex(c, pt, handColor, featureCount);
+                    const auto feature = handFeatureIndex(c, kings, pt, handColor, featureCount);
                     activate(c, feature);
                 }
             }
@@ -448,8 +448,8 @@ namespace stoat::eval::nnue {
             {
                 const auto count = hand.count(pt);
                 for (u32 featureCount = 0; featureCount < count; ++featureCount) {
-                    const auto blackFeature = handFeatureIndex(Colors::kBlack, pt, c, featureCount);
-                    const auto whiteFeature = handFeatureIndex(Colors::kWhite, pt, c, featureCount);
+                    const auto blackFeature = handFeatureIndex(Colors::kBlack, kings, pt, c, featureCount);
+                    const auto whiteFeature = handFeatureIndex(Colors::kWhite, kings, pt, c, featureCount);
                     activate(blackFeature, whiteFeature);
                 }
             }
