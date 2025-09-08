@@ -39,14 +39,22 @@
 
 namespace stoat::datagen {
     namespace {
-        constexpr usize kDatagenTtSizeMib = 16;
+        constexpr usize kDatagenTtSizeMib = 256;
         constexpr usize kReportInterval = 512;
 
         constexpr usize kBaseRandomMoves = 7;
         constexpr bool kRandomizeStartSide = true;
 
-        constexpr usize kSoftNodes = 15000;
+        constexpr usize kSoftNodes = 20000;
         constexpr usize kHardNodes = 8388608;
+
+        constexpr Score kWinAdjMinScore = 1000;
+        constexpr Score kDrawAdjMaxScore = 10;
+
+        constexpr u32 kDrawAdjMinPlies = 40;
+
+        constexpr u32 kWinAdjPlyCount = 6;
+        constexpr u32 kDrawAdjPlyCount = 10;
 
         std::mutex s_printMutex{};
         std::optional<std::ofstream> s_errOut{};
@@ -272,15 +280,15 @@ namespace stoat::datagen {
                         break;
                     }
 
-                    if (blackScore >= 1000) {
+                    if (blackScore >= kWinAdjMinScore) {
                         ++winPlies;
                         lossPlies = 0;
                         drawPlies = 0;
-                    } else if (blackScore <= -1000) {
+                    } else if (blackScore <= -kWinAdjMinScore) {
                         winPlies = 0;
                         ++lossPlies;
                         drawPlies = 0;
-                    } else if (pos.moveCount() >= 40 && std::abs(blackScore) <= 10) {
+                    } else if (pos.moveCount() >= kDrawAdjMinPlies && std::abs(blackScore) <= kDrawAdjMaxScore) {
                         winPlies = 0;
                         lossPlies = 0;
                         ++drawPlies;
@@ -290,11 +298,11 @@ namespace stoat::datagen {
                         drawPlies = 0;
                     }
 
-                    if (winPlies >= 6) {
+                    if (winPlies >= kWinAdjPlyCount) {
                         outcome = format::Outcome::kBlackWin;
-                    } else if (lossPlies >= 6) {
+                    } else if (lossPlies >= kWinAdjPlyCount) {
                         outcome = format::Outcome::kBlackLoss;
-                    } else if (drawPlies >= 10) {
+                    } else if (drawPlies >= kDrawAdjPlyCount) {
                         outcome = format::Outcome::kDraw;
                     }
 
