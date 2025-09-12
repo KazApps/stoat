@@ -89,6 +89,8 @@ namespace stoat {
             return std::abs(score) > kScoreWin;
         }
 
+        constexpr u32 kUnlikelyMovePermille = 1;
+
         [[nodiscard]] bool isUnlikelyMove(const Position& pos, Move move) {
             if (move.isDrop() || move.isPromo()) {
                 return false;
@@ -700,7 +702,7 @@ namespace stoat {
                 continue;
             }
 
-            if (isUnlikelyMove(pos, move) && curr.staticEval - 500 <= alpha) {
+            if (isUnlikelyMove(pos, move) && thread.loadNodes() % 1000 < kUnlikelyMovePermille) {
                 continue;
             }
 
@@ -995,7 +997,7 @@ namespace stoat {
         while (const auto move = generator.next()) {
             assert(pos.isPseudolegal(move));
 
-            if (!pos.isLegal(move) || isUnlikelyMove(pos, move)) {
+            if (!pos.isLegal(move) || (isUnlikelyMove(pos, move) && thread.loadNodes() % 1000 < kUnlikelyMovePermille)) {
                 continue;
             }
 
