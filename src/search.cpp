@@ -700,7 +700,7 @@ namespace stoat {
                 continue;
             }
 
-            if (isUnlikelyMove(pos, move) && curr.staticEval - 500 <= alpha) {
+            if (isUnlikelyMove(pos, move)) {
                 continue;
             }
 
