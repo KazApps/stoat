@@ -20,6 +20,9 @@
 
 #include "types.h"
 
+#include <atomic>
+
+#include "arch.h"
 #include "core.h"
 #include "move.h"
 #include "util/range.h"
@@ -63,13 +66,15 @@ namespace stoat::tt {
         [[nodiscard]] u32 fullPermille() const;
 
         inline void prefetch(u64 key) {
-            __builtin_prefetch(&m_entries[index(key)]);
+            __builtin_prefetch(&m_clusters[index(key)]);
         }
 
     private:
-        struct alignas(8) Entry {
+        struct Entry {
             static constexpr u32 kAgeBits = 5;
+
             static constexpr u32 kAgeCycle = 1 << kAgeBits;
+            static constexpr u32 kAgeMask = kAgeCycle - 1;
 
             u16 key;
             i16 score;
@@ -97,17 +102,28 @@ namespace stoat::tt {
 
         static_assert(sizeof(Entry) == 8);
 
+        static constexpr usize kClusterAlignment = 32;
+        static constexpr auto kStorageAlignment = std::max(kCacheLineSize, kClusterAlignment);
+
+        struct alignas(32) Cluster {
+            static constexpr usize kEntriesPerCluster = 4;
+
+            std::array<Entry, kEntriesPerCluster> entries{};
+        };
+
+        static_assert(sizeof(Cluster) == 32);
+
         bool m_pendingInit{};
 
         // is this an owning raw pointer? :fearful:
         // yes :pensive:
-        Entry* m_entries{};
-        usize m_entryCount{};
+        Cluster* m_clusters{};
+        usize m_clusterCount{};
 
         u32 m_age{};
 
         [[nodiscard]] constexpr usize index(u64 key) const {
-            return static_cast<usize>((static_cast<u128>(key) * static_cast<u128>(m_entryCount)) >> 64);
+            return static_cast<usize>((static_cast<u128>(key) * static_cast<u128>(m_clusterCount)) >> 64);
         }
     };
 } // namespace stoat::tt
