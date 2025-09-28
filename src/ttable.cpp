@@ -56,22 +56,23 @@ namespace stoat::tt {
     }
 
     TTable::~TTable() {
-        if (m_entries) {
-            util::alignedFree(m_entries);
+        if (m_clusters) {
+            util::alignedFree(m_clusters);
         }
     }
 
     void TTable::resize(usize mib) {
-        const auto bytes = mib * 1024 * 1024;
-        const auto entries = bytes / sizeof(Entry);
+        const auto clusters = mib * 1024 * 1024;
+        const auto capacity = clusters / sizeof(Cluster);
 
-        if (m_entryCount != entries) {
-            if (m_entries) {
-                util::alignedFree(m_entries);
+        // don't bother reallocating if we're already at the right size
+        if (m_clusterCount != capacity) {
+            if (m_clusters) {
+                util::alignedFree(m_clusters);
             }
 
-            m_entries = nullptr;
-            m_entryCount = entries;
+            m_clusters = nullptr;
+            m_clusterCount = capacity;
         }
 
         m_pendingInit = true;
@@ -83,9 +84,9 @@ namespace stoat::tt {
         }
 
         m_pendingInit = false;
-        m_entries = util::alignedAlloc<Entry>(kCacheLineSize, m_entryCount);
+        m_clusters = util::alignedAlloc<Cluster>(kStorageAlignment, m_clusterCount);
 
-        if (!m_entries) {
+        if (!m_clusters) {
             fmt::println(stderr, "Failed to reallocate TT - out of memory?");
             std::terminate();
         }
@@ -98,16 +99,18 @@ namespace stoat::tt {
     bool TTable::probe(ProbedEntry& dst, u64 key, i32 ply) const {
         assert(!m_pendingInit);
 
-        const auto entry = m_entries[index(key)];
+        const auto& cluster = m_clusters[index(key)];
 
-        if (entry.key == packEntryKey(key)) {
-            dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
-            dst.move = entry.move;
-            dst.depth = static_cast<i32>(entry.depth);
-            dst.flag = entry.flag();
-            dst.pv = entry.pv();
+        for (const auto entry : cluster.entries) {
+            if (entry.key == packEntryKey(key)) {
+                dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
+                dst.move = entry.move;
+                dst.depth = static_cast<i32>(entry.depth);
+                dst.flag = entry.flag();
+                dst.pv = entry.pv();
 
-            return true;
+                return true;
+            }
         }
 
         return false;
@@ -121,9 +124,35 @@ namespace stoat::tt {
 
         const auto packedKey = packEntryKey(key);
 
-        auto& slot = m_entries[index(key)];
-        auto entry = slot;
+        const auto entryValue = [this](const auto& entry) {
+            const i32 relativeAge = (Entry::kAgeCycle + m_age - entry.age()) & Entry::kAgeMask;
+            return entry.depth - relativeAge * 2;
+        };
 
+        auto& cluster = m_clusters[index(key)];
+
+        Entry* entryPtr = nullptr;
+        auto minValue = std::numeric_limits<i32>::max();
+
+        for (auto& candidate : cluster.entries) {
+            // always take an empty entry, or one from the same position
+            if (candidate.key == packedKey || candidate.flag() == Flag::kNone) {
+                entryPtr = &candidate;
+                break;
+            }
+
+            // otherwise, take the lowest-weighted entry by depth and age
+            const auto value = entryValue(candidate);
+
+            if (value < minValue) {
+                entryPtr = &candidate;
+                minValue = value;
+            }
+        }
+
+        assert(entryPtr != nullptr);
+
+        auto entry = *entryPtr;
         const bool replace =
             flag == Flag::kExact || packedKey != entry.key || entry.age() != m_age || depth + 4 > entry.depth;
 
@@ -140,12 +169,12 @@ namespace stoat::tt {
         entry.depth = static_cast<u8>(depth);
         entry.setAgePvFlag(m_age, pv, flag);
 
-        slot = entry;
+        *entryPtr = entry;
     }
 
     void TTable::clear() {
         assert(!m_pendingInit);
-        std::memset(m_entries, 0, m_entryCount * sizeof(Entry));
+        std::memset(m_clusters, 0, m_clusterCount * sizeof(Cluster));
     }
 
     u32 TTable::fullPermille() const {
@@ -153,13 +182,15 @@ namespace stoat::tt {
 
         u32 filledEntries{};
 
-        for (usize i = 0; i < 1000; ++i) {
-            const auto entry = m_entries[i];
-            if (entry.flag() != Flag::kNone && entry.age() == m_age) {
-                ++filledEntries;
+        for (u64 i = 0; i < 1000; ++i) {
+            const auto cluster = m_clusters[i];
+            for (const auto& entry : cluster.entries) {
+                if (entry.flag() != Flag::kNone && entry.age() == m_age) {
+                    ++filledEntries;
+                }
             }
         }
 
-        return filledEntries;
+        return filledEntries / Cluster::kEntriesPerCluster;
     }
 } // namespace stoat::tt
