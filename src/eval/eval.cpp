@@ -1,5 +1,5 @@
 /*
- * Stoat, a USI shogi engine
+* Stoat, a USI shogi engine
  * Copyright (C) 2025 Ciekce
  *
  * Stoat is free software: you can redistribute it and/or modify
@@ -38,8 +38,8 @@ namespace stoat::eval {
         const i32 ply
     ) {
         const auto eval = staticEval(pos, nnueState);
-        const Score scaledEval = eval * (1024 + ply) / 1024;
         const auto correction = corrhist.correction(pos);
-        return std::clamp(scaledEval + correction, -kScoreWin + 1, kScoreWin - 1);
+        const Score scaledCorrection = correction * (256 + ply) / 256;
+        return std::clamp(eval + scaledCorrection, -kScoreWin + 1, kScoreWin - 1);
     }
 } // namespace stoat::eval
