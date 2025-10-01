@@ -234,14 +234,14 @@ namespace stoat {
 
         all ^= key;
 
+        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
+            cavalry ^= key;
+        }
+
         if (pt == PieceTypes::kSilver || pt == PieceTypes::kGold || pt == PieceTypes::kBishop
             || pt == PieceTypes::kRook)
         {
             hand ^= key;
-        }
-
-        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
-            cavalry ^= key;
         }
     }
 
@@ -255,14 +255,14 @@ namespace stoat {
 
         all ^= key;
 
+        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
+            cavalry ^= key;
+        }
+
         if (pt == PieceTypes::kSilver || pt == PieceTypes::kGold || pt == PieceTypes::kBishop
             || pt == PieceTypes::kRook)
         {
             hand ^= key;
-        }
-
-        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
-            cavalry ^= key;
         }
     }
 
