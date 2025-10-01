@@ -37,11 +37,11 @@ namespace stoat {
     i32 CorrectionHistoryTable::correction(const Position& pos) const {
         i32 correction{};
 
-        correction += m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries];
-        correction += m_cavalryTable[pos.stm().idx()][pos.cavalryKey() % kEntries];
-        correction += m_handTable[pos.stm().idx()][pos.kingHandKey() % kEntries];
-        correction += m_kprTable[pos.stm().idx()][pos.kprKey() % kEntries];
+        correction += 128 * m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries];
+        correction += 128 * m_cavalryTable[pos.stm().idx()][pos.cavalryKey() % kEntries];
+        correction += 128 * m_handTable[pos.stm().idx()][pos.kingHandKey() % kEntries];
+        correction += 128 * m_kprTable[pos.stm().idx()][pos.kprKey() % kEntries];
 
-        return correction / 16;
+        return correction / 2048;
     }
 } // namespace stoat
