@@ -32,7 +32,7 @@ namespace stoat::eval {
     [[nodiscard]] Score correctedStaticEval(
         const Position& pos,
         const nnue::NnueState& nnueState,
-        const CorrectionHistoryTable& correction,
+        const CorrectionHistory& corrhist,
         const i32 ply
     );
 } // namespace stoat::eval

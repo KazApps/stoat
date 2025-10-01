@@ -19,28 +19,30 @@
 #include "correction.h"
 
 namespace stoat {
-    void CorrectionHistoryTable::clear() {
-        std::memset(&m_castleTable, 0, sizeof(m_castleTable));
-        std::memset(&m_cavalryTable, 0, sizeof(m_cavalryTable));
-        std::memset(&m_handTable, 0, sizeof(m_handTable));
-        std::memset(&m_kprTable, 0, sizeof(m_kprTable));
+    void CorrectionHistory::clear() {
+        std::memset(&m_tables, 0, sizeof(m_tables));
     }
 
-    void CorrectionHistoryTable::update(const Position& pos, i32 depth, Score searchScore, Score staticEval) {
+    void CorrectionHistory::update(const Position& pos, i32 depth, Score searchScore, Score staticEval) {
+        auto& tables = m_tables[pos.stm().idx()];
+
         const auto bonus = std::clamp((searchScore - staticEval) * depth / 8, -kMaxBonus, kMaxBonus);
-        m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries].update(bonus);
-        m_cavalryTable[pos.stm().idx()][pos.cavalryKey() % kEntries].update(bonus);
-        m_handTable[pos.stm().idx()][pos.kingHandKey() % kEntries].update(bonus);
-        m_kprTable[pos.stm().idx()][pos.kprKey() % kEntries].update(bonus);
+
+        tables.castle[pos.castleKey() % kEntries].update(bonus);
+        tables.cavalry[pos.cavalryKey() % kEntries].update(bonus);
+        tables.hand[pos.kingHandKey() % kEntries].update(bonus);
+        tables.kpr[pos.kprKey() % kEntries].update(bonus);
     }
 
-    i32 CorrectionHistoryTable::correction(const Position& pos) const {
+    i32 CorrectionHistory::correction(const Position& pos) const {
+        const auto& tables = m_tables[pos.stm().idx()];
+
         i32 correction{};
 
-        correction += 128 * m_castleTable[pos.stm().idx()][pos.castleKey() % kEntries];
-        correction += 128 * m_cavalryTable[pos.stm().idx()][pos.cavalryKey() % kEntries];
-        correction += 128 * m_handTable[pos.stm().idx()][pos.kingHandKey() % kEntries];
-        correction += 128 * m_kprTable[pos.stm().idx()][pos.kprKey() % kEntries];
+        correction += 128 * tables.castle[pos.castleKey() % kEntries];
+        correction += 128 * tables.cavalry[pos.cavalryKey() % kEntries];
+        correction += 128 * tables.hand[pos.kingHandKey() % kEntries];
+        correction += 128 * tables.kpr[pos.kprKey() % kEntries];
 
         return correction / 2048;
     }

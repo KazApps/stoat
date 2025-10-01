@@ -28,7 +28,7 @@
 #include "util/multi_array.h"
 
 namespace stoat {
-    class CorrectionHistoryTable {
+    class CorrectionHistory {
     public:
         void clear();
 
@@ -54,9 +54,13 @@ namespace stoat {
             }
         };
 
-        util::MultiArray<Entry, 2, kEntries> m_castleTable{};
-        util::MultiArray<Entry, 2, kEntries> m_cavalryTable{};
-        util::MultiArray<Entry, 2, kEntries> m_handTable{};
-        util::MultiArray<Entry, 2, kEntries> m_kprTable{};
+        struct SidedTables {
+            std::array<Entry, kEntries> castle{};
+            std::array<Entry, kEntries> cavalry{};
+            std::array<Entry, kEntries> hand{};
+            std::array<Entry, kEntries> kpr{};
+        };
+
+        std::array<SidedTables, 2> m_tables{};
     };
 } // namespace stoat
