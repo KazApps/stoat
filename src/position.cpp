@@ -238,9 +238,7 @@ namespace stoat {
             cavalry ^= key;
         }
 
-        if (pt == PieceTypes::kSilver || pt == PieceTypes::kGold || pt == PieceTypes::kBishop
-            || pt == PieceTypes::kRook)
-        {
+        if (pt != PieceTypes::kPawn) {
             hand ^= key;
         }
     }
@@ -259,9 +257,7 @@ namespace stoat {
             cavalry ^= key;
         }
 
-        if (pt == PieceTypes::kSilver || pt == PieceTypes::kGold || pt == PieceTypes::kBishop
-            || pt == PieceTypes::kRook)
-        {
+        if (pt != PieceTypes::kPawn) {
             hand ^= key;
         }
     }
