@@ -664,7 +664,7 @@ namespace stoat {
             }
         }
 
-        if (ttHit && !ttPv && !pos.isInCheck() && !curr.excluded && std::abs(ttEntry.score) < kScoreMaxMate
+        if (!ttPv && ttMove && !pos.isInCheck() && !curr.excluded && std::abs(ttEntry.score) < kScoreMaxMate
             && ttEntry.score >= beta + 300 && ttEntry.depth >= depth - 4 && pos.isPseudolegal(ttEntry.move))
         {
             return ttEntry.score;
