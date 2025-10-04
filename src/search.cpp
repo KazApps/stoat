@@ -678,7 +678,7 @@ namespace stoat {
         auto generator = MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply);
 
         util::StaticVector<Move, 64> capturesTried{};
-        util::StaticVector<Move, 64> nonCapturesTried{};
+        util::StaticVector<Move, 128> nonCapturesTried{};
 
         u32 legalMoves{};
 
