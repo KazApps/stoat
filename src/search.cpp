@@ -465,7 +465,7 @@ namespace stoat {
                         beta = std::min(score + window, kScoreInf);
                     }
 
-                    window += window * (5 - reduction) / (6 - reduction);
+                    window += window * (4 - reduction) / (5 - reduction);
                 }
 
                 std::ranges::stable_sort(thread.rootMoves, [](const RootMove& a, const RootMove& b) {
