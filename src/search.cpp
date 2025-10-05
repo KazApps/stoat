@@ -126,8 +126,12 @@ namespace stoat {
             return complexityFactor(complexity, 3.0, 0.01);
         }
 
-        [[nodiscard]] f64 corrhistComplexityFactor(i32 complexity) {
+        [[nodiscard]] f64 corrhistUpdateComplexityFactor(i32 complexity) {
             return complexityFactor(complexity, 2.5, 0.008);
+        }
+
+        [[nodiscard]] f64 corrhistApplyComplexityFactor(i32 complexity) {
+            return complexityFactor(complexity, 2.0, 0.005);
         }
     } // namespace
 
@@ -594,7 +598,7 @@ namespace stoat {
                                          thread.nnueState,
                                          thread.corrhist,
                                          ply,
-                                         corrhistComplexityFactor(prevComplexity)
+                                         corrhistApplyComplexityFactor(prevComplexity)
                                      );
         }
 
@@ -625,7 +629,7 @@ namespace stoat {
                                                     thread.nnueState,
                                                     thread.corrhist,
                                                     ply,
-                                                    corrhistComplexityFactor(prevComplexity)
+                                                    corrhistApplyComplexityFactor(prevComplexity)
                                                 );
         }
 
@@ -991,7 +995,7 @@ namespace stoat {
                     || ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval //
                     || ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval))
             {
-                thread.corrhist.update(pos, depth, bestScore, curr.staticEval, corrhistComplexityFactor(complexity));
+                thread.corrhist.update(pos, depth, bestScore, curr.staticEval, corrhistUpdateComplexityFactor(complexity));
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
