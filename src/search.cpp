@@ -117,6 +117,18 @@ namespace stoat {
 
             return false;
         }
+
+        [[nodiscard]] f64 complexityFactor(i32 complexity, f64 maxMultiplier, f64 scale) {
+            return 1.0 + (maxMultiplier - 1.0) * (1.0 - std::exp(-complexity * scale));
+        }
+
+        [[nodiscard]] f64 historyComplexityFactor(i32 complexity) {
+            return complexityFactor(complexity, 3.0, 0.01);
+        }
+
+        [[nodiscard]] f64 corrhistComplexityFactor(i32 complexity) {
+            return complexityFactor(complexity, 2.5, 0.008);
+        }
     } // namespace
 
     Searcher::Searcher(usize ttSizeMb) :
@@ -817,7 +829,7 @@ namespace stoat {
                 if (score > alpha && reduced < newDepth) {
                     score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
                     if (!pos.isCapture(move) && score >= beta) {
-                        const auto bonus = historyBonus(newDepth);
+                        const auto bonus = historyBonus(newDepth, historyComplexityFactor(complexity));
                         thread.history.updateNonCaptureConthistScore(thread.conthist, ply, pos, move, bonus);
                     }
                 }
@@ -906,7 +918,7 @@ namespace stoat {
 
         if (bestMove) {
             const auto historyDepth = depth + (!pos.isInCheck() && curr.staticEval <= bestScore);
-            const auto bonus = historyBonus(historyDepth);
+            const auto bonus = historyBonus(historyDepth, historyComplexityFactor(complexity));
 
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
@@ -935,7 +947,7 @@ namespace stoat {
                     || ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval //
                     || ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval))
             {
-                thread.corrhist.update(pos, depth, bestScore, curr.staticEval, complexity);
+                thread.corrhist.update(pos, depth, bestScore, curr.staticEval, corrhistComplexityFactor(complexity));
             }
 
             if (!kRootNode || thread.pvIdx == 0) {

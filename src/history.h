@@ -78,8 +78,8 @@ namespace stoat {
         util::MultiArray<HistoryEntry, 2, Pieces::kCount, Squares::kCount> m_data{};
     };
 
-    [[nodiscard]] constexpr HistoryScore historyBonus(i32 depth) {
-        return static_cast<HistoryScore>(std::clamp(depth * 300 - 300, 0, 2500));
+    [[nodiscard]] constexpr HistoryScore historyBonus(i32 depth, f64 complexityFactor) {
+        return static_cast<HistoryScore>(std::clamp(static_cast<i32>((depth * 300 - 300) * complexityFactor), 0, 2500));
     }
 
     class HistoryTables {
