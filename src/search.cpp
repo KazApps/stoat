@@ -122,8 +122,12 @@ namespace stoat {
             return 1.0 + (maxMultiplier - 1.0) * (1.0 - std::exp(-complexity * scale));
         }
 
-        [[nodiscard]] f64 historyComplexityFactor(i32 complexity) {
+        [[nodiscard]] f64 historyUpdateComplexityFactor(i32 complexity) {
             return complexityFactor(complexity, 3.0, 0.01);
+        }
+
+        [[nodiscard]] f64 historyApplyComplexityFactor(i32 complexity) {
+            return complexityFactor(complexity, 2.0, 0.005);
         }
 
         [[nodiscard]] f64 corrhistComplexityFactor(i32 complexity) {
@@ -687,8 +691,14 @@ namespace stoat {
 
         auto ttFlag = tt::Flag::kUpperBound;
 
-        auto generator =
-            MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply, historyComplexityFactor(complexity));
+        auto generator = MoveGenerator::main(
+            pos,
+            ttMove,
+            thread.history,
+            thread.conthist,
+            ply,
+            historyApplyComplexityFactor(complexity)
+        );
 
         util::StaticVector<Move, 64> capturesTried{};
         util::StaticVector<Move, 64> nonCapturesTried{};
@@ -719,7 +729,9 @@ namespace stoat {
             const auto history =
                 pos.isCapture(move)
                     ? 0
-                    : static_cast<i32>(thread.history.mainNonCaptureScore(move) * historyComplexityFactor(complexity));
+                    : static_cast<i32>(
+                          thread.history.mainNonCaptureScore(move) * historyApplyComplexityFactor(complexity)
+                      );
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
                 if (legalMoves >= kLmpTable[improving][std::min<usize>(depth, kLmpTableSize - 1)]) {
@@ -833,7 +845,7 @@ namespace stoat {
                 if (score > alpha && reduced < newDepth) {
                     score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
                     if (!pos.isCapture(move) && score >= beta) {
-                        const auto bonus = historyBonus(newDepth, historyComplexityFactor(complexity));
+                        const auto bonus = historyBonus(newDepth, historyUpdateComplexityFactor(complexity));
                         thread.history.updateNonCaptureConthistScore(thread.conthist, ply, pos, move, bonus);
                     }
                 }
@@ -922,7 +934,7 @@ namespace stoat {
 
         if (bestMove) {
             const auto historyDepth = depth + (!pos.isInCheck() && curr.staticEval <= bestScore);
-            const auto bonus = historyBonus(historyDepth, historyComplexityFactor(complexity));
+            const auto bonus = historyBonus(historyDepth, historyUpdateComplexityFactor(complexity));
 
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
