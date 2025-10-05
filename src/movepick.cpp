@@ -169,10 +169,11 @@ namespace stoat {
         Move ttMove,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
-        i32 ply
+        i32 ply,
+        f64 complexityFactor
     ) {
         assert(continuations.size() == kMaxDepth + 1);
-        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, history, continuations, ply};
+        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, history, continuations, ply, complexityFactor};
     }
 
     MoveGenerator MoveGenerator::qsearch(
@@ -184,7 +185,7 @@ namespace stoat {
         assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
             pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
-        return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply};
+        return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply, 1};
     }
 
     MoveGenerator::MoveGenerator(
@@ -193,18 +194,21 @@ namespace stoat {
         Move ttMove,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
-        i32 ply
+        i32 ply,
+        f64 complexityFactor
     ) :
             m_stage{initialStage},
             m_pos{pos},
             m_ttMove{ttMove},
             m_history{history},
             m_continuations{continuations},
-            m_ply{ply} {}
+            m_ply{ply},
+            m_complexityFactor{complexityFactor} {}
 
     i32 MoveGenerator::scoreCapture(Move move) {
         const auto captured = m_pos.pieceOn(move.to()).type();
-        return see::pieceValue(captured) + m_history.captureScore(move, captured) / 8;
+        return see::pieceValue(captured)
+             + static_cast<i32>(m_history.captureScore(move, captured) * m_complexityFactor / 8);
     }
 
     void MoveGenerator::scoreCaptures() {
@@ -214,7 +218,7 @@ namespace stoat {
     }
 
     i32 MoveGenerator::scoreNonCapture(Move move) {
-        return m_history.nonCaptureScore(m_continuations, m_ply, m_pos, move);
+        return static_cast<i32>(m_history.nonCaptureScore(m_continuations, m_ply, m_pos, move) * m_complexityFactor);
     }
 
     void MoveGenerator::scoreNonCaptures() {

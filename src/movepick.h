@@ -70,7 +70,8 @@ namespace stoat {
             Move ttMove,
             const HistoryTables& history,
             std::span<ContinuationSubtable* const> continuations,
-            i32 ply
+            i32 ply,
+            f64 complexityFactor
         );
 
         [[nodiscard]] static MoveGenerator qsearch(
@@ -87,7 +88,8 @@ namespace stoat {
             Move ttMove,
             const HistoryTables& history,
             std::span<ContinuationSubtable* const> continuations,
-            i32 ply
+            i32 ply,
+            f64 complexityFactor
         );
 
         [[nodiscard]] i32 scoreCapture(Move move);
@@ -124,6 +126,8 @@ namespace stoat {
 
         std::span<ContinuationSubtable* const> m_continuations;
         i32 m_ply{};
+
+        f64 m_complexityFactor{};
 
         bool m_skipNonCaptures{false};
 
