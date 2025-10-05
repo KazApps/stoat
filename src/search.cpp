@@ -127,11 +127,11 @@ namespace stoat {
         }
 
         [[nodiscard]] f64 corrhistUpdateComplexityFactor(i32 complexity) {
-            return complexityFactor(complexity, 2.0, 0.0075);
+            return complexityFactor(complexity, 2.5, 0.008);
         }
 
         [[nodiscard]] f64 corrhistApplyComplexityFactor(i32 complexity) {
-            return complexityFactor(complexity, 1.75, 0.005);
+            return complexityFactor(complexity, 2.5, 0.008);
         }
     } // namespace
 
