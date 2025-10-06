@@ -35,7 +35,7 @@ namespace stoat {
         auto& tables = m_tables[pos.stm().idx()];
 
         const auto bonus = std::clamp(
-            static_cast<i32>((searchScore - staticEval) * depth / 8 * complexityFactor),
+            static_cast<i32>((searchScore - staticEval) * depth * complexityFactor / 8),
             -kMaxBonus,
             kMaxBonus
         );
