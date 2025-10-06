@@ -152,7 +152,8 @@ namespace stoat {
             i32 ply,
             Score alpha,
             Score beta,
-            bool expectedCutnode
+            bool expectedCutnode,
+            i32 prevComplexity
         );
 
         template <>
@@ -164,7 +165,8 @@ namespace stoat {
             i32 ply,
             Score alpha,
             Score beta,
-            bool expectedCutnode
+            bool expectedCutnode,
+            i32 prevComplexity
         ) = delete;
 
         template <bool kPvNode = false>

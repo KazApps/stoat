@@ -126,8 +126,12 @@ namespace stoat {
             return complexityFactor(complexity, 3.0, 0.01);
         }
 
-        [[nodiscard]] f64 corrhistComplexityFactor(i32 complexity) {
+        [[nodiscard]] f64 corrhistUpdateComplexityFactor(i32 complexity) {
             return complexityFactor(complexity, 2.5, 0.008);
+        }
+
+        [[nodiscard]] f64 corrhistApplyComplexityFactor(i32 complexity) {
+            return complexityFactor(complexity, 1.5, 0.003);
         }
     } // namespace
 
@@ -444,7 +448,7 @@ namespace stoat {
                 while (true) {
                     const auto rootDepth = std::max(depth - reduction, 1);
 
-                    score = search<true, true>(thread, thread.rootPos, rootPv, rootDepth, 0, alpha, beta, false);
+                    score = search<true, true>(thread, thread.rootPos, rootPv, rootDepth, 0, alpha, beta, false, 0);
 
                     std::stable_sort(
                         thread.rootMoves.begin() + thread.pvIdx,
@@ -546,7 +550,8 @@ namespace stoat {
         i32 ply,
         Score alpha,
         Score beta,
-        bool expectedCutnode
+        bool expectedCutnode,
+        i32 prevComplexity
     ) {
         assert(ply >= 0 && ply <= kMaxDepth);
 
@@ -587,7 +592,14 @@ namespace stoat {
         }
 
         if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0 : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            return pos.isInCheck() ? 0
+                                   : eval::correctedStaticEval(
+                                         pos,
+                                         thread.nnueState,
+                                         thread.corrhist,
+                                         ply,
+                                         corrhistApplyComplexityFactor(prevComplexity)
+                                     );
         }
 
         auto& curr = thread.stack[ply];
@@ -611,8 +623,14 @@ namespace stoat {
                 --depth;
             }
 
-            curr.staticEval =
-                pos.isInCheck() ? kScoreNone : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            curr.staticEval = pos.isInCheck() ? kScoreNone
+                                              : eval::correctedStaticEval(
+                                                    pos,
+                                                    thread.nnueState,
+                                                    thread.corrhist,
+                                                    ply,
+                                                    corrhistApplyComplexityFactor(prevComplexity)
+                                                );
         }
 
         const bool ttPv = ttEntry.pv || kPvNode;
@@ -667,8 +685,17 @@ namespace stoat {
                 const auto r = 3 + depth / 5;
 
                 const auto [newPos, guard] = thread.applyNullMove(ply, pos);
-                const auto score =
-                    -search(thread, newPos, curr.pv, depth - r, ply + 1, -beta, -beta + 1, !expectedCutnode);
+                const auto score = -search(
+                    thread,
+                    newPos,
+                    curr.pv,
+                    depth - r,
+                    ply + 1,
+                    -beta,
+                    -beta + 1,
+                    !expectedCutnode,
+                    complexity
+                );
 
                 if (score >= beta) {
                     return score > kScoreWin ? beta : score;
@@ -750,7 +777,8 @@ namespace stoat {
                     const auto sDepth = (depth - 1) / 2;
 
                     curr.excluded = move;
-                    const auto score = search(thread, pos, curr.pv, sDepth, ply, sBeta - 1, sBeta, expectedCutnode);
+                    const auto score =
+                        search(thread, pos, curr.pv, sDepth, ply, sBeta - 1, sBeta, expectedCutnode, complexity);
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
@@ -823,22 +851,42 @@ namespace stoat {
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
                 curr.reduction = newDepth - reduced;
-                score = -search(thread, newPos, curr.pv, reduced, ply + 1, -alpha - 1, -alpha, true);
+                score = -search(thread, newPos, curr.pv, reduced, ply + 1, -alpha - 1, -alpha, true, complexity);
                 curr.reduction = 0;
 
                 if (score > alpha && reduced < newDepth) {
-                    score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
+                    score = -search(
+                        thread,
+                        newPos,
+                        curr.pv,
+                        newDepth,
+                        ply + 1,
+                        -alpha - 1,
+                        -alpha,
+                        !expectedCutnode,
+                        complexity
+                    );
                     if (!pos.isCapture(move) && score >= beta) {
                         const auto bonus = historyBonus(newDepth, historyComplexityFactor(complexity));
                         thread.history.updateNonCaptureConthistScore(thread.conthist, ply, pos, move, bonus);
                     }
                 }
             } else if (!kPvNode || legalMoves > 1) {
-                score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
+                score = -search(
+                    thread,
+                    newPos,
+                    curr.pv,
+                    newDepth,
+                    ply + 1,
+                    -alpha - 1,
+                    -alpha,
+                    !expectedCutnode,
+                    complexity
+                );
             }
 
             if (kPvNode && (legalMoves == 1 || score > alpha)) {
-                score = -search<true>(thread, newPos, curr.pv, newDepth, ply + 1, -beta, -alpha, false);
+                score = -search<true>(thread, newPos, curr.pv, newDepth, ply + 1, -beta, -alpha, false, complexity);
             }
 
         skipSearch:
@@ -947,7 +995,7 @@ namespace stoat {
                     || ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval //
                     || ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval))
             {
-                thread.corrhist.update(pos, depth, bestScore, curr.staticEval, corrhistComplexityFactor(complexity));
+                thread.corrhist.update(pos, depth, bestScore, curr.staticEval, corrhistUpdateComplexityFactor(complexity));
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
@@ -980,7 +1028,7 @@ namespace stoat {
         }
 
         if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0 : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            return pos.isInCheck() ? 0 : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply, 1.0);
         }
 
         Score staticEval;
@@ -988,7 +1036,7 @@ namespace stoat {
         if (pos.isInCheck()) {
             staticEval = -kScoreMate + ply;
         } else {
-            staticEval = eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            staticEval = eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply, 1.0);
 
             if (staticEval >= beta) {
                 return staticEval;
