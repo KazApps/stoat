@@ -40,6 +40,6 @@ namespace stoat::eval {
         const auto eval = staticEval(pos, nnueState);
         const Score scaledEval = eval * (1024 + ply) / 1024;
         const auto correction = corrhist.correction(pos);
-        return std::clamp(scaledEval + correction, -kScoreWin + 1, kScoreWin - 1);
+        return std::clamp(scaledEval + static_cast<Score>(correction * 1.2), -kScoreWin + 1, kScoreWin - 1);
     }
 } // namespace stoat::eval
