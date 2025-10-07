@@ -232,7 +232,9 @@ namespace stoat {
 
         const auto key = keys::pieceInHand(c, pt, count);
 
-        all ^= key;
+        if (pt != PieceTypes::kPawn) {
+            all ^= key;
+        }
 
         if (pt == PieceTypes::kSilver || pt == PieceTypes::kGold || pt == PieceTypes::kBishop
             || pt == PieceTypes::kRook)
@@ -253,7 +255,9 @@ namespace stoat {
 
         const auto key = keys::pieceInHand(c, pt, before) ^ keys::pieceInHand(c, pt, after);
 
-        all ^= key;
+        if (pt != PieceTypes::kPawn) {
+            all ^= key;
+        }
         hand ^= key;
 
         if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
