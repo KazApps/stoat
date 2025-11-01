@@ -105,13 +105,13 @@ namespace stoat::tt {
         static constexpr usize kClusterAlignment = 32;
         static constexpr auto kStorageAlignment = std::max(kCacheLineSize, kClusterAlignment);
 
-        struct alignas(32) Cluster {
-            static constexpr usize kEntriesPerCluster = 4;
+        struct alignas(16) Cluster {
+            static constexpr usize kEntriesPerCluster = 2;
 
             std::array<Entry, kEntriesPerCluster> entries{};
         };
 
-        static_assert(sizeof(Cluster) == 32);
+        static_assert(sizeof(Cluster) == 16);
 
         bool m_pendingInit{};
 
