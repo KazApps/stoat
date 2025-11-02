@@ -49,7 +49,7 @@ namespace stoat::eval::nnue {
             alignas(64) util::MultiArray<i16, kL1Size> ftBiases;
             alignas(64) util::MultiArray<i8, kL1Size * kL2Size> l1Weights;
             alignas(64) util::MultiArray<i32, kL2Size> l1Biases;
-            alignas(64) util::MultiArray<i32, kL2Size * 2, kL3Size> l2Weights;
+            alignas(64) util::MultiArray<i32, kL2Size, kL3Size> l2Weights;
             alignas(64) util::MultiArray<i32, kL3Size> l2Biases;
             alignas(64) util::MultiArray<i32, kL3Size> l3Weights;
             alignas(64) i32 l3Bias;
@@ -100,13 +100,12 @@ namespace stoat::eval::nnue {
             static constexpr i32 kQ = 1 << kQBits;
 
             alignas(64) std::array<u8, kL1Size> ftOut;
-            alignas(64) std::array<i32, kL2Size * 2> l1Out;
+            alignas(64) std::array<i32, kL2Size> l1Out;
             alignas(64) std::array<i32, kL3Size> l2Out;
 
             const auto zero = _mm256_setzero_si256();
 
             const auto ftOne = _mm256_set1_epi16((1 << kFtQBits) - 1);
-            const auto l1CreluOne = _mm256_set1_epi32(kQ);
             const auto l1ScreluOne = _mm256_set1_epi32(kQ * kQ);
             const auto l2One = _mm256_set1_epi32(kQ * kQ * kQ);
 
@@ -205,23 +204,19 @@ namespace stoat::eval::nnue {
                 out = _mm256_srai_epi32(out, -kL1Shift);
                 out = _mm256_add_epi32(out, biases);
 
-                auto crelu = out;
                 auto screlu = out;
-
-                crelu = _mm256_max_epi32(crelu, zero);
-                crelu = _mm256_min_epi32(crelu, l1CreluOne);
-                crelu = _mm256_slli_epi32(crelu, kQBits);
 
                 screlu = _mm256_mullo_epi32(screlu, screlu);
                 screlu = _mm256_min_epi32(screlu, l1ScreluOne);
 
-                store(&l1Out[i], crelu);
-                store(&l1Out[i + kL2Size], screlu);
+                out = _mm256_add_epi32(out, screlu);
+
+                store(&l1Out[i], out);
             }
 
             std::ranges::copy(s_network.l2Biases, l2Out.begin());
 
-            for (usize inputIdx = 0; inputIdx < kL2Size * 2; ++inputIdx) {
+            for (usize inputIdx = 0; inputIdx < kL2Size; ++inputIdx) {
                 const auto input = _mm256_set1_epi32(l1Out[inputIdx]);
 
                 for (usize outputIdx = 0; outputIdx < kL3Size; outputIdx += kChunkSize32 * 4) {
