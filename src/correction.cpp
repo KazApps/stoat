@@ -29,13 +29,12 @@ namespace stoat {
         const Position& pos,
         i32 depth,
         Score searchScore,
-        Score staticEval,
-        f64 complexityFactor
+        Score staticEval
     ) {
         auto& tables = m_tables[pos.stm().idx()];
 
         const auto bonus = std::clamp(
-            static_cast<i32>((searchScore - staticEval) * depth / 8 * complexityFactor),
+            static_cast<i32>((searchScore - staticEval) * depth / 8),
             -kMaxBonus,
             kMaxBonus
         );

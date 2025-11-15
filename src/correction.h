@@ -32,7 +32,7 @@ namespace stoat {
     public:
         void clear();
 
-        void update(const Position& pos, i32 depth, Score searchScore, Score staticEval, f64 complexityFactor);
+        void update(const Position& pos, i32 depth, Score searchScore, Score staticEval);
 
         [[nodiscard]] i32 correction(const Position& pos) const;
 
