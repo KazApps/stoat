@@ -33,7 +33,6 @@ namespace stoat::eval {
         const Position& pos,
         const nnue::NnueState& nnueState,
         const CorrectionHistory& corrhist,
-        const i32 ply,
-        const f64 complexityFactor
+        const i32 ply
     );
 } // namespace stoat::eval
