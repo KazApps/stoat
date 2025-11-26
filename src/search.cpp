@@ -575,13 +575,7 @@ namespace stoat {
         }
 
         if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0
-                                   : eval::correctedStaticEval(
-                                         pos,
-                                         thread.nnueState,
-                                         thread.corrhist,
-                                         ply
-                                     );
+            return pos.isInCheck() ? 0 : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
         }
 
         auto& curr = thread.stack[ply];
@@ -605,13 +599,8 @@ namespace stoat {
                 --depth;
             }
 
-            curr.staticEval = pos.isInCheck() ? kScoreNone
-                                              : eval::correctedStaticEval(
-                                                    pos,
-                                                    thread.nnueState,
-                                                    thread.corrhist,
-                                                    ply
-                                                );
+            curr.staticEval =
+                pos.isInCheck() ? kScoreNone : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
         }
 
         const bool ttPv = ttEntry.pv || kPvNode;
@@ -666,16 +655,8 @@ namespace stoat {
                 const auto r = 3 + depth / 5;
 
                 const auto [newPos, guard] = thread.applyNullMove(ply, pos);
-                const auto score = -search(
-                    thread,
-                    newPos,
-                    curr.pv,
-                    depth - r,
-                    ply + 1,
-                    -beta,
-                    -beta + 1,
-                    !expectedCutnode
-                );
+                const auto score =
+                    -search(thread, newPos, curr.pv, depth - r, ply + 1, -beta, -beta + 1, !expectedCutnode);
 
                 if (score >= beta) {
                     return score > kScoreWin ? beta : score;
@@ -757,8 +738,7 @@ namespace stoat {
                     const auto sDepth = (depth - 1) / 2;
 
                     curr.excluded = move;
-                    const auto score =
-                        search(thread, pos, curr.pv, sDepth, ply, sBeta - 1, sBeta, expectedCutnode);
+                    const auto score = search(thread, pos, curr.pv, sDepth, ply, sBeta - 1, sBeta, expectedCutnode);
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
@@ -810,20 +790,23 @@ namespace stoat {
                 && generator.stage() >= MovegenStage::kNonCaptures)
             {
                 auto r = baseLmr;
+                const auto dist = Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip()));
 
                 r += !ttPv;
-                r -= pos.isInCheck();
                 r += !improving;
                 r -= history / 8192;
                 r += expectedCutnode * 3;
+
+                if (pos.isInCheck()) {
+                    r -= 1 + (dist == 1);
+                }
 
                 if (pos.isCapture(move)) {
                     r -= 1 + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
                 }
 
                 if (move.isDrop()) {
-                    r -= Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip())) < 3
-                      && !pos.attackersTo(move.to(), pos.stm()).empty();
+                    r -= dist < 3 && !pos.attackersTo(move.to(), pos.stm()).empty();
                     r -= (attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
                           & pos.colorBb(pos.stm().flip()))
                              .popcount();
@@ -835,32 +818,14 @@ namespace stoat {
                 curr.reduction = 0;
 
                 if (score > alpha && reduced < newDepth) {
-                    score = -search(
-                        thread,
-                        newPos,
-                        curr.pv,
-                        newDepth,
-                        ply + 1,
-                        -alpha - 1,
-                        -alpha,
-                        !expectedCutnode
-                    );
+                    score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
                     if (!pos.isCapture(move) && score >= beta) {
                         const auto bonus = historyBonus(newDepth);
                         thread.history.updateNonCaptureConthistScore(thread.conthist, ply, pos, move, bonus);
                     }
                 }
             } else if (!kPvNode || legalMoves > 1) {
-                score = -search(
-                    thread,
-                    newPos,
-                    curr.pv,
-                    newDepth,
-                    ply + 1,
-                    -alpha - 1,
-                    -alpha,
-                    !expectedCutnode
-                );
+                score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
             }
 
             if (kPvNode && (legalMoves == 1 || score > alpha)) {
