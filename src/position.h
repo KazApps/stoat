@@ -80,7 +80,7 @@ namespace stoat {
         u64 castle{};
         u64 cavalry{};
         u64 hand{};
-        u64 kpr{};
+        u64 kpgr{};
 
         void clear();
 
@@ -191,8 +191,8 @@ namespace stoat {
             return m_keys.hand;
         }
 
-        [[nodiscard]] inline u64 kprKey() const {
-            return m_keys.kpr;
+        [[nodiscard]] inline u64 kpgrKey() const {
+            return m_keys.kpgr;
         }
 
         [[nodiscard]] u64 keyAfter(Move move) const;
