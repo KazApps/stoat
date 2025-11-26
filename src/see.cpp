@@ -65,9 +65,10 @@ namespace stoat::see {
 
         [[nodiscard]] constexpr bool canMoveDiagonally(PieceType pt) {
             assert(pt);
-            return pt == PieceTypes::kPromotedPawn || pt == PieceTypes::kPromotedLance || pt == PieceTypes::kPromotedKnight
-                || pt == PieceTypes::kSilver || pt == PieceTypes::kPromotedSilver || pt == PieceTypes::kGold
-                || pt == PieceTypes::kBishop || pt == PieceTypes::kPromotedBishop || pt == PieceTypes::kPromotedRook;
+            return pt == PieceTypes::kPromotedPawn || pt == PieceTypes::kPromotedLance
+                || pt == PieceTypes::kPromotedKnight || pt == PieceTypes::kSilver || pt == PieceTypes::kPromotedSilver
+                || pt == PieceTypes::kGold || pt == PieceTypes::kBishop || pt == PieceTypes::kPromotedBishop
+                || pt == PieceTypes::kPromotedRook;
         }
 
         [[nodiscard]] constexpr bool canMoveOrthogonally(PieceType pt) {

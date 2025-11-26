@@ -126,7 +126,8 @@ namespace stoat {
             const auto pieceIdx = kDropPieceIndices[piece.idx()];
             assert(pieceIdx != -1);
 
-            return Move{static_cast<u16>((to.raw() << kToShift) | (pieceIdx << kDropPieceShift) | (1 << kDropFlagShift))
+            return Move{
+                static_cast<u16>((to.raw() << kToShift) | (pieceIdx << kDropPieceShift) | (1 << kDropFlagShift))
             };
         }
 

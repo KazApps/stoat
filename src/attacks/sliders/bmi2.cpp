@@ -61,7 +61,8 @@ namespace stoat::attacks::sliders::bmi2 {
         offsets::kSouthEast>(kBishopData);
 
     const std::array<Bitboard, kRookData.tableSize> g_rookAttacks =
-        generateAttacks<kRookData.tableSize, offsets::kNorth, offsets::kSouth, offsets::kWest, offsets::kEast>(kRookData
+        generateAttacks<kRookData.tableSize, offsets::kNorth, offsets::kSouth, offsets::kWest, offsets::kEast>(
+            kRookData
         );
 } // namespace stoat::attacks::sliders::bmi2
 #endif

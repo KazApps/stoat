@@ -99,7 +99,8 @@ namespace stoat::protocol {
         fmt::println("uciok");
     }
 
-    util::Result<Position, std::optional<std::string>> UciHandler::parsePosition(std::span<std::string_view> args
+    util::Result<Position, std::optional<std::string>> UciHandler::parsePosition(
+        std::span<std::string_view> args
     ) const {
         assert(!args.empty());
 

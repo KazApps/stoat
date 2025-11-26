@@ -69,7 +69,8 @@ namespace stoat::protocol {
         fmt::println("usiok");
     }
 
-    util::Result<Position, std::optional<std::string>> UsiHandler::parsePosition(std::span<std::string_view> args
+    util::Result<Position, std::optional<std::string>> UsiHandler::parsePosition(
+        std::span<std::string_view> args
     ) const {
         assert(!args.empty());
 

@@ -36,7 +36,8 @@ namespace stoat::protocol {
 
         void finishInitialInfo() const final;
 
-        [[nodiscard]] util::Result<Position, std::optional<std::string>> parsePosition(std::span<std::string_view> args
+        [[nodiscard]] util::Result<Position, std::optional<std::string>> parsePosition(
+            std::span<std::string_view> args
         ) const final;
         [[nodiscard]] util::Result<Move, InvalidMoveError> parseMove(std::string_view str) const final;
 
