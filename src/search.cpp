@@ -793,13 +793,10 @@ namespace stoat {
                 const auto dist = Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip()));
 
                 r += !ttPv;
+                r -= pos.isInCheck();
                 r += !improving;
                 r -= history / 8192;
                 r += expectedCutnode * 3;
-
-                if (pos.isInCheck()) {
-                    r -= 1 + (dist == 1);
-                }
 
                 if (pos.isCapture(move)) {
                     r -= 1 + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
