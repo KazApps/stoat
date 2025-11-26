@@ -798,7 +798,7 @@ namespace stoat {
                 r += expectedCutnode * 3;
 
                 if (pos.isInCheck()) {
-                    r -= 1 + (dist == 1);
+                    r -= 1 + (dist < 3);
                 }
 
                 if (pos.isCapture(move)) {
