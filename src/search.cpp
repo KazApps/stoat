@@ -574,8 +574,11 @@ namespace stoat {
             thread.updateSeldepth(ply + 1);
         }
 
+        auto [staticEval, correction] =
+            pos.isInCheck() ? std::pair{0, 0} : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+
         if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0 : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            return staticEval;
         }
 
         auto& curr = thread.stack[ply];
@@ -599,8 +602,7 @@ namespace stoat {
                 --depth;
             }
 
-            curr.staticEval =
-                pos.isInCheck() ? kScoreNone : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            curr.staticEval = pos.isInCheck() ? kScoreNone : staticEval;
         }
 
         const bool ttPv = ttEntry.pv || kPvNode;
@@ -780,8 +782,12 @@ namespace stoat {
                 goto skipSearch;
             }
 
-            if (extension == 0 && givesCheck) {
-                extension = 1;
+            if (extension == 0) {
+                if (givesCheck) {
+                    extension = 1;
+                } else {
+                    extension = correction / 128;
+                }
             }
 
             newDepth += extension;
@@ -970,17 +976,16 @@ namespace stoat {
             thread.updateSeldepth(ply + 1);
         }
 
-        if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0 : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
-        }
+        auto [staticEval, correction] =
+            pos.isInCheck() ? std::pair{0, 0} : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
 
-        Score staticEval;
+        if (ply >= kMaxDepth) {
+            return staticEval;
+        }
 
         if (pos.isInCheck()) {
             staticEval = -kScoreMate + ply;
         } else {
-            staticEval = eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
-
             if (staticEval >= beta) {
                 return staticEval;
             }

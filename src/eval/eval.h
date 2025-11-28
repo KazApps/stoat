@@ -29,7 +29,7 @@ namespace stoat::eval {
     [[nodiscard]] Score staticEval(const Position& pos, const nnue::NnueState& nnueState);
     [[nodiscard]] Score staticEvalOnce(const Position& pos);
 
-    [[nodiscard]] Score correctedStaticEval(
+    [[nodiscard]] std::pair<Score, i32> correctedStaticEval(
         const Position& pos,
         const nnue::NnueState& nnueState,
         const CorrectionHistory& corrhist,
