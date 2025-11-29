@@ -628,7 +628,7 @@ namespace stoat {
             if (ply > 3 && thread.stack[ply - 4].staticEval != kScoreNone) {
                 return curr.staticEval > thread.stack[ply - 4].staticEval;
             }
-            return true;
+            return false;
         }();
 
         if (!ttPv && !pos.isInCheck() && !curr.excluded && complexity <= 20) {
