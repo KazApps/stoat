@@ -38,11 +38,11 @@ namespace stoat {
         constexpr usize kLmpTableSize = 32;
 
         constexpr auto kLmpTable = [] {
-            util::MultiArray<i32, 2, kLmpTableSize> result{};
+            util::MultiArray<i32, 3, kLmpTableSize> result{};
 
-            for (i32 improving = 0; improving < 2; ++improving) {
+            for (i32 improving = 0; improving < 3; ++improving) {
                 for (i32 depth = 0; depth < kLmpTableSize; ++depth) {
-                    result[improving][depth] = (4 + 3 * depth * depth) / (2 - improving);
+                    result[improving][depth] = (4 + 4 * depth * depth) / (3 - improving);
                 }
             }
 
@@ -618,17 +618,17 @@ namespace stoat {
         const auto ttMove =
             (kRootNode && thread.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
 
-        const bool improving = [&] {
+        const int improving = [&] {
             if (pos.isInCheck()) {
-                return false;
+                return 0;
             }
             if (ply > 1 && thread.stack[ply - 2].staticEval != kScoreNone) {
-                return curr.staticEval > thread.stack[ply - 2].staticEval;
+                return (curr.staticEval > thread.stack[ply - 2].staticEval) * 2;
             }
             if (ply > 3 && thread.stack[ply - 4].staticEval != kScoreNone) {
-                return curr.staticEval > thread.stack[ply - 4].staticEval;
+                return (curr.staticEval > thread.stack[ply - 4].staticEval) * 1;
             }
-            return false;
+            return 0;
         }();
 
         if (!ttPv && !pos.isInCheck() && !curr.excluded && complexity <= 20) {
