@@ -785,8 +785,8 @@ namespace stoat {
             if (extension == 0) {
                 if (givesCheck) {
                     extension = 1;
-                } else {
-                    extension = correction / 192;
+                } else if (correction > 0) {
+                    extension = correction / 128;
                 }
             }
 
