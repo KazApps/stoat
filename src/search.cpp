@@ -1058,7 +1058,7 @@ namespace stoat {
         return bestScore;
     }
 
-    void Searcher::reportSingle(const ThreadData& bestThread, u32 pvIdx, i32 depth, f64 time) {
+    void Searcher::reportSingle(const ThreadData& bestThread, u32 pvIdx, i32 depth, f64 time) const {
         if (m_silent) {
             return;
         }
@@ -1115,13 +1115,13 @@ namespace stoat {
         protocol::currHandler().printSearchInfo(info);
     }
 
-    void Searcher::report(const ThreadData& bestThread, i32 depth, f64 time) {
+    void Searcher::report(const ThreadData& bestThread, i32 depth, f64 time) const {
         for (u32 pvIdx = 0; pvIdx < m_multiPv; ++pvIdx) {
             reportSingle(bestThread, pvIdx, depth, time);
         }
     }
 
-    void Searcher::finalReport(f64 time) {
+    void Searcher::finalReport(f64 time) const {
         if (m_silent) {
             return;
         }
