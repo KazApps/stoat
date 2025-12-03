@@ -126,13 +126,13 @@ endif
 
 .SECONDEXPANSION:
 
-$(BUILD_DIR)/%.o: %.cpp | $$(@D)/
+$(BUILD_DIR)/%.o: %.cpp version.txt $(EVALFILE) | $$(@D)/
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-$(BUILD_DIR)/%.o: %.cc | $$(@D)/
+$(BUILD_DIR)/%.o: %.cc version.txt $(EVALFILE) | $$(@D)/
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-$(OUTFILE): $(OBJECTS) $(EVALFILE)
+$(OUTFILE): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(OUTFILE) $(OBJECTS)
 
 bench: $(OUTFILE)
