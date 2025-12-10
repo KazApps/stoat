@@ -69,7 +69,7 @@ namespace stoat::datagen {
         [[nodiscard]] Move selectRandomLegal(
             util::rng::Jsf64Rng& rng,
             const Position& pos,
-            std::vector<u64>& keyHistory,
+            std::vector<u128>& keyHistory,
             movegen::MoveList& moves
         ) {
             for (usize start = 0; start < moves.size(); ++start) {
@@ -97,11 +97,11 @@ namespace stoat::datagen {
 
         [[nodiscard]] Position getStartpos(
             util::rng::Jsf64Rng& rng,
-            std::vector<u64>& keyHistory,
+            std::vector<u128>& keyHistory,
             format::IDataFormat& format
         ) {
             util::StaticVector<Move, kBaseRandomMoves + kRandomizeStartSide> randomMoves{};
-            util::StaticVector<u64, kBaseRandomMoves + kRandomizeStartSide> newKeys{};
+            util::StaticVector<u128, kBaseRandomMoves + kRandomizeStartSide> newKeys{};
 
             Position pos{};
 
@@ -163,7 +163,7 @@ namespace stoat::datagen {
             Searcher searcher{kDatagenTtSizeMib};
             searcher.setLimiter(std::make_unique<limit::SoftNodeLimiter>(kSoftNodes, kHardNodes));
 
-            std::vector<u64> keyHistory{};
+            std::vector<u128> keyHistory{};
             keyHistory.reserve(1024);
 
             auto& thread = searcher.take();

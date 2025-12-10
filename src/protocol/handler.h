@@ -38,7 +38,7 @@ namespace stoat::protocol {
 
     struct EngineState {
         Position pos{Position::startpos()};
-        std::vector<u64> keyHistory{};
+        std::vector<u128> keyHistory{};
 
         Searcher* searcher{};
 

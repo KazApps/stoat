@@ -56,29 +56,29 @@ namespace stoat::keys {
     constexpr auto kKeys = [] {
         constexpr auto Seed = UINT64_C(0x590d3524d1d6301c);
 
-        std::array<u64, sizes::kTotal> keys{};
+        std::array<u128, sizes::kTotal> keys{};
 
         util::rng::Jsf64Rng rng{Seed};
 
         for (auto& key : keys) {
-            key = rng.nextU64();
+            key = rng.nextU128();
         }
 
         return keys;
     }();
 
-    [[nodiscard]] constexpr u64 pieceSquare(Piece piece, Square sq) {
+    [[nodiscard]] constexpr u128 pieceSquare(Piece piece, Square sq) {
         assert(piece);
         assert(sq);
 
         return kKeys[offsets::kPieceSquares + sq.idx() * Pieces::kCount + piece.idx()];
     }
 
-    [[nodiscard]] constexpr u64 stm() {
+    [[nodiscard]] constexpr u128 stm() {
         return kKeys[offsets::kStm];
     }
 
-    [[nodiscard]] constexpr u64 pieceInHand(Color c, PieceType pt, u32 count) {
+    [[nodiscard]] constexpr u128 pieceInHand(Color c, PieceType pt, u32 count) {
         constexpr auto kOffsets = [] {
             std::array<i32, PieceTypes::kCount> offsets{};
             offsets.fill(-1);
