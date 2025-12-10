@@ -28,7 +28,7 @@ namespace stoat {
         conthist.resize(kMaxDepth + 1);
     }
 
-    void ThreadData::reset(const Position& newRootPos, std::span<const u64> newKeyHistory) {
+    void ThreadData::reset(const Position& newRootPos, std::span<const u128> newKeyHistory) {
         rootPos = newRootPos;
 
         keyHistory.clear();

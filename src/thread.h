@@ -64,7 +64,7 @@ namespace stoat {
     template <bool kUpdateNnue>
     class ThreadPosGuard {
     public:
-        explicit ThreadPosGuard(std::vector<u64>& keyHistory, eval::nnue::NnueState& nnueState) :
+        explicit ThreadPosGuard(std::vector<u128>& keyHistory, eval::nnue::NnueState& nnueState) :
                 m_keyHistory{keyHistory}, m_nnueState{nnueState} {}
 
         ThreadPosGuard(const ThreadPosGuard&) = delete;
@@ -78,7 +78,7 @@ namespace stoat {
         }
 
     private:
-        std::vector<u64>& m_keyHistory;
+        std::vector<u128>& m_keyHistory;
         eval::nnue::NnueState& m_nnueState;
     };
 
@@ -100,7 +100,7 @@ namespace stoat {
         bool datagen{false};
 
         Position rootPos{};
-        std::vector<u64> keyHistory{};
+        std::vector<u128> keyHistory{};
 
         SearchStats stats{};
 
@@ -144,7 +144,7 @@ namespace stoat {
             stats.nodes.fetch_add(1, std::memory_order::relaxed);
         }
 
-        void reset(const Position& newRootPos, std::span<const u64> newKeyHistory);
+        void reset(const Position& newRootPos, std::span<const u128> newKeyHistory);
 
         [[nodiscard]] std::pair<Position, ThreadPosGuard<true>> applyMove(i32 ply, const Position& pos, Move move);
         [[nodiscard]] std::pair<Position, ThreadPosGuard<false>> applyNullMove(i32 ply, const Position& pos);

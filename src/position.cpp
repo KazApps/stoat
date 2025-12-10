@@ -334,7 +334,7 @@ namespace stoat {
         return newPos;
     }
 
-    u64 Position::keyAfter(Move move) const {
+    u128 Position::keyAfter(Move move) const {
         auto key = m_keys.all ^ keys::stm();
 
         const auto& hand = this->hand(m_stm);
@@ -374,7 +374,7 @@ namespace stoat {
 
     SennichiteStatus Position::testSennichite(
         bool cuteChessWorkaround,
-        std::span<const u64> keyHistory,
+        std::span<const u128> keyHistory,
         i32 limit
     ) const {
         const auto end = std::max(0, static_cast<i32>(keyHistory.size()) - limit - 1);

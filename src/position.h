@@ -76,11 +76,11 @@ namespace stoat {
     };
 
     struct PositionKeys {
-        u64 all{};
-        u64 castle{};
-        u64 cavalry{};
-        u64 hand{};
-        u64 kpr{};
+        u128 all{};
+        u128 castle{};
+        u128 cavalry{};
+        u128 hand{};
+        u128 kpr{};
 
         void clear();
 
@@ -175,27 +175,27 @@ namespace stoat {
             return m_hands[color.idx()];
         }
 
-        [[nodiscard]] inline u64 key() const {
+        [[nodiscard]] inline u128 key() const {
             return m_keys.all;
         }
 
-        [[nodiscard]] inline u64 castleKey() const {
+        [[nodiscard]] inline u128 castleKey() const {
             return m_keys.castle;
         }
 
-        [[nodiscard]] inline u64 cavalryKey() const {
+        [[nodiscard]] inline u128 cavalryKey() const {
             return m_keys.cavalry;
         }
 
-        [[nodiscard]] inline u64 kingHandKey() const {
+        [[nodiscard]] inline u128 kingHandKey() const {
             return m_keys.hand;
         }
 
-        [[nodiscard]] inline u64 kprKey() const {
+        [[nodiscard]] inline u128 kprKey() const {
             return m_keys.kpr;
         }
 
-        [[nodiscard]] u64 keyAfter(Move move) const;
+        [[nodiscard]] u128 keyAfter(Move move) const;
 
         [[nodiscard]] inline bool isInCheck() const {
             return !m_checkers.empty();
@@ -228,7 +228,7 @@ namespace stoat {
 
         [[nodiscard]] SennichiteStatus testSennichite(
             bool cuteChessWorkaround,
-            std::span<const u64> keyHistory,
+            std::span<const u128> keyHistory,
             i32 limit = 16
         ) const;
 
