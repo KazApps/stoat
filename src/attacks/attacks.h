@@ -112,6 +112,13 @@ namespace stoat::attacks {
         return tables::kPawnAttacks[c.idx()][sq.idx()];
     }
 
+    [[nodiscard]] constexpr Bitboard lancePseudoAttacks(Square sq, Color c) {
+        assert(sq);
+        assert(c);
+
+        return sliders::kEmptyBoardLanceAttacks[c.idx()][sq.idx()];
+    }
+
     [[nodiscard]] constexpr Bitboard lanceAttacks(Square sq, Color c, Bitboard occ) {
         assert(sq);
         assert(c);
@@ -145,6 +152,12 @@ namespace stoat::attacks {
         return tables::kGoldAttacks[c.idx()][sq.idx()];
     }
 
+    [[nodiscard]] constexpr Bitboard bishopPseudoAttacks(Square sq) {
+        assert(sq);
+
+        return sliders::kEmptyBoardBishopAttacks[sq.idx()];
+    }
+
     [[nodiscard]] constexpr Bitboard bishopAttacks(Square sq, Bitboard occ) {
         assert(sq);
 
@@ -157,6 +170,12 @@ namespace stoat::attacks {
         }
 
         return sliders::bishopAttacks(sq, occ);
+    }
+
+    [[nodiscard]] constexpr Bitboard rookPseudoAttacks(Square sq) {
+        assert(sq);
+
+        return sliders::kEmptyBoardRookAttacks[sq.idx()];
     }
 
     [[nodiscard]] constexpr Bitboard rookAttacks(Square sq, Bitboard occ) {

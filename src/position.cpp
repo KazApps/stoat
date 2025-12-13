@@ -968,18 +968,21 @@ namespace stoat {
         const auto stmOcc = colorBb(stm);
         const auto nstmOcc = colorBb(nstm);
 
-        const auto nstmLances = pieceBb(PieceTypes::kLance, nstm);
-        const auto nstmBishops = pieceBb(PieceTypes::kBishop, nstm) | pieceBb(PieceTypes::kPromotedBishop, nstm);
-        const auto nstmRooks = pieceBb(PieceTypes::kRook, nstm) | pieceBb(PieceTypes::kPromotedRook, nstm);
+        const auto lances = pieceTypeBb(PieceTypes::kLance);
+        const auto bishops = pieceTypeBb(PieceTypes::kBishop) | pieceTypeBb(PieceTypes::kPromotedBishop);
+        const auto rooks = pieceTypeBb(PieceTypes::kRook) | pieceTypeBb(PieceTypes::kPromotedRook);
 
-        auto potentialAttackers = (attacks::lanceAttacks(stmKing, stm, nstmOcc) & nstmLances)
-                                | (attacks::bishopAttacks(stmKing, nstmOcc) & nstmBishops)
-                                | (attacks::rookAttacks(stmKing, nstmOcc) & nstmRooks);
+        auto potentialAttackers = ((attacks::lancePseudoAttacks(stmKing, stm) & lances)
+                                | (attacks::bishopPseudoAttacks(stmKing) & bishops)
+                                | (attacks::rookPseudoAttacks(stmKing) & rooks)) & nstmOcc;
+
+        const auto occ = occupancy() ^ potentialAttackers;
+
         while (!potentialAttackers.empty()) {
             const auto potentialAttacker = potentialAttackers.popLsb();
-            const auto maybePinned = stmOcc & rayBetween(potentialAttacker, stmKing);
+            const auto maybePinned = occ & rayBetween(potentialAttacker, stmKing);
 
-            if (maybePinned.one()) {
+            if (maybePinned.one() && (maybePinned & stmOcc).one()) {
                 m_pinned |= maybePinned;
             }
         }
