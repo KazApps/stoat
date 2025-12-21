@@ -50,7 +50,7 @@ namespace stoat::tt {
         ~TTable();
 
         void resize(usize mib);
-        bool finalize();
+        bool finalize(u32 threadCount = 1);
 
         bool probe(ProbedEntry& dst, u64 key, i32 ply) const;
         void put(u64 key, Score score, Move move, i32 depth, i32 ply, Flag flag, bool pv);
@@ -59,7 +59,7 @@ namespace stoat::tt {
             m_age = (m_age + 1) % Entry::kAgeCycle;
         }
 
-        void clear();
+        void clear(u32 threadCount = 1);
 
         [[nodiscard]] u32 fullPermille() const;
 

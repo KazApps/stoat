@@ -89,6 +89,8 @@ namespace stoat {
 
         [[nodiscard]] bool isSearching() const;
 
+        [[nodiscard]] u32 threadCount() const;
+
     private:
         std::vector<std::thread> m_threads{};
         std::vector<std::unique_ptr<ThreadData>> m_threadData{};

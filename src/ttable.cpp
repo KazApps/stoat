@@ -19,6 +19,8 @@
 #include "ttable.h"
 
 #include <cstring>
+#include <thread>
+#include <vector>
 
 #ifndef _WIN32
     #include <sys/mman.h>
@@ -81,7 +83,7 @@ namespace stoat::tt {
         m_pendingInit = true;
     }
 
-    bool TTable::finalize() {
+    bool TTable::finalize(u32 threadCount) {
         if (!m_pendingInit) {
             return false;
         }
@@ -111,7 +113,7 @@ namespace stoat::tt {
 #endif
         }
 
-        clear();
+        clear(threadCount);
 
         return true;
     }
@@ -164,9 +166,32 @@ namespace stoat::tt {
         slot = entry;
     }
 
-    void TTable::clear() {
+    void TTable::clear(u32 threadCount) {
         assert(!m_pendingInit);
-        std::memset(m_entries, 0, m_entryCount * sizeof(Entry));
+
+        std::vector<std::thread> threads{};
+        threads.reserve(threadCount);
+
+        fmt::println("info string Clearing the TT with {} threads", threadCount);
+
+        const auto chunkSize = (m_entryCount + threadCount - 1) / threadCount;
+
+        for (u32 i = 0; i < threadCount; ++i) {
+            threads.emplace_back([this, chunkSize, i] {
+                const auto start = chunkSize * i;
+                const auto end = std::min(start + chunkSize, m_entryCount);
+
+                const auto count = end - start;
+
+                std::memset(&m_entries[start], 0, count * sizeof(Entry));
+            });
+        }
+
+        m_age = 0;
+
+        for (auto& thread : threads) {
+            thread.join();
+        }
     }
 
     u32 TTable::fullPermille() const {

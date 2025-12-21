@@ -132,8 +132,8 @@ namespace stoat {
 
     void Searcher::newGame() {
         // Finalisation (init) clears the TT, so don't clear it twice
-        if (!m_ttable.finalize()) {
-            m_ttable.clear();
+        if (!m_ttable.finalize(threadCount())) {
+            m_ttable.clear(threadCount());
         }
 
         for (auto& thread : m_threadData) {
@@ -143,7 +143,7 @@ namespace stoat {
     }
 
     void Searcher::ensureReady() {
-        m_ttable.finalize();
+        m_ttable.finalize(threadCount());
     }
 
     void Searcher::setThreadCount(u32 threadCount) {
@@ -229,7 +229,7 @@ namespace stoat {
 
         const auto initStart = util::Instant::now();
 
-        if (m_ttable.finalize()) {
+        if (m_ttable.finalize(threadCount())) {
             const auto initTime = initStart.elapsed();
             const auto ms = static_cast<u32>(initTime * 1000.0);
             protocol::currHandler().printInfoString(
@@ -351,6 +351,10 @@ namespace stoat {
     bool Searcher::isSearching() const {
         const std::unique_lock lock{m_searchMutex};
         return m_searching;
+    }
+
+    u32 Searcher::threadCount() const {
+        return m_threads.size();
     }
 
     Searcher::RootStatus Searcher::initRootMoves(movegen::MoveList& dst, const Position& pos) {
