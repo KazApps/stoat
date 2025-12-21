@@ -20,6 +20,7 @@
 
 #include "types.h"
 
+#include "arch.h"
 #include "core.h"
 #include "move.h"
 #include "util/range.h"
@@ -96,6 +97,9 @@ namespace stoat::tt {
         };
 
         static_assert(sizeof(Entry) == 8);
+
+        static constexpr usize kSmallPageSize = 4096;
+        static constexpr auto kDefaultStorageAlignment = std::max(kCacheLineSize, kSmallPageSize);
 
         bool m_pendingInit{};
 

@@ -20,6 +20,10 @@
 
 #include <cstring>
 
+#ifndef _WIN32
+    #include <sys/mman.h>
+#endif
+
 #include "arch.h"
 #include "core.h"
 #include "util/align.h"
@@ -85,12 +89,26 @@ namespace stoat::tt {
         m_pendingInit = false;
 
         if (!m_entries) {
-            m_entries = util::alignedAlloc<Entry>(kCacheLineSize, m_entryCount);
+#ifdef MADV_HUGEPAGE
+            //TODO handle 1GiB huge pages?
+            static constexpr usize kHugePageSize = 2 * 1024 * 1024;
+
+            const auto size = m_entryCount * sizeof(Entry);
+            const auto alignment = size >= kHugePageSize ? kHugePageSize : kDefaultStorageAlignment;
+#else
+            const auto alignment = kDefaultStorageAlignment;
+#endif
+
+            m_entries = util::alignedAlloc<Entry>(alignment, m_entryCount);
 
             if (!m_entries) {
                 fmt::println(stderr, "Failed to reallocate TT - out of memory?");
                 std::terminate();
             }
+
+#ifdef MADV_HUGEPAGE
+            madvise(m_entries, size, MADV_HUGEPAGE);
+#endif
         }
 
         clear();
