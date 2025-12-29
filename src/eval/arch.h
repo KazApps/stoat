@@ -33,5 +33,5 @@ namespace stoat::eval {
     constexpr u32 kL2Size = 16;
     constexpr u32 kL3Size = 32;
 
-    constexpr i32 kScale = 300;
+    constexpr i32 kScale = 350;
 } // namespace stoat::eval
