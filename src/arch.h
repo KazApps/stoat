@@ -22,17 +22,6 @@
 
 #include <new>
 
-#if defined(ST_NATIVE)
-    // cannot expand a macro to defined()
-    #if __BMI2__ && defined(ST_FAST_PEXT)
-        #define ST_HAS_FAST_PEXT 1
-    #else
-        #define ST_HAS_FAST_PEXT 0
-    #endif
-#else //TODO others
-    #error no arch specified
-#endif
-
 namespace stoat {
 #ifdef __cpp_lib_hardware_interference_size
     constexpr auto kCacheLineSize = std::hardware_destructive_interference_size;

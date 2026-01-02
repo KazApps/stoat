@@ -71,18 +71,6 @@ ifneq (, $(findstring clang,$(COMPILER_VERSION)))
     endif
 endif
 
-ARCH_DEFINES := $(shell echo | $(CXX) -march=native -E -dM -)
-
-ifneq ($(findstring __BMI2__, $(ARCH_DEFINES)),)
-    ifeq ($(findstring __znver1, $(ARCH_DEFINES)),)
-        ifeq ($(findstring __znver2, $(ARCH_DEFINES)),)
-            ifeq ($(findstring __bdver, $(ARCH_DEFINES)),)
-                CXXFLAGS_NATIVE += -DST_FAST_PEXT
-            endif
-        endif
-    endif
-endif
-
 override OUTFILE = $(subst .exe,,$(EXE))$(SUFFIX)
 
 ifeq ($(TYPE), native)
