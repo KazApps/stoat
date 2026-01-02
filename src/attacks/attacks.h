@@ -209,13 +209,10 @@ namespace stoat::attacks {
             case PieceTypes::kGold.raw():
                 return goldAttacks(sq, c);
             case PieceTypes::kBishop.raw():
-                return Bitboards::kEmpty;
             case PieceTypes::kRook.raw():
                 return Bitboards::kEmpty;
             case PieceTypes::kPromotedBishop.raw():
-                return kingAttacks(sq);
             case PieceTypes::kPromotedRook.raw():
-                return kingAttacks(sq);
             case PieceTypes::kKing.raw():
                 return kingAttacks(sq);
         }
