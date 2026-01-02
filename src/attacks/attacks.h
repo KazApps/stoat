@@ -103,7 +103,6 @@ namespace stoat::attacks {
         struct SlidingMask {
             std::array<Bitboard, 2> backwards{};
             std::array<Bitboard, 2> forwards{};
-            Bitboard all{};
         };
 
         template <i32... kDirs>
@@ -126,8 +125,6 @@ namespace stoat::attacks {
                     } else if (dir > 0) {
                         mask.forwards[f_idx++] = attacks;
                     }
-
-                    mask.all |= attacks;
                 }
 
                 dst[sq.idx()] = mask;
