@@ -185,6 +185,41 @@ namespace stoat::attacks {
         return rookAttacks(sq, occ) | kingAttacks(sq);
     }
 
+    [[nodiscard]] constexpr Bitboard adjacentAttacks(PieceType pt, Square sq, Color c) {
+        assert(pt);
+        assert(sq);
+        assert(c);
+
+        switch (pt.raw()) {
+            case PieceTypes::kPawn.raw():
+            case PieceTypes::kLance.raw():
+                return pawnAttacks(sq, c);
+            case PieceTypes::kPromotedPawn.raw():
+                return goldAttacks(sq, c);
+            case PieceTypes::kKnight.raw():
+                return knightAttacks(sq, c);
+            case PieceTypes::kPromotedLance.raw():
+                return goldAttacks(sq, c);
+            case PieceTypes::kPromotedKnight.raw():
+                return goldAttacks(sq, c);
+            case PieceTypes::kSilver.raw():
+                return silverAttacks(sq, c);
+            case PieceTypes::kPromotedSilver.raw():
+                return goldAttacks(sq, c);
+            case PieceTypes::kGold.raw():
+                return goldAttacks(sq, c);
+            case PieceTypes::kBishop.raw():
+            case PieceTypes::kRook.raw():
+                return Bitboards::kEmpty;
+            case PieceTypes::kPromotedBishop.raw():
+            case PieceTypes::kPromotedRook.raw():
+            case PieceTypes::kKing.raw():
+                return kingAttacks(sq);
+        }
+
+        __builtin_unreachable();
+    }
+
     [[nodiscard]] constexpr Bitboard pieceAttacks(PieceType pt, Square sq, Color c, Bitboard occ) {
         assert(pt);
         assert(sq);
