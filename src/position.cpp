@@ -307,7 +307,7 @@ namespace stoat {
         newPos.m_stm = newPos.m_stm.flip();
         newPos.m_keys.flipStm();
 
-        newPos.updateAttacks();
+        newPos.updateAttacks(move.to());
 
         if (newPos.isInCheck()) {
             ++newPos.m_consecutiveChecks[newPos.stm().idx()];
@@ -958,9 +958,33 @@ namespace stoat {
 
     void Position::updateAttacks() {
         const auto stm = this->stm();
+        m_checkers = attackersTo(kingSq(stm), stm.flip());
+
+        updateSlidingCheckersAndPins();
+    }
+
+    void Position::updateAttacks(Square to) {
+        assert(to);
+
+        const auto stm = this->stm();
+        const auto nstm = this->stm().flip();
+        const auto pc = pieceOn(to);
+
+        assert(pc.color() == nstm);
+
+        m_checkers = Bitboards::kEmpty;
+
+        if (!(attacks::adjacentAttacks(pc.type(), to, nstm) & kingSq(stm).bit()).empty()) {
+            m_checkers |= to.bit();
+        }
+
+        updateSlidingCheckersAndPins();
+    }
+
+    void Position::updateSlidingCheckersAndPins() {
+        const auto stm = this->stm();
         const auto nstm = this->stm().flip();
 
-        m_checkers = attackersTo(kingSq(stm), nstm);
         m_pinned = Bitboards::kEmpty;
 
         const auto stmKing = kingSq(stm);
@@ -979,7 +1003,9 @@ namespace stoat {
             const auto potentialAttacker = potentialAttackers.popLsb();
             const auto maybePinned = stmOcc & rayBetween(potentialAttacker, stmKing);
 
-            if (maybePinned.one()) {
+            if (maybePinned.empty()) {
+                m_checkers |= potentialAttacker.bit();
+            } else if (maybePinned.one()) {
                 m_pinned |= maybePinned;
             }
         }

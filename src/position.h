@@ -296,6 +296,8 @@ namespace stoat {
         void dropPiece(Square sq, Piece piece, eval::nnue::NnueUpdates& nnueUpdates);
 
         void updateAttacks();
+        void updateAttacks(Square to);
+        void updateSlidingCheckersAndPins();
 
         void regen();
     };
