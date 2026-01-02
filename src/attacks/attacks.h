@@ -190,37 +190,23 @@ namespace stoat::attacks {
         assert(sq);
         assert(c);
 
-        switch (pt.raw()) {
-            case PieceTypes::kPawn.raw():
-                return pawnAttacks(sq, c);
-            case PieceTypes::kPromotedPawn.raw():
-                return goldAttacks(sq, c);
-            case PieceTypes::kLance.raw():
-                return lanceAttacks(sq, c, occ);
-            case PieceTypes::kKnight.raw():
-                return knightAttacks(sq, c);
-            case PieceTypes::kPromotedLance.raw():
-                return goldAttacks(sq, c);
-            case PieceTypes::kPromotedKnight.raw():
-                return goldAttacks(sq, c);
-            case PieceTypes::kSilver.raw():
-                return silverAttacks(sq, c);
-            case PieceTypes::kPromotedSilver.raw():
-                return goldAttacks(sq, c);
-            case PieceTypes::kGold.raw():
-                return goldAttacks(sq, c);
-            case PieceTypes::kBishop.raw():
-                return bishopAttacks(sq, occ);
-            case PieceTypes::kRook.raw():
-                return rookAttacks(sq, occ);
-            case PieceTypes::kPromotedBishop.raw():
-                return promotedBishopAttacks(sq, occ);
-            case PieceTypes::kPromotedRook.raw():
-                return promotedRookAttacks(sq, occ);
-            case PieceTypes::kKing.raw():
-                return kingAttacks(sq);
-        }
+        constexpr Bitboard (*attacksFn[])(Square, Color, Bitboard) = {
+            [](Square s, Color c, Bitboard _) { return pawnAttacks(s, c); },
+            [](Square s, Color c, Bitboard _) { return goldAttacks(s, c); },
+            [](Square s, Color c, Bitboard o) { return lanceAttacks(s, c, o); },
+            [](Square s, Color c, Bitboard _) { return knightAttacks(s, c); },
+            [](Square s, Color c, Bitboard _) { return goldAttacks(s, c); },
+            [](Square s, Color c, Bitboard _) { return goldAttacks(s, c); },
+            [](Square s, Color c, Bitboard _) { return silverAttacks(s, c); },
+            [](Square s, Color c, Bitboard _) { return goldAttacks(s, c); },
+            [](Square s, Color c, Bitboard _) { return goldAttacks(s, c); },
+            [](Square s, Color _, Bitboard o) { return bishopAttacks(s, o); },
+            [](Square s, Color _, Bitboard o) { return rookAttacks(s, o); },
+            [](Square s, Color _, Bitboard o) { return bishopAttacks(s, o) | kingAttacks(s); },
+            [](Square s, Color _, Bitboard o) { return rookAttacks(s, o) | kingAttacks(s); },
+            [](Square s, Color _, [[maybe_unused]] Bitboard __) { return kingAttacks(s); },
+        };
 
-        __builtin_unreachable();
+        return attacksFn[pt.idx()](sq, c, occ);
     }
 } // namespace stoat::attacks
