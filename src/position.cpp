@@ -967,17 +967,11 @@ namespace stoat {
         assert(to);
 
         const auto stm = this->stm();
-        const auto nstm = this->stm().flip();
         const auto pc = pieceOn(to);
 
-        assert(pc.color() == nstm);
+        assert(pc.color() == stm.flip());
 
-        m_checkers = Bitboards::kEmpty;
-
-        if (!(attacks::adjacentAttacks(pc.type(), to, nstm) & kingSq(stm).bit()).empty()) {
-            m_checkers |= to.bit();
-        }
-
+        m_checkers = attacks::adjacentAttacks(pc.type(), kingSq(stm), stm) & to.bit();
         updateSlidingCheckersAndPins();
     }
 
