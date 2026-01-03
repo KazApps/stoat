@@ -547,21 +547,8 @@ namespace stoat {
             }
 
             // pawn drop mate rule (delivering mate by dropping a pawn is illegal)
-            if (move.dropPiece() == PieceTypes::kPawn) {
-                const auto dropBb = Bitboard::fromSquare(move.to());
-                if (!(dropBb.shiftNorthRelative(stm) & pieceBb(PieceTypes::kKing, nstm)).empty()) {
-                    // this pawn drop gives check - ensure it's not mate
-                    // slow and cursed, but rare
-                    const auto newPos = applyMove(move);
-
-                    assert(newPos.checkers().one());
-                    assert(newPos.checkers().getSquare(move.to()));
-
-                    movegen::MoveList newMoves{};
-                    movegen::generateAll<false>(newMoves, newPos);
-
-                    return std::ranges::any_of(newMoves, [&](Move newMove) { return newPos.isLegal(newMove); });
-                }
+            if (move.dropPiece() == PieceTypes::kPawn && isUchifuzume(move)) {
+                return false;
             }
 
             // impossible to put yourself in check by dropping a piece, no cannons here
@@ -596,6 +583,71 @@ namespace stoat {
         }
 
         // :3
+        return true;
+    }
+
+    bool Position::isUchifuzume(Move move) const {
+        assert(pieceOn(move.from()).type() == PieceTypes::kPawn);
+
+        const auto stm = this->stm();
+        const auto nstm = this->stm().flip();
+
+        const auto sq = move.to();
+        const auto ksq = kingSq(nstm);
+        const auto dropBb = Bitboard::fromSquare(sq);
+
+        if ((dropBb.shiftNorthRelative(stm) & ksq.bit()).empty()) {
+            return false;
+        }
+
+        if (attackersTo(sq, stm).empty()) {
+            return false;
+        }
+
+        const auto defenders = [&] {
+            Bitboard defenders{};
+            const auto occ = occupancy();
+
+            const auto horses = pieceBb(PieceTypes::kPromotedBishop, nstm);
+            const auto dragons = pieceBb(PieceTypes::kPromotedRook, nstm);
+
+            const auto knights = pieceBb(PieceTypes::kKnight, nstm);
+            defenders |= knights & attacks::knightAttacks(sq, stm);
+
+            const auto silvers = pieceBb(PieceTypes::kSilver, nstm);
+            defenders |= silvers & attacks::silverAttacks(sq, stm);
+
+            const auto golds = pieceBb(PieceTypes::kGold, nstm) | pieceBb(PieceTypes::kPromotedPawn, nstm)
+                             | pieceBb(PieceTypes::kPromotedLance, nstm) | pieceBb(PieceTypes::kPromotedKnight, nstm)
+                             | pieceBb(PieceTypes::kPromotedSilver, nstm);
+            defenders |= golds & attacks::goldAttacks(sq, stm);
+
+            const auto bishops = horses | pieceBb(PieceTypes::kBishop, nstm);
+            defenders |= bishops & attacks::bishopAttacks(sq, occ);
+
+            const auto rooks = dragons | pieceBb(PieceTypes::kRook, nstm);
+            defenders |= rooks & attacks::rookAttacks(sq, occ);
+
+            return defenders;
+        }();
+
+        const auto pinned = this->pinned(nstm);
+
+        if (!(defenders & (~pinned | Bitboards::kFiles[sq.file()])).empty()) {
+            return false;
+        }
+
+        auto kingEscapes = attacks::kingAttacks(ksq) & ~colorBb(nstm) ^ sq.bit();
+        const auto occ = occupancy() ^ sq.bit();
+
+        while (!kingEscapes.empty()) {
+            const auto to = kingEscapes.popLsb();
+
+            if (attackersTo(to, stm, occ).empty()) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -665,11 +717,14 @@ namespace stoat {
     }
 
     Bitboard Position::attackersTo(Square sq, Color attacker) const {
+        return attackersTo(sq, attacker, occupancy());
+    }
+
+    Bitboard Position::attackersTo(Square sq, Color attacker, Bitboard occ) const {
         assert(sq);
         assert(attacker);
 
         const auto defender = attacker.flip();
-        const auto occ = occupancy();
 
         Bitboard attackers{};
 
