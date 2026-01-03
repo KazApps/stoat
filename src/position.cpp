@@ -994,6 +994,7 @@ namespace stoat {
         auto potentialAttackers = (attacks::lanceAttacks(defenderKing, defender, attackerOcc) & attackerLances)
                                 | (attacks::bishopAttacks(defenderKing, attackerOcc) & attackerBishops)
                                 | (attacks::rookAttacks(defenderKing, attackerOcc) & attackerRooks);
+
         while (!potentialAttackers.empty()) {
             const auto potentialAttacker = potentialAttackers.popLsb();
             const auto maybePinned = defenderOcc & rayBetween(potentialAttacker, defenderKing);

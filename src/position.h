@@ -246,6 +246,7 @@ namespace stoat {
         }
 
         [[nodiscard]] Bitboard attackersTo(Square sq, Color attacker) const;
+        [[nodiscard]] Bitboard attackersTo(Square sq, Color attacker, Bitboard occ) const;
 
         [[nodiscard]] Bitboard allAttackersTo(Square sq, Bitboard occ) const;
 
