@@ -544,11 +544,6 @@ namespace stoat::protocol {
         }
         fmt::println("");
 
-        fmt::print("Pinned:");
-        auto pinned = m_state.pos.pinned();
-        while (!pinned.empty()) {
-            fmt::print(" {}", pinned.popLsb());
-        }
         fmt::println("");
 
         const auto staticEval = eval::staticEvalOnce(m_state.pos);
