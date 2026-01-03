@@ -553,7 +553,9 @@ namespace stoat {
             // pawn drop mate rule (delivering mate by dropping a pawn is illegal)
             if (move.dropPiece() == PieceTypes::kPawn) {
                 const auto dropBb = Bitboard::fromSquare(move.to());
-                if (!(dropBb.shiftNorthRelative(stm) & pieceBb(PieceTypes::kKing, nstm)).empty()) {
+                if (!(dropBb.shiftNorthRelative(stm) & pieceBb(PieceTypes::kKing, nstm)).empty()
+                    && !attackersTo(move.to(), stm).empty())
+                {
                     // this pawn drop gives check - ensure it's not mate
                     // slow and cursed, but rare
                     const auto newPos = applyMove(move);
