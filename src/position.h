@@ -236,6 +236,7 @@ namespace stoat {
 
         [[nodiscard]] bool isPseudolegal(Move move) const;
         [[nodiscard]] bool isLegal(Move move) const;
+        [[nodiscard]] bool isUchifuzume(Move move) const;
 
         [[nodiscard]] bool isCapture(Move move) const;
 
