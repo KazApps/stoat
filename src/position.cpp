@@ -559,6 +559,10 @@ namespace stoat {
                     return true;
                 }
 
+                if (attackersTo(sq, stm).empty()) {
+                    return true;
+                }
+
                 const auto defenders = [&] {
                     Bitboard defenders{};
                     const auto occ = occupancy();
@@ -593,7 +597,7 @@ namespace stoat {
                     return true;
                 }
 
-                auto kingEscapes = attacks::kingAttacks(ksq) & ~colorBb(nstm);
+                auto kingEscapes = attacks::kingAttacks(ksq) & ~colorBb(nstm) ^ sq.bit();
                 const auto occ = occupancy() ^ sq.bit();
 
                 while (!kingEscapes.empty()) {
