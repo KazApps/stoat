@@ -552,7 +552,7 @@ namespace stoat::protocol {
         }
         fmt::println("");
         fmt::print("White pinned:");
-        while (!blackPinned.empty()) {
+        while (!whitePinned.empty()) {
             fmt::print(" {}", whitePinned.popLsb());
         }
         fmt::println("");
