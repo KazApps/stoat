@@ -32,10 +32,10 @@ add_executable(stoat-native 3rdparty/fmt/src/format.cc src/main.cpp src/types.h 
 	src/limit.cpp src/bench.h src/bench.cpp src/thread.h src/thread.cpp src/attacks/sliders/magics.h
 	src/attacks/sliders/black_magic.h src/attacks/sliders/black_magic.cpp src/ttable.h src/ttable.cpp src/util/align.h
 	src/util/range.h src/movepick.h src/movepick.cpp src/see.h src/see.cpp src/datagen/format/format.h
-	src/datagen/format/stoatpack.h src/datagen/format/stoatpack.cpp src/datagen/format/stoatformat.h
-	src/datagen/format/stoatformat.cpp src/util/u4array.h src/datagen/datagen.h src/datagen/datagen.cpp src/util/ctrlc.h
-	src/util/ctrlc.cpp src/eval/arch.h src/eval/nnue.h src/eval/nnue.cpp src/history.h src/history.cpp src/stats.h
-	src/stats.cpp src/correction.h src/correction.cpp
+	src/datagen/format/stoatpack.h src/datagen/format/stoatformat.h src/datagen/format/stoatformat.cpp
+	src/util/u4array.h src/datagen/datagen.h src/datagen/datagen.cpp src/util/ctrlc.h src/util/ctrlc.cpp src/eval/arch.h
+	src/eval/nnue.h src/eval/nnue.cpp src/history.h src/history.cpp src/stats.h src/stats.cpp src/correction.h
+	src/correction.cpp
 )
 
 target_include_directories(stoat-native PUBLIC 3rdparty/fmt/include)

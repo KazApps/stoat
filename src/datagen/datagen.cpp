@@ -171,7 +171,7 @@ namespace stoat::datagen {
             thread.maxDepth = kMaxDepth;
             thread.datagen = true;
 
-            format::Stoatpack format{};
+            format::Stoatpack2 format{};
 
             usize gameCount{};
             usize totalPositions{};
@@ -219,6 +219,8 @@ namespace stoat::datagen {
                     const auto& rootMove = thread.pvMove();
 
                     const auto blackScore = pos.stm() == Colors::kBlack ? rootMove.score : -rootMove.score;
+                    const auto blackStaticEval =
+                        pos.stm() == Colors::kBlack ? thread.stack[0].staticEval : -thread.stack[0].staticEval;
                     const auto move = rootMove.pv.moves[0];
 
                     if (move.isNull()) {
@@ -298,7 +300,7 @@ namespace stoat::datagen {
                         outcome = format::Outcome::kDraw;
                     }
 
-                    format.push(move, blackScore);
+                    format.push(move, blackStaticEval, blackScore);
                 }
 
                 assert(outcome);

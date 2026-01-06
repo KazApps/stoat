@@ -169,6 +169,8 @@ namespace stoat::tt {
     void TTable::clear(u32 threadCount) {
         assert(!m_pendingInit);
 
+        threadCount = std::max<u32>(threadCount, 1);
+
         std::vector<std::thread> threads{};
         threads.reserve(threadCount);
 

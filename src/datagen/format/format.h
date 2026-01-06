@@ -41,7 +41,7 @@ namespace stoat::datagen::format {
         //TODO shogi960, arbitrary position
 
         virtual void pushUnscored(Move move) = 0;
-        virtual void push(Move move, Score score) = 0;
+        virtual void push(Move move, Score staticEval, Score searchedScore) = 0;
 
         virtual usize writeAllWithOutcome(std::ostream& stream, Outcome outcome) = 0;
     };
