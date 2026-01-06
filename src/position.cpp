@@ -575,7 +575,7 @@ namespace stoat {
         if (pieceOn(move.from()).type() == PieceTypes::kKing) {
             // remove the king to account for moving away from the checker
             const auto kinglessOcc = occupancy() ^ pieceBb(PieceTypes::kKing, stm);
-            return !isAttacked(move.to(), nstm, kinglessOcc);
+            return attackersTo(move.to(), nstm, kinglessOcc).empty();
         } else if (m_checkers.multiple()) {
             // multiple checks can only be evaded with a king move
             return false;
@@ -607,73 +607,11 @@ namespace stoat {
         return pieceOn(move.to()) != Pieces::kNone;
     }
 
-    bool Position::isAttacked(Square sq, Color attacker, Bitboard occ) const {
-        assert(sq);
-        assert(attacker);
-
-        const auto c = attacker.flip();
-
-        const auto horses = pieceBb(PieceTypes::kPromotedBishop, attacker);
-        const auto dragons = pieceBb(PieceTypes::kPromotedRook, attacker);
-
-        const auto rooks = dragons | pieceBb(PieceTypes::kRook, attacker);
-
-        if (const auto pawns = pieceBb(PieceTypes::kPawn, attacker); !(pawns & attacks::pawnAttacks(sq, c)).empty()) {
-            return true;
-        }
-
-        if (const auto knights = pieceBb(PieceTypes::kKnight, attacker);
-            !(knights & attacks::knightAttacks(sq, c)).empty())
-        {
-            return true;
-        }
-
-        if (const auto silvers = pieceBb(PieceTypes::kSilver, attacker);
-            !(silvers & attacks::silverAttacks(sq, c)).empty())
-        {
-            return true;
-        }
-
-        if (const auto golds = pieceBb(PieceTypes::kGold, attacker) | pieceBb(PieceTypes::kPromotedPawn, attacker)
-                             | pieceBb(PieceTypes::kPromotedLance, attacker)
-                             | pieceBb(PieceTypes::kPromotedKnight, attacker)
-                             | pieceBb(PieceTypes::kPromotedSilver, attacker);
-            !(golds & attacks::goldAttacks(sq, c)).empty())
-        {
-            return true;
-        }
-
-        if (const auto kings = horses | dragons | pieceBb(PieceTypes::kKing, attacker);
-            !(kings & attacks::kingAttacks(sq)).empty())
-        {
-            return true;
-        }
-
-        if (const auto lances = rooks | pieceBb(PieceTypes::kLance, attacker);
-            !(lances & attacks::lanceAttacks(sq, c, occ)).empty())
-        {
-            return true;
-        }
-
-        if (const auto bishops = horses | pieceBb(PieceTypes::kBishop, attacker);
-            !(bishops & attacks::bishopAttacks(sq, occ)).empty())
-        {
-            return true;
-        }
-
-        if (!(rooks & attacks::rookAttacks(sq, occ)).empty()) {
-            return true;
-        }
-
-        return false;
-    }
-
-    Bitboard Position::attackersTo(Square sq, Color attacker) const {
+    Bitboard Position::attackersTo(Square sq, Color attacker, Bitboard occ) const {
         assert(sq);
         assert(attacker);
 
         const auto defender = attacker.flip();
-        const auto occ = occupancy();
 
         Bitboard attackers{};
 

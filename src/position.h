@@ -239,13 +239,11 @@ namespace stoat {
 
         [[nodiscard]] bool isCapture(Move move) const;
 
-        [[nodiscard]] bool isAttacked(Square sq, Color attacker, Bitboard occ) const;
+        [[nodiscard]] Bitboard attackersTo(Square sq, Color attacker, Bitboard occ) const;
 
-        [[nodiscard]] bool isAttacked(Square sq, Color attacker) const {
-            return isAttacked(sq, attacker, occupancy());
+        [[nodiscard]] Bitboard attackersTo(Square sq, Color attacker) const {
+            return attackersTo(sq, attacker, occupancy());
         }
-
-        [[nodiscard]] Bitboard attackersTo(Square sq, Color attacker) const;
 
         [[nodiscard]] Bitboard allAttackersTo(Square sq, Bitboard occ) const;
 
