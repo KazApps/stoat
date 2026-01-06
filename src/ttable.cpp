@@ -174,7 +174,7 @@ namespace stoat::tt {
         std::vector<std::thread> threads{};
         threads.reserve(threadCount);
 
-        fmt::println("info string Clearing the TT with {} threads", threadCount);
+        // fmt::println("info string Clearing the TT with {} threads", threadCount);
 
         const auto chunkSize = (m_entryCount + threadCount - 1) / threadCount;
 
