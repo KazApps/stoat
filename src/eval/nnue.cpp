@@ -304,8 +304,19 @@ namespace stoat::eval::nnue {
         }
 
         inline void addSub(std::span<const i16, kL1Size> src, std::span<i16, kL1Size> dst, u32 add, u32 sub) {
-            for (u32 i = 0; i < kL1Size; ++i) {
-                dst[i] = src[i] + s_network.ftWeights[add][i] - s_network.ftWeights[sub][i];
+            const i16* wAdd = s_network.ftWeights[add].data();
+            const i16* wSub = s_network.ftWeights[sub].data();
+
+            constexpr u32 kStride = sizeof(__m256i) / sizeof(i16);
+
+            for (u32 i = 0; i < kL1Size; i += kStride) {
+                const auto vSrc = load(&src[i]);
+                const auto vAdd = load(&wAdd[i]);
+                const auto vSub = load(&wSub[i]);
+                auto out = _mm256_add_epi16(vSrc, vAdd);
+                out = _mm256_sub_epi16(out, vSub);
+
+                store(&dst[i], out);
             }
         }
 
@@ -317,9 +328,25 @@ namespace stoat::eval::nnue {
             u32 sub1,
             u32 sub2
         ) {
-            for (u32 i = 0; i < kL1Size; ++i) {
-                dst[i] = src[i] + s_network.ftWeights[add1][i] - s_network.ftWeights[sub1][i]
-                       + s_network.ftWeights[add2][i] - s_network.ftWeights[sub2][i];
+            const i16* wAdd1 = s_network.ftWeights[add1].data();
+            const i16* wAdd2 = s_network.ftWeights[add2].data();
+            const i16* wSub1 = s_network.ftWeights[sub1].data();
+            const i16* wSub2 = s_network.ftWeights[sub2].data();
+
+            constexpr u32 kStride = sizeof(__m256i) / sizeof(i16);
+
+            for (u32 i = 0; i < kL1Size; i += kStride) {
+                const auto vSrc = load(&src[i]);
+                const auto vAdd1 = load(&wAdd1[i]);
+                const auto vAdd2 = load(&wAdd2[i]);
+                const auto vSub1 = load(&wSub1[i]);
+                const auto vSub2 = load(&wSub2[i]);
+                auto out = _mm256_add_epi16(vSrc, vAdd1);
+                out = _mm256_sub_epi16(out, vSub1);
+                out = _mm256_add_epi16(out, vAdd2);
+                out = _mm256_sub_epi16(out, vSub2);
+
+                store(&dst[i], out);
             }
         }
 
