@@ -581,7 +581,7 @@ namespace stoat {
             return false;
         }
 
-        if (m_pinned.getSquare(move.from())) {
+        if (pinned(stm).getSquare(move.from())) {
             const auto pinRay = rayIntersecting(move.from(), stmKing);
             if (!pinRay.getSquare(move.to())) {
                 return false;
@@ -976,31 +976,36 @@ namespace stoat {
     }
 
     void Position::updateSlidingCheckersAndPins() {
-        const auto stm = this->stm();
-        const auto nstm = this->stm().flip();
+        updateSidedSlidingCheckersAndPins(Colors::kBlack);
+        updateSidedSlidingCheckersAndPins(Colors::kWhite);
+    }
 
-        m_pinned = Bitboards::kEmpty;
+    void Position::updateSidedSlidingCheckersAndPins(Color defender) {
+        const auto attacker = defender.flip();
 
-        const auto stmKing = kingSq(stm);
+        m_pinned[defender.idx()] = Bitboards::kEmpty;
 
-        const auto stmOcc = colorBb(stm);
-        const auto nstmOcc = colorBb(nstm);
+        const auto defenderKing = kingSq(defender);
 
-        const auto nstmLances = pieceBb(PieceTypes::kLance, nstm);
-        const auto nstmBishops = pieceBb(PieceTypes::kBishop, nstm) | pieceBb(PieceTypes::kPromotedBishop, nstm);
-        const auto nstmRooks = pieceBb(PieceTypes::kRook, nstm) | pieceBb(PieceTypes::kPromotedRook, nstm);
+        const auto defenderOcc = colorBb(defender);
+        const auto attackerOcc = colorBb(attacker);
 
-        auto potentialAttackers = (attacks::lanceAttacks(stmKing, stm, nstmOcc) & nstmLances)
-                                | (attacks::bishopAttacks(stmKing, nstmOcc) & nstmBishops)
-                                | (attacks::rookAttacks(stmKing, nstmOcc) & nstmRooks);
+        const auto attackerLances = pieceBb(PieceTypes::kLance, attacker);
+        const auto attackerBishops =
+            pieceBb(PieceTypes::kBishop, attacker) | pieceBb(PieceTypes::kPromotedBishop, attacker);
+        const auto attackerRooks = pieceBb(PieceTypes::kRook, attacker) | pieceBb(PieceTypes::kPromotedRook, attacker);
+
+        auto potentialAttackers = (attacks::lanceAttacks(defenderKing, defender, attackerOcc) & attackerLances)
+                                | (attacks::bishopAttacks(defenderKing, attackerOcc) & attackerBishops)
+                                | (attacks::rookAttacks(defenderKing, attackerOcc) & attackerRooks);
         while (!potentialAttackers.empty()) {
             const auto potentialAttacker = potentialAttackers.popLsb();
-            const auto maybePinned = stmOcc & rayBetween(potentialAttacker, stmKing);
+            const auto maybePinned = defenderOcc & rayBetween(potentialAttacker, defenderKing);
 
-            if (maybePinned.empty()) {
+            if (defender == stm() && maybePinned.empty()) {
                 m_checkers |= potentialAttacker.bit();
             } else if (maybePinned.one()) {
-                m_pinned |= maybePinned;
+                m_pinned[defender.idx()] |= maybePinned;
             }
         }
     }
