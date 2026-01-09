@@ -319,6 +319,8 @@ namespace stoat {
     }
 
     Position Position::applyNullMove() const {
+        assert(!isInCheck());
+
         auto newPos = *this;
 
         ++newPos.m_moveCount;
@@ -326,7 +328,8 @@ namespace stoat {
         newPos.m_stm = newPos.m_stm.flip();
         newPos.m_keys.flipStm();
 
-        newPos.updateAttacks();
+        newPos.m_checkers = Bitboards::kEmpty;
+        newPos.updateSlidingCheckersAndPins();
 
         return newPos;
     }
