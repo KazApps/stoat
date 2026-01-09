@@ -55,7 +55,6 @@ namespace stoat {
         // [improving][depth][move index]
         const auto s_lmrTable = [] {
             constexpr f64 kBase = 0.5;
-            constexpr f64 kDivisor = 2.5;
 
             util::MultiArray<i32, 2, kMaxDepth, kLmrTableMoves> reductions{};
 
@@ -66,7 +65,7 @@ namespace stoat {
                         const auto lnMoveNumber = std::log(static_cast<f64>(moveNumber));
 
                         reductions[improving][depth][moveNumber] =
-                            static_cast<i32>(kBase + lnDepth * lnMoveNumber / (kDivisor + improving / 2.0));
+                            static_cast<i32>(kBase + lnDepth * lnMoveNumber / (improving + 2));
                     }
                 }
             }
