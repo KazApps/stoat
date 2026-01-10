@@ -50,7 +50,7 @@ namespace stoat {
             return result;
         }();
 
-        constexpr usize kLmrTableMoves = 64;
+        constexpr usize kLmrTableMoves = 256;
 
         // [depth][move index]
         const auto s_lmrTable = [] {
