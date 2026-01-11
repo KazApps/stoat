@@ -52,8 +52,8 @@ namespace stoat::tt {
         void resize(usize mib);
         bool finalize(u32 threadCount = 1);
 
-        bool probe(ProbedEntry& dst, u64 key, i32 ply) const;
-        void put(u64 key, Score score, Move move, i32 depth, i32 ply, Flag flag, bool pv);
+        bool probe(ProbedEntry& dst, u128 key, i32 ply) const;
+        void put(u128 key, Score score, Move move, i32 depth, i32 ply, Flag flag, bool pv);
 
         inline void age() {
             m_age = (m_age + 1) % Entry::kAgeCycle;
@@ -63,7 +63,7 @@ namespace stoat::tt {
 
         [[nodiscard]] u32 fullPermille() const;
 
-        inline void prefetch(u64 key) {
+        inline void prefetch(u128 key) {
             __builtin_prefetch(&m_entries[index(key)]);
         }
 
@@ -110,8 +110,9 @@ namespace stoat::tt {
 
         u32 m_age{};
 
-        [[nodiscard]] constexpr usize index(u64 key) const {
-            return static_cast<usize>((static_cast<u128>(key) * static_cast<u128>(m_entryCount)) >> 64);
+        [[nodiscard]] constexpr usize index(u128 key) const {
+            const auto [high, low] = fromU128(key);
+            return static_cast<usize>(((high ^ low) * static_cast<u128>(m_entryCount)) >> 64);
         }
     };
 } // namespace stoat::tt
