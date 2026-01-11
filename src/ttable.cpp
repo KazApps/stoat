@@ -147,8 +147,7 @@ namespace stoat::tt {
         auto& slot = m_entries[index(key)];
         auto entry = slot;
 
-        const bool replace =
-            flag == Flag::kExact || packedKey != entry.key || entry.age() != m_age || depth + 4 > entry.depth;
+        const bool replace = packedKey != entry.key || entry.age() != m_age || depth + 4 > entry.depth;
 
         if (!replace) {
             return;
