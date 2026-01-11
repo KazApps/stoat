@@ -825,7 +825,7 @@ namespace stoat {
                 if (score > alpha && reduced < newDepth) {
                     score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
                     if (!pos.isCapture(move) && score >= beta) {
-                        const auto bonus = historyBonus(ply);
+                        const auto bonus = historyBonus((newDepth * 3 + ply) / 4);
                         thread.history.updateNonCaptureConthistScore(thread.conthist, ply, pos, move, bonus);
                     }
                 }
@@ -913,8 +913,8 @@ namespace stoat {
         }
 
         if (bestMove) {
-            const auto historyPly = ply + (!pos.isInCheck() && curr.staticEval <= bestScore);
-            const auto bonus = historyBonus(historyPly);
+            const auto historyDepth = depth + (!pos.isInCheck() && curr.staticEval <= bestScore);
+            const auto bonus = historyBonus((historyDepth * 3 + ply) / 4);
 
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
