@@ -913,8 +913,7 @@ namespace stoat {
         }
 
         if (bestMove) {
-            const auto historyPly = ply + (!pos.isInCheck() && curr.staticEval <= bestScore);
-            const auto bonus = historyBonus(historyPly);
+            const auto bonus = historyBonus(ply);
 
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
