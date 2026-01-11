@@ -52,7 +52,7 @@ namespace stoat::tt {
             }
         }
 
-        [[nodiscard]] constexpr u16 packEntryKey(u64 key) {
+        [[nodiscard]] constexpr u16 packEntryKey(u128 key) {
             return static_cast<u16>(key);
         }
     } // namespace
@@ -118,7 +118,7 @@ namespace stoat::tt {
         return true;
     }
 
-    bool TTable::probe(ProbedEntry& dst, u64 key, i32 ply) const {
+    bool TTable::probe(ProbedEntry& dst, u128 key, i32 ply) const {
         assert(!m_pendingInit);
 
         const auto entry = m_entries[index(key)];
@@ -136,7 +136,7 @@ namespace stoat::tt {
         return false;
     }
 
-    void TTable::put(u64 key, Score score, Move move, i32 depth, i32 ply, Flag flag, bool pv) {
+    void TTable::put(u128 key, Score score, Move move, i32 depth, i32 ply, Flag flag, bool pv) {
         assert(!m_pendingInit);
 
         assert(depth >= 0);
