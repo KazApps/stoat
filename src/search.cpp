@@ -943,7 +943,7 @@ namespace stoat {
                     || (ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval)))
             {
-                thread.corrhist.update(pos, depth, bestScore, curr.staticEval, complexity);
+                thread.corrhist.update(pos, ply, bestScore, curr.staticEval, complexity);
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
