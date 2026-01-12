@@ -631,7 +631,7 @@ namespace stoat {
                 return curr.staticEval > thread.stack[ply - 2].staticEval;
             }
             if (ply > 3 && thread.stack[ply - 4].staticEval != kScoreNone) {
-                return curr.staticEval > thread.stack[ply - 4].staticEval;
+                return curr.staticEval > thread.stack[ply - 4].staticEval + 50;
             }
             return false;
         }();
