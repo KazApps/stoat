@@ -801,7 +801,7 @@ namespace stoat {
                 r += !improving;
                 r -= history / 8192;
                 r += expectedCutnode * 3;
-                r += std::min(complexity, 128) / 32;
+                r -= std::min(complexity, 128) / 32;
 
                 if (pos.isInCheck()) {
                     r -= 1 + (dist == 1);
