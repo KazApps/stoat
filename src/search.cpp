@@ -604,8 +604,11 @@ namespace stoat {
                 --depth;
             }
 
-            curr.staticEval =
-                pos.isInCheck() ? kScoreNone : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            if (pos.isInCheck()) {
+                curr.staticEval = ply > 1 ? thread.stack[ply - 2].staticEval : kScoreNone;
+            } else {
+                curr.staticEval = eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            }
         }
 
         const bool ttPv = ttEntry.pv || kPvNode;
