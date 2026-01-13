@@ -791,7 +791,7 @@ namespace stoat {
 
             newDepth += extension;
 
-            if (depth >= 2 && legalMoves >= 3 + 2 * kRootNode - ply / 8 && !givesCheck
+            if (depth >= 2 && legalMoves >= 4 + 2 * kRootNode - ply / 4 && !givesCheck
                 && generator.stage() >= MovegenStage::kNonCaptures)
             {
                 auto r = baseLmr;
