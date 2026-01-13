@@ -801,7 +801,7 @@ namespace stoat {
                 r += !improving;
                 r -= history / 8192;
                 r += expectedCutnode * 3;
-                r += newPos.occupancy().popcount() / 16 - 1;
+                r -= (40 - newPos.occupancy().popcount()) / 16;
 
                 if (pos.isInCheck()) {
                     r -= 1 + (dist == 1);
