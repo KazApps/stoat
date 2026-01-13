@@ -749,7 +749,7 @@ namespace stoat {
                     if (score < sBeta) {
                         extension = 1;
                     } else if (sBeta >= beta) {
-                        return sBeta;
+                        return score;
                     } else if (ttEntry.score >= beta) {
                         extension = -1;
                     } else if (expectedCutnode) {
