@@ -59,8 +59,16 @@ namespace stoat {
     } // namespace
 
     void HistoryTables::clear() {
-        std::memset(m_nonCaptureNonDrop.data(), 0, sizeof(m_nonCaptureNonDrop));
-        std::memset(m_drop.data(), 0, sizeof(m_drop));
+        for (auto& entries : m_nonCaptureNonDrop) {
+            for (auto& entry : entries) {
+                entry.fill(-512);
+            }
+        }
+
+        for (auto& entry : m_drop) {
+            entry.fill(-1024);
+        }
+
         std::memset(m_continuation.data(), 0, sizeof(m_continuation));
         std::memset(m_capture.data(), 0, sizeof(m_capture));
     }

@@ -298,6 +298,9 @@ namespace stoat {
             return;
         }
 
+        thread.history.clear();
+        thread.corrhist.clear();
+
         auto currLimiter = std::move(m_limiter);
 
         m_limiter = std::make_unique<limit::CompoundLimiter>();
