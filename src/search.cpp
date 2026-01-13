@@ -747,7 +747,7 @@ namespace stoat {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        extension = 1;
+                        extension = std::min(static_cast<int>(std::log2(sBeta - score) * depth / 64), 3);
                     } else if (sBeta >= beta) {
                         return sBeta;
                     } else if (ttEntry.score >= beta) {
