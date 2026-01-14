@@ -628,10 +628,10 @@ namespace stoat {
                 return false;
             }
             if (ply > 1 && thread.stack[ply - 2].staticEval != kScoreNone) {
-                return curr.staticEval > thread.stack[ply - 2].staticEval;
+                return curr.staticEval > thread.stack[ply - 2].staticEval + 50 * expectedCutnode;
             }
             if (ply > 3 && thread.stack[ply - 4].staticEval != kScoreNone) {
-                return curr.staticEval > thread.stack[ply - 4].staticEval;
+                return curr.staticEval > thread.stack[ply - 4].staticEval + 100 * expectedCutnode;
             }
             return false;
         }();
