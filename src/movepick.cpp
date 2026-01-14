@@ -214,7 +214,8 @@ namespace stoat {
     }
 
     i32 MoveGenerator::scoreNonCapture(Move move) {
-        return m_history.nonCaptureScore(m_continuations, m_ply, m_pos, move);
+        const auto promoted = m_pos.pieceOn(move.from()).type().promoted();
+        return see::pieceValue(promoted) + m_history.nonCaptureScore(m_continuations, m_ply, m_pos, move) / 32;
     }
 
     void MoveGenerator::scoreNonCaptures() {
