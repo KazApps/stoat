@@ -98,8 +98,8 @@ namespace stoat {
                 return kNullMove;
             }
 
-            case MovegenStage::kQsearchGenerateNoisy: {
-                movegen::generateNoisy(m_moves, m_pos);
+            case MovegenStage::kQsearchGenerateCaptures: {
+                movegen::generateCaptures(m_moves, m_pos);
                 m_end = m_moves.size();
 
                 scoreNoisy();
@@ -108,7 +108,7 @@ namespace stoat {
                 [[fallthrough]];
             }
 
-            case MovegenStage::kQsearchNoisy: {
+            case MovegenStage::kQsearchCaptures: {
                 if (const auto move = selectNext([](Move) { return true; })) {
                     return move;
                 }
@@ -117,8 +117,8 @@ namespace stoat {
                 return kNullMove;
             }
 
-            case MovegenStage::kQsearchEvasionsGenerateNoisy: {
-                movegen::generateNoisy(m_moves, m_pos);
+            case MovegenStage::kQsearchEvasionsGenerateCaptures: {
+                movegen::generateCaptures(m_moves, m_pos);
                 m_end = m_moves.size();
 
                 scoreNoisy();
@@ -127,7 +127,7 @@ namespace stoat {
                 [[fallthrough]];
             }
 
-            case MovegenStage::kQsearchEvasionsNoisy: {
+            case MovegenStage::kQsearchEvasionsCaptures: {
                 if (const auto move = selectNext([](Move) { return true; })) {
                     return move;
                 }
@@ -183,7 +183,7 @@ namespace stoat {
     ) {
         assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
-            pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateNoisy : MovegenStage::kQsearchGenerateNoisy;
+            pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
         return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply};
     }
 
@@ -206,7 +206,7 @@ namespace stoat {
         const auto captured = m_pos.pieceOn(move.to());
         const auto pieceValue = captured != Pieces::kNone ? see::pieceValue(captured.type()) : 0;
 
-        return pieceValue + m_history.noisyScore(m_pos, move) / 8;
+        return pieceValue + m_history.noisyScore(m_pos, move) / 4;
     }
 
     void MoveGenerator::scoreNoisy() {
