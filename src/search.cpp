@@ -723,7 +723,7 @@ namespace stoat {
                     generator.skipQuiet();
                 }
 
-                const auto seeThreshold = isNoisy(pos, move) ? -77 * depth * depth : -15 * depth * depth;
+                const auto seeThreshold = pos.isCapture(move) ? -77 * depth * depth : -15 * depth * depth;
                 if (!see::see(pos, move, seeThreshold)) {
                     continue;
                 }
