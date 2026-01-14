@@ -59,21 +59,22 @@ namespace stoat {
     } // namespace
 
     void HistoryTables::clear() {
-        std::memset(m_nonCaptureNonDrop.data(), 0, sizeof(m_nonCaptureNonDrop));
+        std::memset(m_quietNonDrop.data(), 0, sizeof(m_quietNonDrop));
         std::memset(m_drop.data(), 0, sizeof(m_drop));
         std::memset(m_continuation.data(), 0, sizeof(m_continuation));
         std::memset(m_capture.data(), 0, sizeof(m_capture));
+        std::memset(m_capture.data(), 0, sizeof(m_promotion));
     }
 
-    i32 HistoryTables::mainNonCaptureScore(Move move) const {
+    i32 HistoryTables::mainQuietScore(Move move) const {
         if (move.isDrop()) {
             return m_drop[move.dropPiece().idx()][move.to().idx()];
         } else {
-            return m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()];
+            return m_quietNonDrop[move.from().idx()][move.to().idx()];
         }
     }
 
-    i32 HistoryTables::nonCaptureScore(
+    i32 HistoryTables::quietScore(
         std::span<ContinuationSubtable* const> continuations,
         i32 ply,
         const Position& pos,
@@ -84,7 +85,7 @@ namespace stoat {
         if (move.isDrop()) {
             score += m_drop[move.dropPiece().idx()][move.to().idx()];
         } else {
-            score += m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()];
+            score += m_quietNonDrop[move.from().idx()][move.to().idx()];
         }
 
         score += conthistScore(continuations, ply, pos, move, 1);
@@ -94,7 +95,7 @@ namespace stoat {
         return score;
     }
 
-    void HistoryTables::updateNonCaptureScore(
+    void HistoryTables::updateQuietScore(
         std::span<ContinuationSubtable*> continuations,
         i32 ply,
         const Position& pos,
@@ -104,13 +105,13 @@ namespace stoat {
         if (move.isDrop()) {
             m_drop[move.dropPiece().idx()][move.to().idx()].update(bonus);
         } else {
-            m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()].update(bonus);
+            m_quietNonDrop[move.from().idx()][move.to().idx()].update(bonus);
         }
 
-        updateNonCaptureConthistScore(continuations, ply, pos, move, bonus);
+        updateQuietConthistScore(continuations, ply, pos, move, bonus);
     }
 
-    void HistoryTables::updateNonCaptureConthistScore(
+    void HistoryTables::updateQuietConthistScore(
         std::span<ContinuationSubtable*> continuations,
         i32 ply,
         const Position& pos,
@@ -122,11 +123,23 @@ namespace stoat {
         updateConthist(continuations, ply, pos, move, bonus, 3);
     }
 
-    i32 HistoryTables::captureScore(Move move, PieceType captured) const {
-        return m_capture[move.isPromo()][move.from().idx()][move.to().idx()][captured.idx()];
+    i32 HistoryTables::noisyScore(const Position& pos, Move move) const {
+        const auto captured = pos.pieceOn(move.to());
+
+        if (captured != Pieces::kNone) {
+            return m_capture[move.isPromo()][move.from().idx()][move.to().idx()][captured.type().idx()];
+        } else {
+            return m_promotion[pos.pieceOn(move.from()).type().idx()][move.from().idx()][move.to().idx()];
+        }
     }
 
-    void HistoryTables::updateCaptureScore(Move move, PieceType captured, HistoryScore bonus) {
-        m_capture[move.isPromo()][move.from().idx()][move.to().idx()][captured.idx()].update(bonus);
+    void HistoryTables::updateNoisyScore(const Position& pos, Move move, HistoryScore bonus) {
+        const auto captured = pos.pieceOn(move.to());
+
+        if (captured != Pieces::kNone) {
+            m_capture[move.isPromo()][move.from().idx()][move.to().idx()][captured.type().idx()].update(bonus);
+        } else {
+            m_promotion[pos.pieceOn(move.from()).type().idx()][move.from().idx()][move.to().idx()].update(bonus);
+        }
     }
 } // namespace stoat

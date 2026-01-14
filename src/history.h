@@ -102,16 +102,16 @@ namespace stoat {
             }
         }
 
-        [[nodiscard]] i32 mainNonCaptureScore(Move move) const;
+        [[nodiscard]] i32 mainQuietScore(Move move) const;
 
-        [[nodiscard]] i32 nonCaptureScore(
+        [[nodiscard]] i32 quietScore(
             std::span<ContinuationSubtable* const> continuations,
             i32 ply,
             const Position& pos,
             Move move
         ) const;
 
-        void updateNonCaptureScore(
+        void updateQuietScore(
             std::span<ContinuationSubtable*> continuations,
             i32 ply,
             const Position& pos,
@@ -119,7 +119,7 @@ namespace stoat {
             HistoryScore bonus
         );
 
-        void updateNonCaptureConthistScore(
+        void updateQuietConthistScore(
             std::span<ContinuationSubtable*> continuations,
             i32 ply,
             const Position& pos,
@@ -127,12 +127,12 @@ namespace stoat {
             HistoryScore bonus
         );
 
-        [[nodiscard]] i32 captureScore(Move move, PieceType captured) const;
-        void updateCaptureScore(Move move, PieceType captured, HistoryScore bonus);
+        [[nodiscard]] i32 noisyScore(const Position& pos, Move move) const;
+        void updateNoisyScore(const Position& pos, Move move, HistoryScore bonus);
 
     private:
-        // [promo][from][to]
-        util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount> m_nonCaptureNonDrop{};
+        // [from][to]
+        util::MultiArray<HistoryEntry, Squares::kCount, Squares::kCount> m_quietNonDrop{};
         // [dropped piece type][drop square]
         util::MultiArray<HistoryEntry, PieceTypes::kCount, Squares::kCount> m_drop{};
 
@@ -141,5 +141,8 @@ namespace stoat {
 
         // [promo][from][to][captured]
         util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount, PieceTypes::kCount> m_capture{};
+
+        // [moving piece type][from][to]
+        util::MultiArray<HistoryEntry, PieceTypes::kCount, Squares::kCount, Squares::kCount> m_promotion{};
     };
 } // namespace stoat

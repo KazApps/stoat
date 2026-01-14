@@ -30,17 +30,17 @@
 namespace stoat {
     enum class MovegenStage : i32 {
         kTtMove = 0,
-        kGenerateCaptures,
-        kGoodCaptures,
-        kGenerateNonCaptures,
-        kNonCaptures,
-        kBadCaptures,
-        kQsearchGenerateCaptures,
-        kQsearchCaptures,
-        kQsearchEvasionsGenerateCaptures,
-        kQsearchEvasionsCaptures,
-        kQsearchEvasionsGenerateNonCaptures,
-        kQsearchEvasionsNonCaptures,
+        kGenerateNoisy,
+        kGoodNoisy,
+        kGenerateQuiet,
+        kQuiet,
+        kBadNoisy,
+        kQsearchGenerateNoisy,
+        kQsearchNoisy,
+        kQsearchEvasionsGenerateNoisy,
+        kQsearchEvasionsNoisy,
+        kQsearchEvasionsGenerateQuiet,
+        kQsearchEvasionsQuiet,
         kEnd,
     };
 
@@ -61,8 +61,8 @@ namespace stoat {
             return m_stage;
         }
 
-        inline void skipNonCaptures() {
-            m_skipNonCaptures = true;
+        inline void skipQuiet() {
+            m_skipQuiet = true;
         }
 
         [[nodiscard]] static MoveGenerator main(
@@ -90,11 +90,11 @@ namespace stoat {
             i32 ply
         );
 
-        [[nodiscard]] i32 scoreCapture(Move move);
-        void scoreCaptures();
+        [[nodiscard]] i32 scoreNoisy(Move move);
+        void scoreNoisy();
 
-        [[nodiscard]] i32 scoreNonCapture(Move move);
-        void scoreNonCaptures();
+        [[nodiscard]] i32 scoreQuiet(Move move);
+        void scoreQuiet();
 
         [[nodiscard]] usize findNext();
 
@@ -125,11 +125,11 @@ namespace stoat {
         std::span<ContinuationSubtable* const> m_continuations;
         i32 m_ply{};
 
-        bool m_skipNonCaptures{false};
+        bool m_skipQuiet{false};
 
         usize m_idx{};
         usize m_end{};
 
-        usize m_badCapturesEnd{};
+        usize m_badNoisyEnd{};
     };
 } // namespace stoat

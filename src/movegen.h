@@ -32,4 +32,6 @@ namespace stoat::movegen {
     void generateCaptures(MoveList& dst, const Position& pos);
     void generateNonCaptures(MoveList& dst, const Position& pos);
     void generateRecaptures(MoveList& dst, const Position& pos, Square captureSq);
+    void generateNoisy(MoveList& dst, const Position& pos);
+    void generateQuiet(MoveList& dst, const Position& pos);
 } // namespace stoat::movegen

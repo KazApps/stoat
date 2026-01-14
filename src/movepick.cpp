@@ -33,17 +33,17 @@ namespace stoat {
                 [[fallthrough]];
             }
 
-            case MovegenStage::kGenerateCaptures: {
-                movegen::generateCaptures(m_moves, m_pos);
+            case MovegenStage::kGenerateNoisy: {
+                movegen::generateNoisy(m_moves, m_pos);
                 m_end = m_moves.size();
 
-                scoreCaptures();
+                scoreNoisy();
 
                 ++m_stage;
                 [[fallthrough]];
             }
 
-            case MovegenStage::kGoodCaptures: {
+            case MovegenStage::kGoodNoisy: {
                 while (m_idx < m_end) {
                     const auto idx = findNext();
                     const auto move = m_moves[idx];
@@ -56,40 +56,40 @@ namespace stoat {
                         return move;
                     }
 
-                    m_moves[m_badCapturesEnd++] = m_moves[idx];
+                    m_moves[m_badNoisyEnd++] = m_moves[idx];
                 }
 
                 ++m_stage;
                 [[fallthrough]];
             }
 
-            case MovegenStage::kGenerateNonCaptures: {
-                if (!m_skipNonCaptures) {
-                    movegen::generateNonCaptures(m_moves, m_pos);
+            case MovegenStage::kGenerateQuiet: {
+                if (!m_skipQuiet) {
+                    movegen::generateQuiet(m_moves, m_pos);
                     m_end = m_moves.size();
                 }
 
-                scoreNonCaptures();
+                scoreQuiet();
 
                 ++m_stage;
                 [[fallthrough]];
             }
 
-            case MovegenStage::kNonCaptures: {
-                if (!m_skipNonCaptures) {
+            case MovegenStage::kQuiet: {
+                if (!m_skipQuiet) {
                     if (const auto move = selectNext([this](Move move) { return move != m_ttMove; })) {
                         return move;
                     }
                 }
 
                 m_idx = 0;
-                m_end = m_badCapturesEnd;
+                m_end = m_badNoisyEnd;
 
                 ++m_stage;
                 [[fallthrough]];
             }
 
-            case MovegenStage::kBadCaptures: {
+            case MovegenStage::kBadNoisy: {
                 if (const auto move = selectNext<false>([this](auto move) { return move != m_ttMove; })) {
                     return move;
                 }
@@ -98,17 +98,17 @@ namespace stoat {
                 return kNullMove;
             }
 
-            case MovegenStage::kQsearchGenerateCaptures: {
-                movegen::generateCaptures(m_moves, m_pos);
+            case MovegenStage::kQsearchGenerateNoisy: {
+                movegen::generateNoisy(m_moves, m_pos);
                 m_end = m_moves.size();
 
-                scoreCaptures();
+                scoreNoisy();
 
                 ++m_stage;
                 [[fallthrough]];
             }
 
-            case MovegenStage::kQsearchCaptures: {
+            case MovegenStage::kQsearchNoisy: {
                 if (const auto move = selectNext([](Move) { return true; })) {
                     return move;
                 }
@@ -117,17 +117,17 @@ namespace stoat {
                 return kNullMove;
             }
 
-            case MovegenStage::kQsearchEvasionsGenerateCaptures: {
-                movegen::generateCaptures(m_moves, m_pos);
+            case MovegenStage::kQsearchEvasionsGenerateNoisy: {
+                movegen::generateNoisy(m_moves, m_pos);
                 m_end = m_moves.size();
 
-                scoreCaptures();
+                scoreNoisy();
 
                 ++m_stage;
                 [[fallthrough]];
             }
 
-            case MovegenStage::kQsearchEvasionsCaptures: {
+            case MovegenStage::kQsearchEvasionsNoisy: {
                 if (const auto move = selectNext([](Move) { return true; })) {
                     return move;
                 }
@@ -136,20 +136,20 @@ namespace stoat {
                 [[fallthrough]];
             }
 
-            case MovegenStage::kQsearchEvasionsGenerateNonCaptures: {
-                if (!m_skipNonCaptures) {
-                    movegen::generateNonCaptures(m_moves, m_pos);
+            case MovegenStage::kQsearchEvasionsGenerateQuiet: {
+                if (!m_skipQuiet) {
+                    movegen::generateQuiet(m_moves, m_pos);
                     m_end = m_moves.size();
                 }
 
-                scoreNonCaptures();
+                scoreQuiet();
 
                 ++m_stage;
                 [[fallthrough]];
             }
 
-            case MovegenStage::kQsearchEvasionsNonCaptures: {
-                if (!m_skipNonCaptures) {
+            case MovegenStage::kQsearchEvasionsQuiet: {
+                if (!m_skipQuiet) {
                     if (const auto move = selectNext([this](Move move) { return move != m_ttMove; })) {
                         return move;
                     }
@@ -183,7 +183,7 @@ namespace stoat {
     ) {
         assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
-            pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
+            pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateNoisy : MovegenStage::kQsearchGenerateNoisy;
         return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply};
     }
 
@@ -202,24 +202,26 @@ namespace stoat {
             m_continuations{continuations},
             m_ply{ply} {}
 
-    i32 MoveGenerator::scoreCapture(Move move) {
-        const auto captured = m_pos.pieceOn(move.to()).type();
-        return see::pieceValue(captured) + m_history.captureScore(move, captured) / 8;
+    i32 MoveGenerator::scoreNoisy(Move move) {
+        const auto captured = m_pos.pieceOn(move.to());
+        const auto pieceValue = captured != Pieces::kNone ? see::pieceValue(captured.type()) : 0;
+
+        return pieceValue + m_history.noisyScore(m_pos, move) / 8;
     }
 
-    void MoveGenerator::scoreCaptures() {
+    void MoveGenerator::scoreNoisy() {
         for (usize idx = m_idx; idx < m_end; ++idx) {
-            m_scores[idx] = scoreCapture(m_moves[idx]);
+            m_scores[idx] = scoreNoisy(m_moves[idx]);
         }
     }
 
-    i32 MoveGenerator::scoreNonCapture(Move move) {
-        return m_history.nonCaptureScore(m_continuations, m_ply, m_pos, move);
+    i32 MoveGenerator::scoreQuiet(Move move) {
+        return m_history.quietScore(m_continuations, m_ply, m_pos, move);
     }
 
-    void MoveGenerator::scoreNonCaptures() {
+    void MoveGenerator::scoreQuiet() {
         for (usize idx = m_idx; idx < m_end; ++idx) {
-            m_scores[idx] = scoreNonCapture(m_moves[idx]);
+            m_scores[idx] = scoreQuiet(m_moves[idx]);
         }
     }
 

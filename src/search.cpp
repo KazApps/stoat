@@ -118,6 +118,14 @@ namespace stoat {
 
             return false;
         }
+
+        [[nodiscard]] bool isNoisy(const Position& pos, Move move) {
+            if (move.isDrop()) {
+                return false;
+            }
+
+            return move.isPromo() || pos.isCapture(move);
+        }
     } // namespace
 
     Searcher::Searcher(usize ttSizeMb) :
@@ -682,8 +690,8 @@ namespace stoat {
 
         auto generator = MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply);
 
-        util::StaticVector<Move, 64> capturesTried{};
-        util::StaticVector<Move, 64> nonCapturesTried{};
+        util::StaticVector<Move, 64> noisyTried{};
+        util::StaticVector<Move, 64> quietTried{};
 
         u32 legalMoves{};
 
@@ -708,19 +716,19 @@ namespace stoat {
             }
 
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
-            const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(move);
+            const auto history = isNoisy(pos, move) ? 0 : thread.history.mainQuietScore(move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
                 if (legalMoves >= kLmpTable[improving][std::min<usize>(depth, kLmpTableSize - 1)]) {
-                    generator.skipNonCaptures();
+                    generator.skipQuiet();
                 }
 
-                const auto seeThreshold = pos.isCapture(move) ? -77 * depth * depth : -15 * depth * depth;
+                const auto seeThreshold = isNoisy(pos, move) ? -77 * depth * depth : -15 * depth * depth;
                 if (!see::see(pos, move, seeThreshold)) {
                     continue;
                 }
 
-                if (depth <= 4 && !pos.isInCheck() && alpha < 2000 && !pos.isCapture(move)
+                if (depth <= 4 && !pos.isInCheck() && alpha < 2000 && !isNoisy(pos, move)
                     && curr.staticEval + 150 + 100 * depth <= alpha)
                 {
                     continue;
@@ -792,7 +800,7 @@ namespace stoat {
             newDepth += extension;
 
             if (depth >= 2 && legalMoves >= 3 + 2 * kRootNode && !givesCheck
-                && generator.stage() >= MovegenStage::kNonCaptures)
+                && generator.stage() >= MovegenStage::kQuiet)
             {
                 auto r = baseLmr;
                 const auto dist = Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip()));
@@ -824,9 +832,9 @@ namespace stoat {
 
                 if (score > alpha && reduced < newDepth) {
                     score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
-                    if (!pos.isCapture(move) && score >= beta) {
+                    if (!isNoisy(pos, move) && score >= beta) {
                         const auto bonus = historyBonus(newDepth);
-                        thread.history.updateNonCaptureConthistScore(thread.conthist, ply, pos, move, bonus);
+                        thread.history.updateQuietConthistScore(thread.conthist, ply, pos, move, bonus);
                     }
                 }
             } else if (!kPvNode || legalMoves > 1) {
@@ -899,10 +907,10 @@ namespace stoat {
             }
 
             if (move != bestMove) {
-                if (pos.isCapture(move)) {
-                    capturesTried.tryPush(move);
+                if (isNoisy(pos, move)) {
+                    noisyTried.tryPush(move);
                 } else {
-                    nonCapturesTried.tryPush(move);
+                    quietTried.tryPush(move);
                 }
             }
         }
@@ -916,20 +924,18 @@ namespace stoat {
             const auto historyDepth = depth + (!pos.isInCheck() && curr.staticEval <= bestScore);
             const auto bonus = historyBonus(historyDepth);
 
-            if (!pos.isCapture(bestMove)) {
-                thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
-
-                for (const auto prevNonCapture : nonCapturesTried) {
-                    thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
-                }
+            if (isNoisy(pos, bestMove)) {
+                thread.history.updateNoisyScore(pos, bestMove, bonus);
             } else {
-                const auto captured = pos.pieceOn(bestMove.to()).type();
-                thread.history.updateCaptureScore(bestMove, captured, bonus);
+                thread.history.updateQuietScore(thread.conthist, ply, pos, bestMove, bonus);
+
+                for (const auto prevQuiet : quietTried) {
+                    thread.history.updateQuietScore(thread.conthist, ply, pos, prevQuiet, -bonus);
+                }
             }
 
-            for (const auto prevCapture : capturesTried) {
-                const auto captured = pos.pieceOn(prevCapture.to()).type();
-                thread.history.updateCaptureScore(prevCapture, captured, -bonus);
+            for (const auto prevNoisy : noisyTried) {
+                thread.history.updateNoisyScore(pos, prevNoisy, -bonus);
             }
         }
 
@@ -938,7 +944,7 @@ namespace stoat {
         }
 
         if (!curr.excluded) {
-            if (!pos.isInCheck() && (bestMove.isNull() || !pos.isCapture(bestMove))
+            if (!pos.isInCheck() && (bestMove.isNull() || !isNoisy(pos, bestMove))
                 && (ttFlag == tt::Flag::kExact                                          //
                     || (ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval)))
@@ -1044,7 +1050,7 @@ namespace stoat {
             }
 
             if (score > -kScoreWin) {
-                generator.skipNonCaptures();
+                generator.skipQuiet();
             }
 
             if (score > bestScore) {
