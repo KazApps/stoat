@@ -738,9 +738,10 @@ namespace stoat {
             i32 extension{};
 
             if (!kRootNode && ply < thread.rootDepth * 2 && move == ttMove && !curr.excluded) {
+                const auto sDepth = (depth - 1) / 2;
+
                 if (depth >= 7 && ttEntry.depth >= depth - 3 && ttEntry.flag != tt::Flag::kUpperBound) {
                     const auto sBeta = std::max(-kScoreInf + 1, ttEntry.score - depth * 4 / 3);
-                    const auto sDepth = (depth - 1) / 2;
 
                     curr.excluded = move;
                     const auto score = search(thread, pos, curr.pv, sDepth, ply, sBeta - 1, sBeta, expectedCutnode);
@@ -759,6 +760,16 @@ namespace stoat {
                            && ttEntry.flag == tt::Flag::kLowerBound)
                 {
                     extension = 1;
+                }
+
+                if (depth >= 7 && ttEntry.depth >= depth - 3 && ttEntry.flag == tt::Flag::kLowerBound) {
+                    curr.excluded = move;
+                    const auto score = search(thread, pos, curr.pv, sDepth, ply, alpha, alpha + 1, false);
+                    curr.excluded = kNullMove;
+
+                    if (score >= alpha) {
+                        extension -= 1;
+                    }
                 }
             }
 
