@@ -740,7 +740,7 @@ namespace stoat {
             if (!kRootNode && ply < thread.rootDepth * 2 && move == ttMove && !curr.excluded) {
                 const auto sDepth = (depth - 1) / 2;
 
-                if (depth >= 7 && ttEntry.depth >= depth - 3 && ttEntry.flag != tt::Flag::kUpperBound) {
+                if (depth >= 5 && ttEntry.depth >= depth - 3 && ttEntry.flag != tt::Flag::kUpperBound) {
                     const auto sBeta = std::max(-kScoreInf + 1, ttEntry.score - depth * 4 / 3);
 
                     curr.excluded = move;
@@ -756,13 +756,13 @@ namespace stoat {
                     } else if (expectedCutnode) {
                         extension = -1;
                     }
-                } else if (depth <= 7 && !pos.isInCheck() && curr.staticEval <= alpha - 26
+                } else if (depth <= 5 && !pos.isInCheck() && curr.staticEval <= alpha - 26
                            && ttEntry.flag == tt::Flag::kLowerBound)
                 {
                     extension = 1;
                 }
 
-                if (depth >= 7 && ttEntry.depth >= depth - 3 && ttEntry.flag == tt::Flag::kLowerBound) {
+                if (depth >= 5 && ttEntry.depth >= depth - 3 && ttEntry.flag == tt::Flag::kLowerBound) {
                     curr.excluded = move;
                     const auto score = search(thread, pos, curr.pv, sDepth, ply, alpha, alpha + 1, false);
                     curr.excluded = kNullMove;
