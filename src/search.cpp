@@ -645,7 +645,7 @@ namespace stoat {
                 depth++;
             }
 
-            if (depth <= 10 && curr.staticEval - 80 * (depth - improving) >= beta) {
+            if (curr.staticEval - 80 * (depth - improving) >= beta) {
                 return curr.staticEval;
             }
 
