@@ -65,9 +65,9 @@ namespace stoat {
         std::memset(m_capture.data(), 0, sizeof(m_capture));
     }
 
-    i32 HistoryTables::mainNonCaptureScore(Move move) const {
+    i32 HistoryTables::mainNonCaptureScore(const Position& pos, Move move) const {
         if (move.isDrop()) {
-            return m_drop[move.dropPiece().idx()][move.to().idx()];
+            return m_drop[move.dropPiece().idx()][move.to().idx()][pos.hand(pos.stm()).count(move.dropPiece()) - 1];
         } else {
             return m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()];
         }
@@ -82,7 +82,7 @@ namespace stoat {
         i32 score{};
 
         if (move.isDrop()) {
-            score += m_drop[move.dropPiece().idx()][move.to().idx()];
+            score += m_drop[move.dropPiece().idx()][move.to().idx()][pos.hand(pos.stm()).count(move.dropPiece()) - 1];
         } else {
             score += m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()];
         }
@@ -102,7 +102,9 @@ namespace stoat {
         HistoryScore bonus
     ) {
         if (move.isDrop()) {
-            m_drop[move.dropPiece().idx()][move.to().idx()].update(bonus);
+            m_drop[move.dropPiece().idx()][move.to().idx()][pos.hand(pos.stm()).count(move.dropPiece()) - 1].update(
+                bonus
+            );
         } else {
             m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()].update(bonus);
         }
