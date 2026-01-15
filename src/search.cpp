@@ -720,7 +720,7 @@ namespace stoat {
                     continue;
                 }
 
-                if (depth <= 4 && !pos.isInCheck() && alpha < 2000 && !pos.isCapture(move)
+                if (depth <= 8 && !pos.isInCheck() && alpha < 2000 && !pos.isCapture(move)
                     && curr.staticEval + 150 + 100 * depth <= alpha)
                 {
                     continue;
