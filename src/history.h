@@ -102,7 +102,7 @@ namespace stoat {
             }
         }
 
-        [[nodiscard]] i32 mainNonCaptureScore(Move move) const;
+        [[nodiscard]] i32 mainNonCaptureScore(const Position& pos, Move move) const;
 
         [[nodiscard]] i32 nonCaptureScore(
             std::span<ContinuationSubtable* const> continuations,
@@ -131,10 +131,14 @@ namespace stoat {
         void updateCaptureScore(Move move, PieceType captured, HistoryScore bonus);
 
     private:
+        static constexpr usize kEntries = 16384;
+
         // [promo][from][to]
         util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount> m_nonCaptureNonDrop{};
         // [dropped piece type][drop square]
         util::MultiArray<HistoryEntry, PieceTypes::kCount, Squares::kCount> m_drop{};
+
+        std::array<HistoryEntry, kEntries> m_castle{};
 
         // [drop][prev piece][to]
         util::MultiArray<ContinuationSubtable, 2, Pieces::kCount, Squares::kCount> m_continuation{};

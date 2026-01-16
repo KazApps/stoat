@@ -65,12 +65,18 @@ namespace stoat {
         std::memset(m_capture.data(), 0, sizeof(m_capture));
     }
 
-    i32 HistoryTables::mainNonCaptureScore(Move move) const {
+    i32 HistoryTables::mainNonCaptureScore(const Position& pos, Move move) const {
+        i32 score{};
+
         if (move.isDrop()) {
-            return m_drop[move.dropPiece().idx()][move.to().idx()];
+            score += m_drop[move.dropPiece().idx()][move.to().idx()];
         } else {
-            return m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()];
+            score += m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()];
         }
+
+        score += m_castle[pos.castleKey() % kEntries];
+
+        return score;
     }
 
     i32 HistoryTables::nonCaptureScore(
@@ -86,6 +92,8 @@ namespace stoat {
         } else {
             score += m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()];
         }
+
+        score += m_castle[pos.castleKey() % kEntries];
 
         score += conthistScore(continuations, ply, pos, move, 1);
         score += conthistScore(continuations, ply, pos, move, 2);
@@ -106,6 +114,8 @@ namespace stoat {
         } else {
             m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()].update(bonus);
         }
+
+        m_castle[pos.castleKey() % kEntries].update(bonus);
 
         updateNonCaptureConthistScore(continuations, ply, pos, move, bonus);
     }
