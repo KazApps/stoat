@@ -204,7 +204,7 @@ namespace stoat {
 
     i32 MoveGenerator::scoreCapture(Move move) {
         const auto captured = m_pos.pieceOn(move.to()).type();
-        return see::pieceValue(captured) + m_history.captureScore(move, captured) / 8;
+        return see::pieceValue(captured) + m_history.captureScore(m_pos, move, captured) / 8;
     }
 
     void MoveGenerator::scoreCaptures() {

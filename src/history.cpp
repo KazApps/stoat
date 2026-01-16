@@ -65,11 +65,13 @@ namespace stoat {
         std::memset(m_capture.data(), 0, sizeof(m_capture));
     }
 
-    i32 HistoryTables::mainNonCaptureScore(Move move) const {
+    i32 HistoryTables::mainNonCaptureScore(const Position& pos, Move move) const {
+        const auto stm = pos.stm();
+
         if (move.isDrop()) {
-            return m_drop[move.dropPiece().idx()][move.to().idx()];
+            return m_drop[move.dropPiece().idx()][move.to().relative(stm).idx()];
         } else {
-            return m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()];
+            return m_nonCaptureNonDrop[move.isPromo()][move.from().relative(stm).idx()][move.to().relative(stm).idx()];
         }
     }
 
@@ -79,12 +81,15 @@ namespace stoat {
         const Position& pos,
         Move move
     ) const {
+        const auto stm = pos.stm();
+
         i32 score{};
 
         if (move.isDrop()) {
-            score += m_drop[move.dropPiece().idx()][move.to().idx()];
+            score += m_drop[move.dropPiece().idx()][move.to().relative(stm).idx()];
         } else {
-            score += m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()];
+            score +=
+                m_nonCaptureNonDrop[move.isPromo()][move.from().relative(stm).idx()][move.to().relative(stm).idx()];
         }
 
         score += conthistScore(continuations, ply, pos, move, 1);
@@ -101,10 +106,14 @@ namespace stoat {
         Move move,
         HistoryScore bonus
     ) {
+        const auto stm = pos.stm();
+
         if (move.isDrop()) {
-            m_drop[move.dropPiece().idx()][move.to().idx()].update(bonus);
+            m_drop[move.dropPiece().idx()][move.to().relative(stm).idx()].update(bonus);
         } else {
-            m_nonCaptureNonDrop[move.isPromo()][move.from().idx()][move.to().idx()].update(bonus);
+            m_nonCaptureNonDrop[move.isPromo()][move.from().relative(stm).idx()][move.to().relative(stm).idx()].update(
+                bonus
+            );
         }
 
         updateNonCaptureConthistScore(continuations, ply, pos, move, bonus);
@@ -122,11 +131,17 @@ namespace stoat {
         updateConthist(continuations, ply, pos, move, bonus, 3);
     }
 
-    i32 HistoryTables::captureScore(Move move, PieceType captured) const {
-        return m_capture[move.isPromo()][move.from().idx()][move.to().idx()][captured.idx()];
+    i32 HistoryTables::captureScore(const Position& pos, Move move, PieceType captured) const {
+        const auto stm = pos.stm();
+
+        return m_capture[move.isPromo()][move.from().relative(stm).idx()][move.to().relative(stm).idx()]
+                        [captured.idx()];
     }
 
-    void HistoryTables::updateCaptureScore(Move move, PieceType captured, HistoryScore bonus) {
-        m_capture[move.isPromo()][move.from().idx()][move.to().idx()][captured.idx()].update(bonus);
+    void HistoryTables::updateCaptureScore(const Position& pos, Move move, PieceType captured, HistoryScore bonus) {
+        const auto stm = pos.stm();
+
+        m_capture[move.isPromo()][move.from().relative(stm).idx()][move.to().relative(stm).idx()][captured.idx()]
+            .update(bonus);
     }
 } // namespace stoat

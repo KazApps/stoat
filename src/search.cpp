@@ -708,7 +708,7 @@ namespace stoat {
             }
 
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
-            const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(move);
+            const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(pos, move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
                 if (legalMoves >= kLmpTable[improving][std::min<usize>(depth, kLmpTableSize - 1)]) {
@@ -924,12 +924,12 @@ namespace stoat {
                 }
             } else {
                 const auto captured = pos.pieceOn(bestMove.to()).type();
-                thread.history.updateCaptureScore(bestMove, captured, bonus);
+                thread.history.updateCaptureScore(pos, bestMove, captured, bonus);
             }
 
             for (const auto prevCapture : capturesTried) {
                 const auto captured = pos.pieceOn(prevCapture.to()).type();
-                thread.history.updateCaptureScore(prevCapture, captured, -bonus);
+                thread.history.updateCaptureScore(pos, prevCapture, captured, -bonus);
             }
         }
 

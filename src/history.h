@@ -57,19 +57,23 @@ namespace stoat {
         //TODO take two args when c++23 is usable
         inline HistoryScore operator[](std::pair<const Position&, Move> ctx) const {
             const auto [pos, move] = ctx;
+            const auto stm = pos.stm();
+
             if (move.isDrop()) {
-                return m_data[true][move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
+                return m_data[true][move.dropPiece().withColor(stm).idx()][move.to().relative(stm).idx()];
             } else {
-                return m_data[false][pos.pieceOn(move.from()).idx()][move.to().idx()];
+                return m_data[false][pos.pieceOn(move.from()).idx()][move.to().relative(stm).idx()];
             }
         }
 
         inline HistoryEntry& operator[](std::pair<const Position&, Move> ctx) {
             const auto [pos, move] = ctx;
+            const auto stm = pos.stm();
+
             if (move.isDrop()) {
-                return m_data[true][move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
+                return m_data[true][move.dropPiece().withColor(stm).idx()][move.to().relative(stm).idx()];
             } else {
-                return m_data[false][pos.pieceOn(move.from()).idx()][move.to().idx()];
+                return m_data[false][pos.pieceOn(move.from()).idx()][move.to().relative(stm).idx()];
             }
         }
 
@@ -87,22 +91,26 @@ namespace stoat {
         void clear();
 
         [[nodiscard]] inline const ContinuationSubtable& contTable(const Position& pos, Move move) const {
+            const auto stm = pos.stm();
+
             if (move.isDrop()) {
-                return m_continuation[true][move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
+                return m_continuation[true][move.dropPiece().withColor(stm).idx()][move.to().relative(stm).idx()];
             } else {
-                return m_continuation[false][pos.pieceOn(move.from()).idx()][move.to().idx()];
+                return m_continuation[false][pos.pieceOn(move.from()).idx()][move.to().relative(stm).idx()];
             }
         }
 
         [[nodiscard]] inline ContinuationSubtable& contTable(const Position& pos, Move move) {
+            const auto stm = pos.stm();
+
             if (move.isDrop()) {
-                return m_continuation[true][move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
+                return m_continuation[true][move.dropPiece().withColor(stm).idx()][move.to().relative(stm).idx()];
             } else {
-                return m_continuation[false][pos.pieceOn(move.from()).idx()][move.to().idx()];
+                return m_continuation[false][pos.pieceOn(move.from()).idx()][move.to().relative(stm).idx()];
             }
         }
 
-        [[nodiscard]] i32 mainNonCaptureScore(Move move) const;
+        [[nodiscard]] i32 mainNonCaptureScore(const Position& pos, Move move) const;
 
         [[nodiscard]] i32 nonCaptureScore(
             std::span<ContinuationSubtable* const> continuations,
@@ -127,8 +135,8 @@ namespace stoat {
             HistoryScore bonus
         );
 
-        [[nodiscard]] i32 captureScore(Move move, PieceType captured) const;
-        void updateCaptureScore(Move move, PieceType captured, HistoryScore bonus);
+        [[nodiscard]] i32 captureScore(const Position& pos, Move move, PieceType captured) const;
+        void updateCaptureScore(const Position& pos, Move move, PieceType captured, HistoryScore bonus);
 
     private:
         // [promo][from][to]
