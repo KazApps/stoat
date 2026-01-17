@@ -87,6 +87,7 @@ namespace stoat {
             score += m_nonCaptureNonDrop[pos.stm().idx()][move.isPromo()][move.from().idx()][move.to().idx()];
         }
 
+        score += conthistScore(continuations, ply, pos, move, 0);
         score += conthistScore(continuations, ply, pos, move, 1);
         score += conthistScore(continuations, ply, pos, move, 2);
         score += conthistScore(continuations, ply, pos, move, 3);
