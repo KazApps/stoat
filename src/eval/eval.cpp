@@ -38,8 +38,8 @@ namespace stoat::eval {
         const i32 ply
     ) {
         const auto eval = staticEval(pos, nnueState);
-        const Score scaledEval = eval * (1024 + ply) / 1024;
         const auto correction = corrhist.correction(pos);
-        return std::clamp(scaledEval + static_cast<Score>(correction), -kScoreWin + 1, kScoreWin - 1);
+        const auto scaledCorrection = correction * (128 + ply) / 128;
+        return std::clamp(eval + static_cast<Score>(scaledCorrection), -kScoreWin + 1, kScoreWin - 1);
     }
 } // namespace stoat::eval
