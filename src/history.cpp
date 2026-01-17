@@ -117,9 +117,9 @@ namespace stoat {
         Move move,
         HistoryScore bonus
     ) {
-        updateConthist(continuations, ply, pos, move, bonus, 1);
+        updateConthist(continuations, ply, pos, move, bonus * 2, 1);
         updateConthist(continuations, ply, pos, move, bonus, 2);
-        updateConthist(continuations, ply, pos, move, bonus, 3);
+        updateConthist(continuations, ply, pos, move, bonus / 2, 3);
     }
 
     i32 HistoryTables::captureScore(Move move, PieceType captured) const {
