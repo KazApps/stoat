@@ -624,9 +624,6 @@ namespace stoat {
             (kRootNode && thread.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
 
         const bool improving = [&] {
-            if (pos.isInCheck()) {
-                return false;
-            }
             if (ply > 1 && thread.stack[ply - 2].staticEval != kScoreNone) {
                 return curr.staticEval > thread.stack[ply - 2].staticEval + 50 * expectedCutnode;
             }
