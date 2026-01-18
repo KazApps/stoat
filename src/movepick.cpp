@@ -90,8 +90,10 @@ namespace stoat {
             }
 
             case MovegenStage::kBadCaptures: {
-                if (const auto move = selectNext<false>([this](auto move) { return move != m_ttMove; })) {
-                    return move;
+                if (!m_skipNonCaptures) {
+                    if (const auto move = selectNext<false>([this](auto move) { return move != m_ttMove; })) {
+                        return move;
+                    }
                 }
 
                 m_stage = MovegenStage::kEnd;
