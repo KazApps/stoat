@@ -37,6 +37,8 @@ namespace stoat {
         kBadCaptures,
         kQsearchGenerateCaptures,
         kQsearchCaptures,
+        kQsearchGenerateNonCaptureChecks,
+        kQsearchNonCaptureChecks,
         kQsearchEvasionsGenerateCaptures,
         kQsearchEvasionsCaptures,
         kQsearchEvasionsGenerateNonCaptures,

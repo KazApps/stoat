@@ -113,6 +113,25 @@ namespace stoat {
                     return move;
                 }
 
+                ++m_stage;
+                [[fallthrough]];
+            }
+
+            case MovegenStage::kQsearchGenerateNonCaptureChecks: {
+                movegen::generateNonCaptureChecks(m_moves, m_pos);
+                m_end = m_moves.size();
+
+                scoreNonCaptures();
+
+                ++m_stage;
+                [[fallthrough]];
+            }
+
+            case MovegenStage::kQsearchNonCaptureChecks: {
+                if (const auto move = selectNext([](Move) { return true; })) {
+                    return move;
+                }
+
                 m_stage = MovegenStage::kEnd;
                 return kNullMove;
             }
