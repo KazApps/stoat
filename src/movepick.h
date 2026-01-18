@@ -33,8 +33,9 @@ namespace stoat {
         kGenerateCaptures,
         kGoodCaptures,
         kGenerateNonCaptures,
-        kNonCaptures,
+        kGoodNonCaptures,
         kBadCaptures,
+        kBadNonCaptures,
         kQsearchGenerateCaptures,
         kQsearchCaptures,
         kQsearchEvasionsGenerateCaptures,
@@ -131,5 +132,6 @@ namespace stoat {
         usize m_end{};
 
         usize m_badCapturesEnd{};
+        usize m_badNonCapturesEnd{};
     };
 } // namespace stoat

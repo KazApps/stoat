@@ -792,7 +792,7 @@ namespace stoat {
             newDepth += extension;
 
             if (depth >= 2 && legalMoves >= 3 + 2 * kRootNode && !givesCheck
-                && generator.stage() >= MovegenStage::kNonCaptures)
+                && generator.stage() >= MovegenStage::kGoodNonCaptures)
             {
                 auto r = baseLmr;
                 const auto dist = Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip()));
