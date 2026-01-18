@@ -69,7 +69,8 @@ namespace stoat::movegen {
             Bitboard pieces,
             auto attackGetter,
             Bitboard dstMask,
-            Bitboard nonPromoMask = Bitboards::kAll
+            Bitboard nonPromoMask,
+            Bitboard promoMask = Bitboards::kAll
         ) {
             const auto stm = pos.stm();
 
@@ -81,7 +82,7 @@ namespace stoat::movegen {
                 auto promotable = pieces;
                 while (!promotable.empty()) {
                     const auto piece = promotable.popLsb();
-                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & promoArea;
+                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & promoArea & promoMask;
 
                     serializePromotions(dst, piece, attacks);
                 }
@@ -89,7 +90,7 @@ namespace stoat::movegen {
                 promotable = pieces & promoArea;
                 while (!promotable.empty()) {
                     const auto piece = promotable.popLsb();
-                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & ~promoArea;
+                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & ~promoArea & promoMask;
 
                     serializePromotions(dst, piece, attacks);
                 }
@@ -111,7 +112,8 @@ namespace stoat::movegen {
             Bitboard pieces,
             auto attackGetter,
             Bitboard dstMask,
-            Bitboard nonPromoMask = Bitboards::kAll
+            Bitboard nonPromoMask,
+            Bitboard promoMask = Bitboards::kAll
         ) {
             generatePrecalculatedWithColorAndOcc<kCanPromote>(
                 dst,
@@ -119,7 +121,8 @@ namespace stoat::movegen {
                 pieces,
                 [&](Square sq, Color c, [[maybe_unused]] Bitboard occ) { return attackGetter(sq, c); },
                 dstMask,
-                nonPromoMask
+                nonPromoMask,
+                promoMask
             );
         }
 
@@ -130,7 +133,8 @@ namespace stoat::movegen {
             Bitboard pieces,
             auto attackGetter,
             Bitboard dstMask,
-            Bitboard nonPromoMask = Bitboards::kAll
+            Bitboard nonPromoMask,
+            Bitboard promoMask = Bitboards::kAll
         ) {
             generatePrecalculatedWithColorAndOcc<kCanPromote>(
                 dst,
@@ -138,7 +142,8 @@ namespace stoat::movegen {
                 pieces,
                 [&](Square sq, [[maybe_unused]] Color c, Bitboard occ) { return attackGetter(sq, occ); },
                 dstMask,
-                nonPromoMask
+                nonPromoMask,
+                promoMask
             );
         }
 
@@ -149,7 +154,8 @@ namespace stoat::movegen {
             Bitboard pieces,
             auto attackGetter,
             Bitboard dstMask,
-            Bitboard nonPromoMask = Bitboards::kAll
+            Bitboard nonPromoMask,
+            Bitboard promoMask = Bitboards::kAll
         ) {
             generatePrecalculatedWithColorAndOcc<kCanPromote>(
                 dst,
@@ -157,15 +163,20 @@ namespace stoat::movegen {
                 pieces,
                 [&](Square sq, [[maybe_unused]] Color c, [[maybe_unused]] Bitboard occ) { return attackGetter(sq); },
                 dstMask,
-                nonPromoMask
+                nonPromoMask,
+                promoMask
             );
         }
 
+        template <bool kChecksOnly>
         void generatePawns(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto stm = pos.stm();
+            const auto nstm = stm.flip();
             const auto pawns = pos.pieceBb(PieceTypes::kPawn, stm);
 
-            const auto shifted = pawns.shiftNorthRelative(stm) & dstMask;
+            const auto checkMask = kChecksOnly ? attacks::pawnAttacks(pos.kingSq(nstm), nstm) : Bitboards::kAll;
+
+            const auto shifted = pawns.shiftNorthRelative(stm) & dstMask & checkMask;
 
             const auto promos = shifted & Bitboards::promoArea(stm);
             const auto nonPromos = shifted & ~Bitboards::relativeRank(stm, 8);
@@ -176,7 +187,13 @@ namespace stoat::movegen {
             serializeNormals(dst, offset, nonPromos);
         }
 
+        template <bool kChecksOnly>
         void generateLances(MoveList& dst, const Position& pos, Bitboard dstMask) {
+            const auto nstm = pos.stm().flip();
+            const auto ksq = pos.kingSq(nstm);
+            const auto nonPromoMask = kChecksOnly ? attacks::lanceAttacks(ksq, nstm, pos.occupancy()) : Bitboards::kAll;
+            const auto promoMask = kChecksOnly ? attacks::goldAttacks(ksq, nstm) : Bitboards::kAll;
+
             const auto lances = pos.pieceBb(PieceTypes::kLance, pos.stm());
             generatePrecalculatedWithColorAndOcc<true>(
                 dst,
@@ -184,11 +201,18 @@ namespace stoat::movegen {
                 lances,
                 attacks::lanceAttacks,
                 dstMask,
-                ~Bitboards::relativeRank(pos.stm(), 8)
+                ~Bitboards::relativeRank(pos.stm(), 8) & nonPromoMask,
+                promoMask
             );
         }
 
+        template <bool kChecksOnly>
         void generateKnights(MoveList& dst, const Position& pos, Bitboard dstMask) {
+            const auto nstm = pos.stm().flip();
+            const auto ksq = pos.kingSq(nstm);
+            const auto nonPromoMask = kChecksOnly ? attacks::knightAttacks(ksq, nstm) : Bitboards::kAll;
+            const auto promoMask = kChecksOnly ? attacks::goldAttacks(ksq, nstm) : Bitboards::kAll;
+
             const auto knights = pos.pieceBb(PieceTypes::kKnight, pos.stm());
             generatePrecalculatedWithColor<true>(
                 dst,
@@ -196,55 +220,89 @@ namespace stoat::movegen {
                 knights,
                 attacks::knightAttacks,
                 dstMask,
-                ~(Bitboards::relativeRank(pos.stm(), 8) | Bitboards::relativeRank(pos.stm(), 7))
+                ~(Bitboards::relativeRank(pos.stm(), 8) | Bitboards::relativeRank(pos.stm(), 7)) & nonPromoMask,
+                promoMask
             );
         }
 
+        template <bool kChecksOnly>
         void generateSilvers(MoveList& dst, const Position& pos, Bitboard dstMask) {
+            const auto nstm = pos.stm().flip();
+            const auto ksq = pos.kingSq(nstm);
+            const auto nonPromoMask = kChecksOnly ? attacks::silverAttacks(ksq, nstm) : Bitboards::kAll;
+            const auto promoMask = kChecksOnly ? attacks::goldAttacks(ksq, nstm) : Bitboards::kAll;
+
             const auto silvers = pos.pieceBb(PieceTypes::kSilver, pos.stm());
-            generatePrecalculatedWithColor<true>(dst, pos, silvers, attacks::silverAttacks, dstMask);
+            generatePrecalculatedWithColor<
+                true>(dst, pos, silvers, attacks::silverAttacks, dstMask, nonPromoMask, promoMask);
         }
 
+        template <bool kChecksOnly>
         void generateGolds(MoveList& dst, const Position& pos, Bitboard dstMask) {
+            const auto nstm = pos.stm().flip();
+            const auto ksq = pos.kingSq(nstm);
+            const auto mask = kChecksOnly ? attacks::goldAttacks(ksq, nstm) : Bitboards::kAll;
+
             const auto golds = pos.pieceBb(PieceTypes::kGold, pos.stm())
                              | pos.pieceBb(PieceTypes::kPromotedPawn, pos.stm())
                              | pos.pieceBb(PieceTypes::kPromotedLance, pos.stm())
                              | pos.pieceBb(PieceTypes::kPromotedKnight, pos.stm())
                              | pos.pieceBb(PieceTypes::kPromotedSilver, pos.stm());
-            generatePrecalculatedWithColor<false>(dst, pos, golds, attacks::goldAttacks, dstMask);
+            generatePrecalculatedWithColor<false>(dst, pos, golds, attacks::goldAttacks, dstMask, mask);
         }
 
+        template <bool kChecksOnly>
         void generateBishops(MoveList& dst, const Position& pos, Bitboard dstMask) {
+            const auto ksq = pos.kingSq(pos.stm().flip());
+            const auto nonPromoMask = kChecksOnly ? attacks::bishopAttacks(ksq, pos.occupancy()) : Bitboards::kAll;
+            const auto promoMask = kChecksOnly ? attacks::promotedBishopAttacks(ksq, pos.occupancy()) : Bitboards::kAll;
+
             const auto bishops = pos.pieceBb(PieceTypes::kBishop, pos.stm());
-            generatePrecalculatedWithOcc<true>(dst, pos, bishops, attacks::bishopAttacks, dstMask);
+            generatePrecalculatedWithOcc<
+                true>(dst, pos, bishops, attacks::bishopAttacks, dstMask, nonPromoMask, promoMask);
         }
 
+        template <bool kChecksOnly>
         void generateRooks(MoveList& dst, const Position& pos, Bitboard dstMask) {
+            const auto ksq = pos.kingSq(pos.stm().flip());
+            const auto nonPromoMask = kChecksOnly ? attacks::rookAttacks(ksq, pos.occupancy()) : Bitboards::kAll;
+            const auto promoMask = kChecksOnly ? attacks::promotedRookAttacks(ksq, pos.occupancy()) : Bitboards::kAll;
+
             const auto rooks = pos.pieceBb(PieceTypes::kRook, pos.stm());
-            generatePrecalculatedWithOcc<true>(dst, pos, rooks, attacks::rookAttacks, dstMask);
+            generatePrecalculatedWithOcc<true>(dst, pos, rooks, attacks::rookAttacks, dstMask, nonPromoMask, promoMask);
         }
 
+        template <bool kChecksOnly>
         void generatePromotedBishops(MoveList& dst, const Position& pos, Bitboard dstMask) {
+            const auto ksq = pos.kingSq(pos.stm().flip());
+            const auto mask = kChecksOnly ? attacks::promotedBishopAttacks(ksq, pos.occupancy()) : Bitboards::kAll;
+
             const auto horses = pos.pieceBb(PieceTypes::kPromotedBishop, pos.stm());
-            generatePrecalculatedWithOcc<false>(dst, pos, horses, attacks::promotedBishopAttacks, dstMask);
+            generatePrecalculatedWithOcc<false>(dst, pos, horses, attacks::promotedBishopAttacks, dstMask, mask);
         }
 
+        template <bool kChecksOnly>
         void generatePromotedRooks(MoveList& dst, const Position& pos, Bitboard dstMask) {
+            const auto ksq = pos.kingSq(pos.stm().flip());
+            const auto mask = kChecksOnly ? attacks::promotedRookAttacks(ksq, pos.occupancy()) : Bitboards::kAll;
+
             const auto dragons = pos.pieceBb(PieceTypes::kPromotedRook, pos.stm());
-            generatePrecalculatedWithOcc<false>(dst, pos, dragons, attacks::promotedRookAttacks, dstMask);
+            generatePrecalculatedWithOcc<false>(dst, pos, dragons, attacks::promotedRookAttacks, dstMask, mask);
         }
 
         void generateKings(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto kings = pos.pieceBb(PieceTypes::kKing, pos.stm());
-            generatePrecalculated<false>(dst, pos, kings, attacks::kingAttacks, dstMask);
+            generatePrecalculated<false>(dst, pos, kings, attacks::kingAttacks, dstMask, Bitboards::kAll);
         }
 
+        template <bool kChecksOnly>
         void generateDrops(MoveList& dst, const Position& pos, Bitboard dstMask) {
             if (dstMask.empty()) {
                 return;
             }
 
             const auto stm = pos.stm();
+            const auto nstm = stm.flip();
             const auto& hand = pos.hand(stm);
 
             if (hand.empty()) {
@@ -258,21 +316,36 @@ namespace stoat::movegen {
                 }
             };
 
+            const auto ksq = pos.kingSq(nstm);
+            const auto pawnCheckMask = kChecksOnly ? attacks::pawnAttacks(ksq, nstm) : Bitboards::kAll;
+            const auto lanceCheckMask =
+                kChecksOnly ? attacks::lanceAttacks(ksq, nstm, pos.occupancy()) : Bitboards::kAll;
+            const auto knightCheckMask = kChecksOnly ? attacks::knightAttacks(ksq, nstm) : Bitboards::kAll;
+            const auto silverCheckMask = kChecksOnly ? attacks::silverAttacks(ksq, nstm) : Bitboards::kAll;
+            const auto goldCheckMask = kChecksOnly ? attacks::goldAttacks(ksq, nstm) : Bitboards::kAll;
+            const auto bishopCheckMask = kChecksOnly ? attacks::bishopAttacks(ksq, pos.occupancy()) : Bitboards::kAll;
+            const auto rookCheckMask = kChecksOnly ? attacks::rookAttacks(ksq, pos.occupancy()) : Bitboards::kAll;
+
             generate(
                 PieceTypes::kPawn,
-                ~Bitboards::relativeRank(stm, 8) & ~pos.pieceBb(PieceTypes::kPawn, stm).fillFile()
+                ~Bitboards::relativeRank(stm, 8) & ~pos.pieceBb(PieceTypes::kPawn, stm).fillFile() & pawnCheckMask
             );
-            generate(PieceTypes::kLance, ~Bitboards::relativeRank(stm, 8));
-            generate(PieceTypes::kKnight, ~(Bitboards::relativeRank(stm, 8) | Bitboards::relativeRank(stm, 7)));
-            generate(PieceTypes::kSilver);
-            generate(PieceTypes::kGold);
-            generate(PieceTypes::kBishop);
-            generate(PieceTypes::kRook);
+            generate(PieceTypes::kLance, ~Bitboards::relativeRank(stm, 8) & lanceCheckMask);
+            generate(
+                PieceTypes::kKnight,
+                ~(Bitboards::relativeRank(stm, 8) | Bitboards::relativeRank(stm, 7)) & knightCheckMask
+            );
+            generate(PieceTypes::kSilver, silverCheckMask);
+            generate(PieceTypes::kGold, goldCheckMask);
+            generate(PieceTypes::kBishop, bishopCheckMask);
+            generate(PieceTypes::kRook, rookCheckMask);
         }
 
-        template <bool kGenerateDrops>
+        template <bool kGenerateDrops, bool kChecksOnly = false>
         void generate(MoveList& dst, const Position& pos, Bitboard dstMask) {
-            generateKings(dst, pos, dstMask);
+            if constexpr (!kChecksOnly) {
+                generateKings(dst, pos, dstMask);
+            }
 
             if (pos.checkers().multiple()) {
                 return;
@@ -288,18 +361,18 @@ namespace stoat::movegen {
                 dropMask &= checkRay;
             }
 
-            generatePawns(dst, pos, dstMask);
-            generateLances(dst, pos, dstMask);
-            generateKnights(dst, pos, dstMask);
-            generateSilvers(dst, pos, dstMask);
-            generateGolds(dst, pos, dstMask);
-            generateBishops(dst, pos, dstMask);
-            generateRooks(dst, pos, dstMask);
-            generatePromotedBishops(dst, pos, dstMask);
-            generatePromotedRooks(dst, pos, dstMask);
+            generatePawns<kChecksOnly>(dst, pos, dstMask);
+            generateLances<kChecksOnly>(dst, pos, dstMask);
+            generateKnights<kChecksOnly>(dst, pos, dstMask);
+            generateSilvers<kChecksOnly>(dst, pos, dstMask);
+            generateGolds<kChecksOnly>(dst, pos, dstMask);
+            generateBishops<kChecksOnly>(dst, pos, dstMask);
+            generateRooks<kChecksOnly>(dst, pos, dstMask);
+            generatePromotedBishops<kChecksOnly>(dst, pos, dstMask);
+            generatePromotedRooks<kChecksOnly>(dst, pos, dstMask);
 
             if constexpr (kGenerateDrops) {
-                generateDrops(dst, pos, dropMask);
+                generateDrops<kChecksOnly>(dst, pos, dropMask);
             }
         }
     } // namespace
@@ -325,5 +398,10 @@ namespace stoat::movegen {
 
         const auto dstMask = Bitboard::fromSquare(captureSq);
         generate<false>(dst, pos, dstMask);
+    }
+
+    void generateNonCaptureChecks(MoveList& dst, const Position& pos) {
+        const auto dstMask = ~pos.occupancy();
+        generate<true, true>(dst, pos, dstMask);
     }
 } // namespace stoat::movegen
