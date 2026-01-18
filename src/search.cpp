@@ -1043,10 +1043,6 @@ namespace stoat {
                 return 0;
             }
 
-            if (score > -kScoreWin) {
-                generator.skipNonCaptures();
-            }
-
             if (score > bestScore) {
                 bestScore = score;
             }
