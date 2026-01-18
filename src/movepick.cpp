@@ -117,8 +117,8 @@ namespace stoat {
                 return kNullMove;
             }
 
-            case MovegenStage::kQsearchEvasionsGenerateCaptures: {
-                movegen::generateCaptures(m_moves, m_pos);
+            case MovegenStage::kQsearchGenerateEvasions: {
+                movegen::generateAll(m_moves, m_pos);
                 m_end = m_moves.size();
 
                 scoreCaptures();
@@ -127,32 +127,9 @@ namespace stoat {
                 [[fallthrough]];
             }
 
-            case MovegenStage::kQsearchEvasionsCaptures: {
+            case MovegenStage::kQsearchEvasions: {
                 if (const auto move = selectNext([](Move) { return true; })) {
                     return move;
-                }
-
-                ++m_stage;
-                [[fallthrough]];
-            }
-
-            case MovegenStage::kQsearchEvasionsGenerateNonCaptures: {
-                if (!m_skipNonCaptures) {
-                    movegen::generateNonCaptures(m_moves, m_pos);
-                    m_end = m_moves.size();
-                }
-
-                scoreNonCaptures();
-
-                ++m_stage;
-                [[fallthrough]];
-            }
-
-            case MovegenStage::kQsearchEvasionsNonCaptures: {
-                if (!m_skipNonCaptures) {
-                    if (const auto move = selectNext([this](Move move) { return move != m_ttMove; })) {
-                        return move;
-                    }
                 }
 
                 m_stage = MovegenStage::kEnd;
@@ -183,7 +160,7 @@ namespace stoat {
     ) {
         assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
-            pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
+            pos.isInCheck() ? MovegenStage::kQsearchGenerateEvasions : MovegenStage::kQsearchGenerateCaptures;
         return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply};
     }
 
