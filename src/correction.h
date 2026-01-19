@@ -55,10 +55,10 @@ namespace stoat {
         };
 
         struct SidedTables {
-            std::array<Entry, kEntries> castle{};
-            util::MultiArray<Entry, 2, kEntries> cavalry{};
-            std::array<Entry, kEntries> hand{};
-            util::MultiArray<Entry, 2, kEntries> kpr{};
+            util::MultiArray<Entry, 2, kEntries> castle{};
+            std::array<Entry, kEntries> cavalry{};
+            util::MultiArray<Entry, 2, kEntries> hand{};
+            std::array<Entry, kEntries> kpr{};
         };
 
         std::array<SidedTables, Colors::kCount> m_tables{};

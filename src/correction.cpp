@@ -40,10 +40,10 @@ namespace stoat {
         const auto bonus =
             std::clamp(static_cast<i32>((searchScore - staticEval) * depth / 8 * factor), -kMaxBonus, kMaxBonus);
 
-        tables.castle[pos.castleKey() % kEntries].update(bonus);
-        tables.cavalry[captured][pos.cavalryKey() % kEntries].update(bonus);
-        tables.hand[pos.kingHandKey() % kEntries].update(bonus);
-        tables.kpr[captured][pos.kprKey() % kEntries].update(bonus);
+        tables.castle[captured][pos.castleKey() % kEntries].update(bonus);
+        tables.cavalry[pos.cavalryKey() % kEntries].update(bonus);
+        tables.hand[captured][pos.kingHandKey() % kEntries].update(bonus);
+        tables.kpr[pos.kprKey() % kEntries].update(bonus);
     }
 
     i32 CorrectionHistory::correction(const Position& pos, bool captured) const {
@@ -51,10 +51,10 @@ namespace stoat {
 
         i32 correction{};
 
-        correction += 256 * tables.castle[pos.castleKey() % kEntries];
-        correction += 256 * tables.cavalry[captured][pos.cavalryKey() % kEntries];
-        correction += 256 * tables.hand[pos.kingHandKey() % kEntries];
-        correction += 256 * tables.kpr[captured][pos.kprKey() % kEntries];
+        correction += 128 * tables.castle[captured][pos.castleKey() % kEntries];
+        correction += 128 * tables.cavalry[pos.cavalryKey() % kEntries];
+        correction += 128 * tables.hand[captured][pos.kingHandKey() % kEntries];
+        correction += 128 * tables.kpr[pos.kprKey() % kEntries];
 
         return correction / 2048;
     }
