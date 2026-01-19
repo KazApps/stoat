@@ -30,9 +30,10 @@ namespace stoat {
         i32 depth,
         Score searchScore,
         Score staticEval,
-        i32 complexity
+        i32 complexity,
+        bool captured
     ) {
-        auto& tables = m_tables[pos.stm().idx()];
+        auto& tables = m_tables[pos.stm().idx()][captured];
 
         const double factor = 1.0 + std::log2(complexity + 1) / 10.0;
 
@@ -45,8 +46,8 @@ namespace stoat {
         tables.kpr[pos.kprKey() % kEntries].update(bonus);
     }
 
-    i32 CorrectionHistory::correction(const Position& pos) const {
-        const auto& tables = m_tables[pos.stm().idx()];
+    i32 CorrectionHistory::correction(const Position& pos, bool captured) const {
+        const auto& tables = m_tables[pos.stm().idx()][captured];
 
         i32 correction{};
 

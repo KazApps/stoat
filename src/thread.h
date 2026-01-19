@@ -88,6 +88,7 @@ namespace stoat {
         Score staticEval{};
         Move excluded{};
         i32 reduction{};
+        bool capture{false};
     };
 
     struct alignas(kCacheLineSize) ThreadData {

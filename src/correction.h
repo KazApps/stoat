@@ -32,9 +32,9 @@ namespace stoat {
     public:
         void clear();
 
-        void update(const Position& pos, i32 depth, Score searchScore, Score staticEval, i32 complexity);
+        void update(const Position& pos, i32 depth, Score searchScore, Score staticEval, i32 complexity, bool captured);
 
-        [[nodiscard]] i32 correction(const Position& pos) const;
+        [[nodiscard]] i32 correction(const Position& pos, bool captured) const;
 
     private:
         static constexpr usize kEntries = 16384;
@@ -61,6 +61,6 @@ namespace stoat {
             std::array<Entry, kEntries> kpr{};
         };
 
-        std::array<SidedTables, 2> m_tables{};
+        util::MultiArray<SidedTables, 2, 2> m_tables{};
     };
 } // namespace stoat

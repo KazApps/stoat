@@ -579,12 +579,14 @@ namespace stoat {
             thread.updateSeldepth(ply + 1);
         }
 
-        if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0 : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
-        }
-
         auto& curr = thread.stack[ply];
         const auto* parent = kRootNode ? nullptr : &thread.stack[ply - 1];
+        bool isCaptured = parent ? parent->capture : false;
+
+        if (ply >= kMaxDepth) {
+            return pos.isInCheck() ? 0
+                                   : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply, isCaptured);
+        }
 
         tt::ProbedEntry ttEntry{};
         [[maybe_unused]] bool ttHit = false;
@@ -604,8 +606,9 @@ namespace stoat {
                 --depth;
             }
 
-            curr.staticEval =
-                pos.isInCheck() ? kScoreNone : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            curr.staticEval = pos.isInCheck()
+                                ? kScoreNone
+                                : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply, isCaptured);
         }
 
         const bool ttPv = ttEntry.pv || kPvNode;
@@ -943,7 +946,7 @@ namespace stoat {
                     || (ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval)))
             {
-                thread.corrhist.update(pos, depth, bestScore, curr.staticEval, complexity);
+                thread.corrhist.update(pos, depth, bestScore, curr.staticEval, complexity, isCaptured);
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
@@ -975,8 +978,11 @@ namespace stoat {
             thread.updateSeldepth(ply + 1);
         }
 
+        bool isCaptured = thread.stack[ply - 1].capture;
+
         if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0 : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            return pos.isInCheck() ? 0
+                                   : eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply, isCaptured);
         }
 
         Score staticEval;
@@ -984,7 +990,7 @@ namespace stoat {
         if (pos.isInCheck()) {
             staticEval = -kScoreMate + ply;
         } else {
-            staticEval = eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply);
+            staticEval = eval::correctedStaticEval(pos, thread.nnueState, thread.corrhist, ply, isCaptured);
 
             if (staticEval >= beta) {
                 return staticEval;
