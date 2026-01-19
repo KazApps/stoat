@@ -656,7 +656,7 @@ namespace stoat {
                 }
             }
 
-            if (depth >= 4 && curr.staticEval >= beta + 70 && !parent->move.isNull()) {
+            if (depth >= 4 && curr.staticEval >= beta + 70 && parent->move && ply > 1 && thread.stack[ply - 2].move) {
                 const auto r = 3 + depth / 5;
 
                 const auto [newPos, guard] = thread.applyNullMove(ply, pos);
@@ -938,7 +938,7 @@ namespace stoat {
         }
 
         if (!curr.excluded) {
-            if (!pos.isInCheck() && (bestMove.isNull() || !pos.isCapture(bestMove))
+            if (!pos.isInCheck() && (!bestMove || !pos.isCapture(bestMove))
                 && (ttFlag == tt::Flag::kExact                                          //
                     || (ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval)))
