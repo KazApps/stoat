@@ -33,7 +33,7 @@ namespace stoat {
         i32 complexity,
         bool captured
     ) {
-        auto& tables = m_tables[pos.stm().idx()][captured];
+        auto& tables = m_tables[pos.stm().idx()];
 
         const double factor = 1.0 + std::log2(complexity + 1) / 10.0;
 
@@ -41,20 +41,20 @@ namespace stoat {
             std::clamp(static_cast<i32>((searchScore - staticEval) * depth / 8 * factor), -kMaxBonus, kMaxBonus);
 
         tables.castle[pos.castleKey() % kEntries].update(bonus);
-        tables.cavalry[pos.cavalryKey() % kEntries].update(bonus);
+        tables.cavalry[captured][pos.cavalryKey() % kEntries].update(bonus);
         tables.hand[pos.kingHandKey() % kEntries].update(bonus);
-        tables.kpr[pos.kprKey() % kEntries].update(bonus);
+        tables.kpr[captured][pos.kprKey() % kEntries].update(bonus);
     }
 
     i32 CorrectionHistory::correction(const Position& pos, bool captured) const {
-        const auto& tables = m_tables[pos.stm().idx()][captured];
+        const auto& tables = m_tables[pos.stm().idx()];
 
         i32 correction{};
 
-        correction += 128 * tables.castle[pos.castleKey() % kEntries];
-        correction += 128 * tables.cavalry[pos.cavalryKey() % kEntries];
-        correction += 128 * tables.hand[pos.kingHandKey() % kEntries];
-        correction += 128 * tables.kpr[pos.kprKey() % kEntries];
+        correction += 256 * tables.castle[pos.castleKey() % kEntries];
+        correction += 256 * tables.cavalry[captured][pos.cavalryKey() % kEntries];
+        correction += 256 * tables.hand[pos.kingHandKey() % kEntries];
+        correction += 256 * tables.kpr[captured][pos.kprKey() % kEntries];
 
         return correction / 2048;
     }
