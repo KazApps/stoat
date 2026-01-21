@@ -52,8 +52,8 @@ namespace stoat::tt {
             }
         }
 
-        [[nodiscard]] constexpr u16 packEntryKey(u128 key) {
-            return static_cast<u16>(key);
+        [[nodiscard]] constexpr u64 packEntryKey(u128 key) {
+            return static_cast<u64>(key);
         }
     } // namespace
 

@@ -72,7 +72,7 @@ namespace stoat::tt {
             static constexpr u32 kAgeBits = 5;
             static constexpr u32 kAgeCycle = 1 << kAgeBits;
 
-            u16 key;
+            u64 key;
             i16 score;
             Move move;
             u8 depth;
@@ -96,7 +96,7 @@ namespace stoat::tt {
             }
         };
 
-        static_assert(sizeof(Entry) == 8);
+        static_assert(sizeof(Entry) == 16);
 
         static constexpr usize kSmallPageSize = 4096;
         static constexpr auto kDefaultStorageAlignment = std::max(kCacheLineSize, kSmallPageSize);
@@ -111,8 +111,7 @@ namespace stoat::tt {
         u32 m_age{};
 
         [[nodiscard]] constexpr usize index(u128 key) const {
-            const auto [high, low] = fromU128(key);
-            return static_cast<usize>(((high ^ low) * static_cast<u128>(m_entryCount)) >> 64);
+            return static_cast<usize>(((key >> 64) * static_cast<u128>(m_entryCount)) >> 64);
         }
     };
 } // namespace stoat::tt
