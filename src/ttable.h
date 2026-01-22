@@ -20,6 +20,8 @@
 
 #include "types.h"
 
+#include <array>
+
 #include "arch.h"
 #include "core.h"
 #include "move.h"
@@ -65,13 +67,14 @@ namespace stoat::tt {
         [[nodiscard]] u32 fullPermille() const;
 
         inline void prefetch(u64 key) {
-            __builtin_prefetch(&m_entries[index(key)]);
+            __builtin_prefetch(&m_clusters[index(key)]);
         }
 
     private:
         struct __attribute__((packed)) Entry {
             static constexpr u32 kAgeBits = 5;
             static constexpr u32 kAgeCycle = 1 << kAgeBits;
+            static constexpr u32 kAgeMask = kAgeCycle - 1;
 
             u16 key;
             i16 score;
@@ -103,17 +106,33 @@ namespace stoat::tt {
         static constexpr usize kSmallPageSize = 4096;
         static constexpr auto kDefaultStorageAlignment = std::max(kCacheLineSize, kSmallPageSize);
 
+        static constexpr usize kClusterAlignment = 32;
+        static constexpr auto kStorageAlignment = std::max(kCacheLineSize, kClusterAlignment);
+
+        struct alignas(32) Cluster {
+            static constexpr usize kEntriesPerCluster = 3;
+
+            std::array<Entry, kEntriesPerCluster> entries{};
+
+            // round up to nearest power of 2 bytes
+            [[maybe_unused]] std::array<
+                u8,
+                std::bit_ceil(sizeof(Entry) * kEntriesPerCluster) - sizeof(Entry) * kEntriesPerCluster> padding{};
+        };
+
+        static_assert(sizeof(Cluster) == 32);
+
         bool m_pendingInit{};
 
         // is this an owning raw pointer? :fearful:
         // yes :pensive:
-        Entry* m_entries{};
-        usize m_entryCount{};
+        Cluster* m_clusters{};
+        usize m_clusterCount{};
 
         u32 m_age{};
 
         [[nodiscard]] constexpr usize index(u64 key) const {
-            return static_cast<usize>((static_cast<u128>(key) * static_cast<u128>(m_entryCount)) >> 64);
+            return static_cast<usize>((static_cast<u128>(key) * static_cast<u128>(m_clusterCount)) >> 64);
         }
     };
 } // namespace stoat::tt
