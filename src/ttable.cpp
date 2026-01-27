@@ -137,7 +137,7 @@ namespace stoat::tt {
         return false;
     }
 
-    void TTable::put(u64 key, Score score, [[maybe_unused]] Score staticEval, Move move, i32 depth, i32 ply, Flag flag, bool pv) {
+    void TTable::put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, Flag flag, bool pv) {
         assert(!m_pendingInit);
 
         assert(depth >= 0);

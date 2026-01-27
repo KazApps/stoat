@@ -416,6 +416,10 @@ namespace stoat {
         for (i32 depth = 1;; ++depth) {
             thread.rootDepth = depth;
 
+            for (auto& move : thread.rootMoves) {
+                move.previousScore = move.score;
+            }
+
             for (thread.pvIdx = 0; thread.pvIdx < m_multiPv; ++thread.pvIdx) {
                 thread.resetSeldepth();
 
@@ -425,7 +429,7 @@ namespace stoat {
                 auto beta = kScoreInf;
 
                 if (depth >= 3) {
-                    const auto lastScore = thread.rootMoves[thread.pvIdx].score;
+                    const auto lastScore = thread.rootMoves[thread.pvIdx].windowScore;
                     alpha = std::max(lastScore - window, -kScoreInf);
                     beta = std::min(lastScore + window, kScoreInf);
                 }
@@ -453,7 +457,7 @@ namespace stoat {
                         break;
                     }
 
-                    if (thread.isMainThread()) {
+                    if (thread.isMainThread() && m_targetMultiPv == 1) {
                         const auto time = m_startTime.elapsed();
                         if (time >= kWideningReportDelay) {
                             reportSingle(thread, thread.pvIdx, depth, time);
@@ -866,6 +870,8 @@ namespace stoat {
                     std::terminate();
                 }
 
+                rootMove->windowScore = score;
+
                 if (legalMoves == 1 || score > alpha) {
                     rootMove->seldepth = thread.loadSeldepth();
 
@@ -1084,8 +1090,12 @@ namespace stoat {
 
         const auto& move = bestThread.rootMoves[pvIdx];
 
-        auto score = move.score == -kScoreInf ? move.displayScore : move.score;
-        depth = move.score == -kScoreInf ? std::max(1, depth - 1) : depth;
+        auto score = move.displayScore;
+
+        if (move.score == -kScoreInf) {
+            score = move.previousScore;
+            depth = std::max(1, depth - 1);
+        }
 
         usize totalNodes = 0;
 
