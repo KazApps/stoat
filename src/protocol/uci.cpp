@@ -42,7 +42,7 @@ namespace stoat::protocol {
             const u32 file = str[0] - 'a';
             const u32 rank = str[1] - '1';
 
-            return Square::fromRaw(rank * 9 + file);
+            return Square::fromFileRank(file, rank);
         }
 
         void printSquare(Square sq) {
