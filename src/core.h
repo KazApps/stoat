@@ -636,7 +636,7 @@ namespace stoat {
             const u32 file = '1' + 8 - str[0];
             const u32 rank = 'a' + 8 - str[1];
 
-            return fromRaw(rank * 9 + file);
+            return fromFileRank(file, rank);
         }
 
         [[nodiscard]] constexpr explicit operator bool() const {
