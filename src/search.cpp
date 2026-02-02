@@ -693,6 +693,7 @@ namespace stoat {
 
         auto bestMove = kNullMove;
         auto bestScore = -kScoreInf;
+        auto bestMoveReduction = 0;
 
         auto ttFlag = tt::Flag::kUpperBound;
 
@@ -724,6 +725,7 @@ namespace stoat {
             }
 
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
+            auto r = 0;
             const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(pos, move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
@@ -810,7 +812,6 @@ namespace stoat {
             if (depth >= 2 && legalMoves >= 3 + 2 * kRootNode && !givesCheck
                 && generator.stage() >= MovegenStage::kNonCaptures)
             {
-                auto r = baseLmr;
                 const auto dist = Square::chebyshev(move.to(), pos.kingSq(pos.stm().flip()));
 
                 r += !ttPv;
@@ -833,7 +834,7 @@ namespace stoat {
                              .popcount();
                 }
 
-                const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
+                const auto reduced = std::min(std::max(newDepth - (baseLmr + r), 1), newDepth - 1) + kPvNode;
                 curr.reduction = newDepth - reduced;
                 score = -search(thread, newPos, curr.pv, reduced, ply + 1, -alpha - 1, -alpha, true);
                 curr.reduction = 0;
@@ -841,7 +842,7 @@ namespace stoat {
                 if (score > alpha && reduced < newDepth) {
                     score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
                     if (!pos.isCapture(move) && score >= beta) {
-                        const auto bonus = historyBonus(newDepth);
+                        const auto bonus = historyBonus(newDepth, bestMoveReduction);
                         thread.history.updateNonCaptureConthistScore(thread.conthist, ply, pos, move, bonus);
                     }
                 }
@@ -902,6 +903,7 @@ namespace stoat {
             if (score > alpha) {
                 alpha = score;
                 bestMove = move;
+                bestMoveReduction = r;
 
                 if constexpr (kPvNode) {
                     assert(curr.pv.length + 1 <= kMaxDepth);
@@ -932,13 +934,14 @@ namespace stoat {
 
         if (bestMove) {
             const auto historyDepth = depth + (!pos.isInCheck() && curr.staticEval <= bestScore);
-            const auto bonus = historyBonus(historyDepth);
+            const auto bonus = historyBonus(historyDepth, bestMoveReduction);
+            const auto penalty = historyPenalty(historyDepth, bestMoveReduction);
 
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
 
                 for (const auto prevNonCapture : nonCapturesTried) {
-                    thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
+                    thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, penalty);
                 }
             } else {
                 const auto captured = pos.pieceOn(bestMove.to()).type();
@@ -947,7 +950,7 @@ namespace stoat {
 
             for (const auto prevCapture : capturesTried) {
                 const auto captured = pos.pieceOn(prevCapture.to()).type();
-                thread.history.updateCaptureScore(prevCapture, captured, -bonus);
+                thread.history.updateCaptureScore(prevCapture, captured, penalty);
             }
         }
 
