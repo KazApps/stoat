@@ -423,7 +423,7 @@ namespace stoat {
             for (thread.pvIdx = 0; thread.pvIdx < m_multiPv; ++thread.pvIdx) {
                 thread.resetSeldepth();
 
-                i32 window = static_cast<i32>(32 / std::pow(depth + 2, 0.3));
+                i32 window = static_cast<i32>(28 / std::pow(depth + 2, 0.2));
 
                 auto alpha = -kScoreInf;
                 auto beta = kScoreInf;
