@@ -55,14 +55,14 @@ namespace stoat {
         // [depth][move index]
         const auto s_lmrTable = [] {
             constexpr f64 kBase = 0.5;
-            constexpr f64 kDivisor = 2.5;
+            constexpr f64 kDivisor = 4;
 
             util::MultiArray<i32, kMaxDepth, kLmrTableMoves> reductions{};
 
             for (i32 depth = 1; depth < kMaxDepth; ++depth) {
                 for (i32 moveNumber = 1; moveNumber < kLmrTableMoves; ++moveNumber) {
-                    const auto lnDepth = std::log(static_cast<f64>(depth));
-                    const auto lnMoveNumber = std::log(static_cast<f64>(moveNumber));
+                    const auto lnDepth = std::log2(static_cast<f64>(depth));
+                    const auto lnMoveNumber = std::log2(static_cast<f64>(moveNumber));
 
                     reductions[depth][moveNumber] = static_cast<i32>(kBase + lnDepth * lnMoveNumber / kDivisor);
                 }
