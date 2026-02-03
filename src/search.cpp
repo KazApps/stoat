@@ -723,8 +723,10 @@ namespace stoat {
                 continue;
             }
 
+            const auto captured = pos.pieceOn(move.to()).type();
             const auto baseLmr = s_lmrTable[depth][std::min<u32>(legalMoves, kLmrTableMoves - 1)];
-            const auto history = pos.isCapture(move) ? 0 : thread.history.mainNonCaptureScore(pos, move);
+            const auto history = pos.isCapture(move) ? thread.history.captureScore(move, captured)
+                                                     : thread.history.mainNonCaptureScore(pos, move);
 
             if (!kRootNode && bestScore > -kScoreWin && (!kPvNode || !thread.datagen)) {
                 if (legalMoves >= kLmpTable[improving][std::min<usize>(depth, kLmpTableSize - 1)]) {
@@ -753,8 +755,8 @@ namespace stoat {
 
             i32 extension{};
 
-            if (!kRootNode && ply < thread.rootDepth * 2 && (move == ttMove || (depth > 7 && legalMoves == 1))
-                && !curr.excluded)
+            if (!kRootNode && ply < thread.rootDepth * 2
+                && (move == ttMove || (depth > 7 && legalMoves == 1 && history > 4096)) && !curr.excluded)
             {
                 if (depth >= 7 && ttEntry.depth >= depth - 3 && ttEntry.flag != tt::Flag::kUpperBound) {
                     const auto sBeta = std::max(-kScoreInf + 1, ttEntry.score - depth * 4 / 3);
@@ -825,7 +827,7 @@ namespace stoat {
                 }
 
                 if (pos.isCapture(move)) {
-                    r -= 1 + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
+                    r -= 1 + (see::pieceValue(captured) + 150) / 250;
                 }
 
                 if (move.isDrop()) {
