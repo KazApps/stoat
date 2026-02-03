@@ -170,7 +170,7 @@ namespace stoat {
         ) = delete;
 
         template <bool kPvNode = false>
-        Score qsearch(ThreadData& thread, const Position& pos, i32 ply, Score alpha, Score beta);
+        Score qsearch(ThreadData& thread, const Position& pos, i32 depth, i32 ply, Score alpha, Score beta);
 
         void reportSingle(const ThreadData& bestThread, u32 pvIdx, i32 depth, f64 time) const;
 

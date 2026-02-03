@@ -574,7 +574,7 @@ namespace stoat {
         }
 
         if (depth <= 0) {
-            return qsearch<kPvNode>(thread, pos, ply, alpha, beta);
+            return qsearch<kPvNode>(thread, pos, 0, ply, alpha, beta);
         }
 
         thread.incNodes();
@@ -666,7 +666,7 @@ namespace stoat {
             }
 
             if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + 300 * depth <= alpha) {
-                const auto score = qsearch(thread, pos, ply, alpha, alpha + 1);
+                const auto score = qsearch(thread, pos, 0, ply, alpha, alpha + 1);
                 if (score <= alpha) {
                     return score;
                 }
@@ -973,7 +973,7 @@ namespace stoat {
     }
 
     template <bool kPvNode>
-    Score Searcher::qsearch(ThreadData& thread, const Position& pos, i32 ply, Score alpha, Score beta) {
+    Score Searcher::qsearch(ThreadData& thread, const Position& pos, i32 depth, i32 ply, Score alpha, Score beta) {
         assert(ply >= 0 && ply <= kMaxDepth);
 
         if (hasStopped()) {
@@ -1017,7 +1017,7 @@ namespace stoat {
 
         auto bestScore = staticEval;
 
-        auto generator = MoveGenerator::qsearch(pos, thread.history, thread.conthist, ply);
+        auto generator = MoveGenerator::qsearch(pos, thread.history, thread.conthist, depth, ply);
 
         u32 legalMoves{};
 
@@ -1056,7 +1056,7 @@ namespace stoat {
             } else if (sennichite == SennichiteStatus::kDraw) {
                 score = drawScore(thread.loadNodes());
             } else {
-                score = -qsearch<kPvNode>(thread, newPos, ply + 1, -beta, -alpha);
+                score = -qsearch<kPvNode>(thread, newPos, depth - 1, ply + 1, -beta, -alpha);
             }
 
             if (hasStopped()) {

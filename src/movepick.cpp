@@ -118,8 +118,10 @@ namespace stoat {
             }
 
             case MovegenStage::kQsearchGenerateNonCaptureChecks: {
-                movegen::generateNonCaptureChecks(m_moves, m_pos);
-                m_end = m_moves.size();
+                if (m_generateChecks) {
+                    movegen::generateNonCaptureChecks(m_moves, m_pos);
+                    m_end = m_moves.size();
+                }
 
                 scoreNonCaptures();
 
@@ -128,8 +130,10 @@ namespace stoat {
             }
 
             case MovegenStage::kQsearchNonCaptureChecks: {
-                if (const auto move = selectNext([](Move) { return true; })) {
-                    return move;
+                if (m_generateChecks) {
+                    if (const auto move = selectNext([](Move) { return true; })) {
+                        return move;
+                    }
                 }
 
                 m_stage = MovegenStage::kEnd;
@@ -191,19 +195,20 @@ namespace stoat {
         i32 ply
     ) {
         assert(continuations.size() == kMaxDepth + 1);
-        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, history, continuations, ply};
+        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, history, continuations, ply, false};
     }
 
     MoveGenerator MoveGenerator::qsearch(
         const Position& pos,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
+        i32 depth,
         i32 ply
     ) {
         assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
             pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
-        return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply};
+        return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply, depth == 0};
     }
 
     MoveGenerator::MoveGenerator(
@@ -212,14 +217,16 @@ namespace stoat {
         Move ttMove,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
-        i32 ply
+        i32 ply,
+        bool generateChecks
     ) :
             m_stage{initialStage},
             m_pos{pos},
             m_ttMove{ttMove},
             m_history{history},
             m_continuations{continuations},
-            m_ply{ply} {}
+            m_ply{ply},
+            m_generateChecks{generateChecks} {}
 
     i32 MoveGenerator::scoreCapture(Move move) {
         const auto captured = m_pos.pieceOn(move.to()).type();
