@@ -652,27 +652,27 @@ namespace stoat {
             return false;
         }();
 
-        if (!ttPv && !pos.isInCheck() && !curr.excluded && complexity <= 20) {
-            if (parent && depth >= 2 && parent->reduction >= 1 && curr.staticEval + parent->staticEval >= 200) {
+        if (!ttPv && !pos.isInCheck() && !curr.excluded) {
+            if (parent && depth >= 2 && parent->reduction >= 1 && curr.staticEval + parent->staticEval >= 200 + complexity) {
                 depth--;
             }
 
-            if (parent && parent->reduction >= 3 && curr.staticEval + parent->staticEval <= 0) {
+            if (parent && parent->reduction >= 3 && curr.staticEval + parent->staticEval + complexity <= 0) {
                 depth++;
             }
 
-            if (depth <= 10 && curr.staticEval - 80 * (depth - improving) >= beta) {
+            if (depth <= 10 && curr.staticEval - 80 * (depth - improving) >= beta + complexity) {
                 return curr.staticEval;
             }
 
-            if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + 300 * depth <= alpha) {
+            if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + 300 * depth + complexity <= alpha) {
                 const auto score = qsearch(thread, pos, ply, alpha, alpha + 1);
                 if (score <= alpha) {
                     return score;
                 }
             }
 
-            if (depth >= 4 && curr.staticEval >= beta + 70 && !parent->move.isNull()) {
+            if (depth >= 4 && curr.staticEval >= beta + 70 + complexity && !parent->move.isNull()) {
                 const auto r = 3 + depth / 5;
 
                 const auto [newPos, guard] = thread.applyNullMove(ply, pos);
