@@ -771,11 +771,13 @@ namespace stoat {
                     } else if (expectedCutnode) {
                         extension = -1;
                     }
-                } else if (depth <= 7 && !pos.isInCheck() && curr.staticEval <= alpha - 26
-                           && ttEntry.flag == tt::Flag::kLowerBound)
-                {
-                    extension = 1;
                 }
+            }
+
+            if (extension == 0 && legalMoves < 4 && !pos.isInCheck() && curr.staticEval <= alpha - 26
+                && ttEntry.flag == tt::Flag::kLowerBound)
+            {
+                extension = 1;
             }
 
             m_ttable.prefetch(pos.keyAfter(move));
