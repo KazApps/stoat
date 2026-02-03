@@ -71,12 +71,12 @@ namespace stoat::tt {
         }
 
     private:
-        struct __attribute__((packed)) Entry {
+        struct alignas(16) Entry {
             static constexpr u32 kAgeBits = 5;
             static constexpr u32 kAgeCycle = 1 << kAgeBits;
             static constexpr u32 kAgeMask = kAgeCycle - 1;
 
-            u16 key;
+            u64 key;
             i16 score;
             i16 staticEval;
             u16 move;
@@ -101,7 +101,7 @@ namespace stoat::tt {
             }
         };
 
-        static_assert(sizeof(Entry) == 10);
+        static_assert(sizeof(Entry) == 16);
 
         static constexpr usize kSmallPageSize = 4096;
         static constexpr auto kDefaultStorageAlignment = std::max(kCacheLineSize, kSmallPageSize);
@@ -109,18 +109,13 @@ namespace stoat::tt {
         static constexpr usize kClusterAlignment = 32;
         static constexpr auto kStorageAlignment = std::max(kCacheLineSize, kClusterAlignment);
 
-        struct alignas(32) Cluster {
-            static constexpr usize kEntriesPerCluster = 3;
+        struct alignas(64) Cluster {
+            static constexpr usize kEntriesPerCluster = 4;
 
             std::array<Entry, kEntriesPerCluster> entries{};
-
-            // round up to nearest power of 2 bytes
-            [[maybe_unused]] std::array<
-                u8,
-                std::bit_ceil(sizeof(Entry) * kEntriesPerCluster) - sizeof(Entry) * kEntriesPerCluster> padding{};
         };
 
-        static_assert(sizeof(Cluster) == 32);
+        static_assert(sizeof(Cluster) == 64);
 
         bool m_pendingInit{};
 

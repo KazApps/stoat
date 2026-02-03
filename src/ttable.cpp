@@ -51,10 +51,6 @@ namespace stoat::tt {
                 return score;
             }
         }
-
-        [[nodiscard]] constexpr u16 packEntryKey(u64 key) {
-            return static_cast<u16>(key);
-        }
     } // namespace
 
     TTable::TTable(usize mib) {
@@ -125,7 +121,7 @@ namespace stoat::tt {
         const auto& cluster = m_clusters[index(key)];
 
         for (const auto entry : cluster.entries) {
-            if (entry.key == packEntryKey(key)) {
+            if (entry.key == key) {
                 dst.score = scoreFromTt(static_cast<Score>(entry.score), ply);
                 dst.staticEval = static_cast<Score>(entry.staticEval);
                 dst.move = Move::fromRaw(entry.move);
@@ -155,8 +151,6 @@ namespace stoat::tt {
         assert(depth >= 0);
         assert(depth <= kMaxDepth);
 
-        const auto packedKey = packEntryKey(key);
-
         const auto entryValue = [this](const auto& entry) {
             const i32 relativeAge = (Entry::kAgeCycle + m_age - entry.age()) & Entry::kAgeMask;
             return entry.depth - relativeAge * 2;
@@ -169,7 +163,7 @@ namespace stoat::tt {
 
         for (auto& candidate : cluster.entries) {
             // always take an empty entry, or one from the same position
-            if (candidate.key == packedKey || candidate.flag() == Flag::kNone) {
+            if (candidate.key == key || candidate.flag() == Flag::kNone) {
                 entryPtr = &candidate;
                 break;
             }
@@ -187,17 +181,17 @@ namespace stoat::tt {
 
         auto entry = *entryPtr;
         const bool replace =
-            flag == Flag::kExact || packedKey != entry.key || entry.age() != m_age || depth + 4 > entry.depth;
+            flag == Flag::kExact || entry.key != key || entry.age() != m_age || depth + 4 > entry.depth;
 
         if (!replace) {
             return;
         }
 
-        if (move || entry.key != packedKey) {
+        if (move || entry.key != key) {
             entry.move = move.raw();
         }
 
-        entry.key = packedKey;
+        entry.key = key;
         entry.score = static_cast<i16>(scoreToTt(score, ply));
         entry.staticEval = static_cast<i16>(staticEval);
         entry.depth = static_cast<u8>(depth);
