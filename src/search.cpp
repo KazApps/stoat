@@ -774,7 +774,7 @@ namespace stoat {
                 }
             }
 
-            if (extension == 0 && legalMoves < 4 && !pos.isInCheck() && curr.staticEval <= alpha - 26
+            if (extension == 0 && legalMoves < 3 && !pos.isInCheck() && curr.staticEval <= alpha - 26
                 && ttEntry.flag == tt::Flag::kLowerBound)
             {
                 extension = 1;
