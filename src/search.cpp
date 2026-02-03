@@ -936,13 +936,13 @@ namespace stoat {
 
             if (!pos.isCapture(bestMove)) {
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
-
-                for (const auto prevNonCapture : nonCapturesTried) {
-                    thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
-                }
             } else {
                 const auto captured = pos.pieceOn(bestMove.to()).type();
                 thread.history.updateCaptureScore(bestMove, captured, bonus);
+            }
+
+            for (const auto prevNonCapture : nonCapturesTried) {
+                thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
             }
 
             for (const auto prevCapture : capturesTried) {
