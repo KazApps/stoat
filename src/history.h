@@ -80,7 +80,7 @@ namespace stoat {
 
     [[nodiscard]] inline HistoryScore historyBonus(i32 depth, Score searchScore, Score staticEval) {
         return static_cast<HistoryScore>(
-            std::clamp(std::clamp(std::abs(searchScore - staticEval), 1, 256) * depth * 8 - 600, 0, 2500)
+            std::clamp(std::clamp(std::abs(searchScore - staticEval), 1, 128) * depth * 8 - 600, 0, 2500)
         );
     }
 
