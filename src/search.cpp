@@ -901,7 +901,7 @@ namespace stoat {
 
             if (score > alpha) {
                 alpha = score;
-                bestMove = move;
+                bestMove = curr.killer = move;
 
                 if constexpr (kPvNode) {
                     assert(curr.pv.length + 1 <= kMaxDepth);
@@ -935,8 +935,6 @@ namespace stoat {
             const auto bonus = historyBonus(historyDepth);
 
             if (!pos.isCapture(bestMove)) {
-                curr.killer = bestMove;
-
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
 
                 for (const auto prevNonCapture : nonCapturesTried) {
