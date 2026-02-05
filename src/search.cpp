@@ -806,8 +806,8 @@ namespace stoat {
                 extension = 1;
             }
 
-            if (legalMoves > 1) {
-                extension -= bestScore - sumScore / static_cast<i32>(legalMoves - 1) > 150;
+            if (extension == 0 && legalMoves > 1) {
+                extension += bestScore - sumScore / static_cast<i32>(legalMoves - 1) < 50;
             }
 
             newDepth += extension;
