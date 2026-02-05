@@ -901,7 +901,7 @@ namespace stoat {
 
             if (score > alpha) {
                 alpha = score;
-                bestMove = curr.killer = move;
+                bestMove = move;
 
                 if constexpr (kPvNode) {
                     assert(curr.pv.length + 1 <= kMaxDepth);
