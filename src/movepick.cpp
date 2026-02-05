@@ -63,16 +63,6 @@ namespace stoat {
                 [[fallthrough]];
             }
 
-            case MovegenStage::kKiller: {
-                ++m_stage;
-
-                if (!m_skipNonCaptures && m_killer && m_pos.isPseudolegal(m_killer)) {
-                    return m_killer;
-                }
-
-                [[fallthrough]];
-            }
-
             case MovegenStage::kGenerateNonCaptures: {
                 if (!m_skipNonCaptures) {
                     movegen::generateNonCaptures(m_moves, m_pos);
@@ -87,7 +77,7 @@ namespace stoat {
 
             case MovegenStage::kNonCaptures: {
                 if (!m_skipNonCaptures) {
-                    if (const auto move = selectNext([this](Move move) { return move != m_ttMove && move != m_killer; })) {
+                    if (const auto move = selectNext([this](Move move) { return move != m_ttMove; })) {
                         return move;
                     }
                 }
@@ -227,7 +217,7 @@ namespace stoat {
     }
 
     i32 MoveGenerator::scoreNonCapture(Move move) {
-        return m_history.nonCaptureScore(m_continuations, m_ply, m_pos, move);
+        return (move == m_killer) * 1024 + m_history.nonCaptureScore(m_continuations, m_ply, m_pos, move);
     }
 
     void MoveGenerator::scoreNonCaptures() {

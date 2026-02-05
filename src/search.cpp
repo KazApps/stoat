@@ -935,6 +935,8 @@ namespace stoat {
             const auto bonus = historyBonus(historyDepth);
 
             if (!pos.isCapture(bestMove)) {
+                curr.killer = bestMove;
+
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
 
                 for (const auto prevNonCapture : nonCapturesTried) {

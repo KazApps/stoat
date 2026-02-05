@@ -32,7 +32,6 @@ namespace stoat {
         kTtMove = 0,
         kGenerateCaptures,
         kGoodCaptures,
-        kKiller,
         kGenerateNonCaptures,
         kNonCaptures,
         kBadCaptures,
