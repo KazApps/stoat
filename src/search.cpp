@@ -696,7 +696,7 @@ namespace stoat {
 
         auto ttFlag = tt::Flag::kUpperBound;
 
-        auto generator = MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply);
+        auto generator = MoveGenerator::main(pos, ttMove, curr.killer, thread.history, thread.conthist, ply);
 
         util::StaticVector<Move, 64> capturesTried{};
         util::StaticVector<Move, 64> nonCapturesTried{};
@@ -935,6 +935,8 @@ namespace stoat {
             const auto bonus = historyBonus(historyDepth);
 
             if (!pos.isCapture(bestMove)) {
+                curr.killer = bestMove;
+
                 thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
 
                 for (const auto prevNonCapture : nonCapturesTried) {

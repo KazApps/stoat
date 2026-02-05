@@ -32,6 +32,7 @@ namespace stoat {
         kTtMove = 0,
         kGenerateCaptures,
         kGoodCaptures,
+        kKiller,
         kGenerateNonCaptures,
         kNonCaptures,
         kBadCaptures,
@@ -68,6 +69,7 @@ namespace stoat {
         [[nodiscard]] static MoveGenerator main(
             const Position& pos,
             Move ttMove,
+            Move killer,
             const HistoryTables& history,
             std::span<ContinuationSubtable* const> continuations,
             i32 ply
@@ -85,6 +87,7 @@ namespace stoat {
             MovegenStage initialStage,
             const Position& pos,
             Move ttMove,
+            Move killer,
             const HistoryTables& history,
             std::span<ContinuationSubtable* const> continuations,
             i32 ply
@@ -120,6 +123,7 @@ namespace stoat {
         std::array<i32, movegen::kMoveListCapacity> m_scores{};
 
         Move m_ttMove;
+        Move m_killer;
         const HistoryTables& m_history;
 
         std::span<ContinuationSubtable* const> m_continuations;

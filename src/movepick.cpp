@@ -63,6 +63,16 @@ namespace stoat {
                 [[fallthrough]];
             }
 
+            case MovegenStage::kKiller: {
+                ++m_stage;
+
+                if (!m_skipNonCaptures && m_killer && m_pos.isPseudolegal(m_killer)) {
+                    return m_killer;
+                }
+
+                [[fallthrough]];
+            }
+
             case MovegenStage::kGenerateNonCaptures: {
                 if (!m_skipNonCaptures) {
                     movegen::generateNonCaptures(m_moves, m_pos);
@@ -77,7 +87,7 @@ namespace stoat {
 
             case MovegenStage::kNonCaptures: {
                 if (!m_skipNonCaptures) {
-                    if (const auto move = selectNext([this](Move move) { return move != m_ttMove; })) {
+                    if (const auto move = selectNext([this](Move move) { return move != m_ttMove && move != m_killer; })) {
                         return move;
                     }
                 }
@@ -150,7 +160,7 @@ namespace stoat {
 
             case MovegenStage::kQsearchEvasionsNonCaptures: {
                 if (!m_skipNonCaptures) {
-                    if (const auto move = selectNext([this](Move move) { return move != m_ttMove; })) {
+                    if (const auto move = selectNext([](Move) { return true; })) {
                         return move;
                     }
                 }
@@ -167,12 +177,13 @@ namespace stoat {
     MoveGenerator MoveGenerator::main(
         const Position& pos,
         Move ttMove,
+        Move killer,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
         i32 ply
     ) {
         assert(continuations.size() == kMaxDepth + 1);
-        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, history, continuations, ply};
+        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, killer, history, continuations, ply};
     }
 
     MoveGenerator MoveGenerator::qsearch(
@@ -184,13 +195,14 @@ namespace stoat {
         assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
             pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
-        return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply};
+        return MoveGenerator{initialStage, pos, kNullMove, kNullMove, history, continuations, ply};
     }
 
     MoveGenerator::MoveGenerator(
         MovegenStage initialStage,
         const Position& pos,
         Move ttMove,
+        Move killer,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
         i32 ply
@@ -198,6 +210,7 @@ namespace stoat {
             m_stage{initialStage},
             m_pos{pos},
             m_ttMove{ttMove},
+            m_killer{killer},
             m_history{history},
             m_continuations{continuations},
             m_ply{ply} {}
