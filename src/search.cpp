@@ -693,6 +693,7 @@ namespace stoat {
 
         auto bestMove = kNullMove;
         auto bestScore = -kScoreInf;
+        auto sumScore = 0;
 
         auto ttFlag = tt::Flag::kUpperBound;
 
@@ -805,6 +806,10 @@ namespace stoat {
                 extension = 1;
             }
 
+            if (legalMoves > 1) {
+                extension -= bestScore - sumScore / static_cast<i32>(legalMoves - 1) > 150;
+            }
+
             newDepth += extension;
 
             if (depth >= 2 && legalMoves >= 3 + 2 * kRootNode && !givesCheck
@@ -852,6 +857,8 @@ namespace stoat {
             if (kPvNode && (legalMoves == 1 || score > alpha)) {
                 score = -search<true>(thread, newPos, curr.pv, newDepth, ply + 1, -beta, -alpha, false);
             }
+
+            sumScore += score;
 
         skipSearch:
             if (hasStopped()) {
