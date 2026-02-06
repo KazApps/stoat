@@ -47,7 +47,7 @@ namespace stoat {
 
             inline void update(i32 bonus) {
                 const auto diff = std::abs(value / 16 - bonus);
-                const auto factor = 1.0 + std::log1p(diff) / 16.0;
+                const auto factor = 1.0 + std::log1p(diff) / 12.0;
                 bonus = static_cast<i32>(bonus * factor);
                 value += bonus - value * std::abs(bonus) / kLimit;
             }
