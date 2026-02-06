@@ -141,5 +141,7 @@ namespace stoat {
 
         // [promo][from][to][captured]
         util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount, PieceTypes::kCount> m_capture{};
+
+        std::array<HistoryEntry, Squares::kCount> m_to{};
     };
 } // namespace stoat

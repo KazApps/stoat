@@ -63,14 +63,21 @@ namespace stoat {
         std::memset(m_drop.data(), 0, sizeof(m_drop));
         std::memset(m_continuation.data(), 0, sizeof(m_continuation));
         std::memset(m_capture.data(), 0, sizeof(m_capture));
+        std::memset(m_to.data(), 0, sizeof(m_to));
     }
 
     i32 HistoryTables::mainNonCaptureScore(const Position& pos, Move move) const {
+        i32 score{};
+
         if (move.isDrop()) {
-            return m_drop[move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
+            score += m_drop[move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
         } else {
-            return m_nonCaptureNonDrop[pos.stm().idx()][move.isPromo()][move.from().idx()][move.to().idx()];
+            score += m_nonCaptureNonDrop[pos.stm().idx()][move.isPromo()][move.from().idx()][move.to().idx()];
         }
+
+        score += m_to[move.to().idx()];
+
+        return score;
     }
 
     i32 HistoryTables::nonCaptureScore(
@@ -91,6 +98,8 @@ namespace stoat {
         score += conthistScore(continuations, ply, pos, move, 2);
         score += conthistScore(continuations, ply, pos, move, 3);
 
+        score += m_to[move.to().idx()];
+
         return score;
     }
 
@@ -108,6 +117,7 @@ namespace stoat {
         }
 
         updateNonCaptureConthistScore(continuations, ply, pos, move, bonus);
+        m_to[move.to().idx()].update(bonus);
     }
 
     void HistoryTables::updateNonCaptureConthistScore(
@@ -123,10 +133,11 @@ namespace stoat {
     }
 
     i32 HistoryTables::captureScore(Move move, PieceType captured) const {
-        return m_capture[move.isPromo()][move.from().idx()][move.to().idx()][captured.idx()];
+        return m_capture[move.isPromo()][move.from().idx()][move.to().idx()][captured.idx()] + m_to[move.to().idx()];
     }
 
     void HistoryTables::updateCaptureScore(Move move, PieceType captured, HistoryScore bonus) {
         m_capture[move.isPromo()][move.from().idx()][move.to().idx()][captured.idx()].update(bonus);
+        m_to[move.to().idx()].update(bonus);
     }
 } // namespace stoat
