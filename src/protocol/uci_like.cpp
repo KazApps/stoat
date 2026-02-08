@@ -401,7 +401,13 @@ namespace stoat::protocol {
                 .byoyomi = byoyomi.value_or(0.0),
             };
 
-            limiter->addLimiter<limit::TimeManager>(startTime, limits, m_state.moveOverhead, m_state.pos.moveCount());
+            limiter->addLimiter<limit::TimeManager>(
+                startTime,
+                limits,
+                m_state.moveOverhead,
+                m_state.pos.moveCount(),
+                m_state.pos.isInCheck()
+            );
         } else if (inc) {
             printInfoString("Warning: increment given but no time, ignoring");
         }
