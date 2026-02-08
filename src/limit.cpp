@@ -74,11 +74,7 @@ namespace stoat::limit {
         const auto extra = std::max(limits.byoyomi - moveOverhead, 0.0);
 
         const auto baseTime =
-            std::min(
-                remaining * std::log2(moveCount + 1) / 100 + limits.increment * std::log2(moveCount + 1) / 10,
-                remaining
-            )
-            + extra;
+            std::min(remaining * (moveCount + 1) / 1000 + limits.increment * (moveCount + 1) / 100, remaining) + extra;
         const auto optTime = baseTime * 0.6;
 
         m_maxTime = remaining * 0.6 + extra;
