@@ -64,7 +64,7 @@ namespace stoat::limit {
         return stopSoft(nodes);
     }
 
-    TimeManager::TimeManager(util::Instant startTime, const TimeLimits& limits, u32 moveOverheadMs) :
+    TimeManager::TimeManager(util::Instant startTime, const TimeLimits& limits, u32 moveOverheadMs, bool inCheck) :
             m_startTime{startTime} {
         fmt::println("info string move overhead: {} ms", moveOverheadMs);
 
@@ -74,7 +74,7 @@ namespace stoat::limit {
         const auto extra = std::max(limits.byoyomi - moveOverhead, 0.0);
 
         const auto baseTime = std::min(remaining * 0.05 + limits.increment * 0.5, remaining) + extra;
-        const auto optTime = baseTime * 0.6;
+        const auto optTime = baseTime * 0.6 / (inCheck * 2.0);
 
         m_maxTime = remaining * 0.6 + extra;
         m_optTime = std::min(optTime, m_maxTime);
