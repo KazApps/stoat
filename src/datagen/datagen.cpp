@@ -62,7 +62,7 @@ namespace stoat::datagen {
         }
 
         void initCtrlCHandler() {
-            util::signal::addCtrlCHandler([] { s_stop.store(true); });
+            util::signal::setCtrlCHandler([] { s_stop.store(true); });
         }
 
         // NOTE: this does not test for entering kings

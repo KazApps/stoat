@@ -33,8 +33,6 @@ namespace stoat {
     namespace {
         void init() {
             std::setvbuf(stdout, nullptr, _IONBF, 0);
-
-            util::signal::init();
         }
 
         i32 runDatagen(std::span<const std::string_view> args) {
