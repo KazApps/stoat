@@ -81,32 +81,14 @@ namespace stoat::limit {
         m_optTime = std::min(optTime, m_maxTime);
     }
 
-    void TimeManager::addMoveNodes(Move move, usize nodes) {
-        if (move.isDrop()) {
-            m_drop[move.dropPiece().idx()][move.to().idx()] += nodes;
-        } else {
-            m_nonDrop[move.isPromo()][move.from().idx()][move.to().idx()] += nodes;
-        }
-
-        m_totalNodes += nodes;
-    }
-
-    void TimeManager::update(i32 depth, Move bestMove) {
+    void TimeManager::update(i32 depth, usize totalNodes, const RootMove& pvMove) {
         m_scale = 1.0;
 
         if (depth <= 5) {
             return;
         }
 
-        const auto bestMoveNodes = [&] {
-            if (bestMove.isDrop()) {
-                return m_drop[bestMove.dropPiece().idx()][bestMove.to().idx()];
-            } else {
-                return m_nonDrop[bestMove.isPromo()][bestMove.from().idx()][bestMove.to().idx()];
-            }
-        }();
-
-        const auto bestMoveNodeFraction = static_cast<f64>(bestMoveNodes) / static_cast<f64>(m_totalNodes);
+        const auto bestMoveNodeFraction = static_cast<f64>(pvMove.nodes) / static_cast<f64>(totalNodes);
         m_scale *= 2.2 - bestMoveNodeFraction * 1.6;
     }
 

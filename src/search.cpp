@@ -497,9 +497,11 @@ namespace stoat {
             }
 
             if (thread.isMainThread()) {
-                m_limiter->update(depth, thread.pvMove().pv.moves[0]);
+                const auto nodes = thread.loadNodes();
 
-                if (m_limiter->stopSoft(thread.loadNodes())) {
+                m_limiter->update(depth, nodes, thread.pvMove());
+
+                if (m_limiter->stopSoft(nodes)) {
                     break;
                 }
 
@@ -864,10 +866,6 @@ namespace stoat {
             }
 
             if (kRootNode) {
-                if (thread.isMainThread()) {
-                    m_limiter->addMoveNodes(move, thread.loadNodes() - prevNodes);
-                }
-
                 auto* rootMove = thread.findRootMove(move);
 
                 if (!rootMove) {
@@ -876,6 +874,7 @@ namespace stoat {
                 }
 
                 rootMove->windowScore = score;
+                rootMove->nodes += thread.loadNodes() - prevNodes;
 
                 if (legalMoves == 1 || score > alpha) {
                     rootMove->seldepth = thread.loadSeldepth();

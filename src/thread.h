@@ -62,6 +62,8 @@ namespace stoat {
 
         i32 seldepth{};
         PvList pv{};
+
+        usize nodes{};
     };
 
     template <bool kUpdateNnue>

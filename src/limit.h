@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "move.h"
+#include "thread.h"
 #include "util/multi_array.h"
 #include "util/timer.h"
 
@@ -33,9 +34,11 @@ namespace stoat::limit {
     public:
         virtual ~ISearchLimiter() = default;
 
-        virtual void addMoveNodes([[maybe_unused]] Move move, [[maybe_unused]] usize nodes) {}
-
-        virtual void update([[maybe_unused]] i32 depth, [[maybe_unused]] Move bestMove) {}
+        virtual void update(
+            [[maybe_unused]] i32 depth,
+            [[maybe_unused]] usize totalNodes,
+            [[maybe_unused]] const RootMove& pvMove
+        ) {}
 
         [[nodiscard]] virtual bool stopSoft(usize nodes) = 0;
         [[nodiscard]] virtual bool stopHard(usize nodes) = 0;
@@ -50,15 +53,9 @@ namespace stoat::limit {
             m_limiters.push_back(std::make_unique<T>(std::forward<Args>(args)...));
         }
 
-        inline void addMoveNodes(Move move, usize nodes) final {
+        inline void update(i32 depth, usize totalNodes, const RootMove& pvMove) final {
             for (auto& limiter : m_limiters) {
-                limiter->addMoveNodes(move, nodes);
-            }
-        }
-
-        inline void update(i32 depth, Move bestMove) final {
-            for (auto& limiter : m_limiters) {
-                limiter->update(depth, bestMove);
+                limiter->update(depth, totalNodes, pvMove);
             }
         }
 
@@ -123,9 +120,7 @@ namespace stoat::limit {
         TimeManager(util::Instant startTime, const TimeLimits& limits, u32 moveOverheadMs, u32 moveCount);
         ~TimeManager() final = default;
 
-        void addMoveNodes(Move move, usize nodes) final;
-
-        void update(i32 depth, Move bestMove) final;
+        void update(i32 depth, usize totalNodes, const RootMove& pvMove) final;
 
         [[nodiscard]] bool stopSoft(usize nodes) final;
         [[nodiscard]] bool stopHard(usize nodes) final;
@@ -137,12 +132,5 @@ namespace stoat::limit {
         f64 m_maxTime;
 
         f64 m_scale{1.0};
-
-        // [promo][from][to]
-        util::MultiArray<usize, 2, Squares::kCount, Squares::kCount> m_nonDrop{};
-        // [dropped piece type][drop square]
-        util::MultiArray<usize, PieceTypes::kCount, Squares::kCount> m_drop{};
-
-        usize m_totalNodes{};
     };
 } // namespace stoat::limit
