@@ -778,7 +778,7 @@ namespace stoat {
                     const auto score = search(thread, pos, curr.pv, sDepth, ply, sBeta - 1, sBeta, expectedCutnode);
                     curr.excluded = kNullMove;
 
-                    if (score < sBeta) {
+                    if (score < sBeta - pos.isCapture(move) * 100) {
                         if (!kPvNode && !pos.isCapture(move) && score < sBeta - 50) {
                             extension = 2;
                         } else {
