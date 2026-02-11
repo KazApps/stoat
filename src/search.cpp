@@ -189,6 +189,11 @@ namespace stoat {
         m_targetMultiPv = multiPv;
     }
 
+    void Searcher::setMinimal(bool minimal) {
+        assert(!isSearching());
+        m_minimal = minimal;
+    }
+
     void Searcher::setCuteChessWorkaround(bool enabled) {
         assert(!isSearching());
         m_cuteChessWorkaround = enabled;
@@ -457,7 +462,7 @@ namespace stoat {
                         break;
                     }
 
-                    if (thread.isMainThread() && m_targetMultiPv == 1) {
+                    if (thread.isMainThread() && !m_minimal && m_targetMultiPv == 1) {
                         const auto time = m_startTime.elapsed();
                         if (time >= kWideningReportDelay) {
                             reportSingle(thread, thread.pvIdx, depth, time);
@@ -505,7 +510,9 @@ namespace stoat {
                     break;
                 }
 
-                report(thread, depth, m_startTime.elapsed());
+                if (!m_minimal) {
+                    report(thread, depth, m_startTime.elapsed());
+                }
             }
         }
 
@@ -1252,7 +1259,9 @@ namespace stoat {
             }
         }
 
-        fmt::println("info string Selected thread {}", bestThread->id);
+        if (!m_minimal) {
+            fmt::println("info string Selected thread {}", bestThread->id);
+        }
 
         return *bestThread;
     }

@@ -83,6 +83,10 @@ namespace stoat::protocol {
         );
 
         fmt::print("option name ");
+        printOptionName("Minimal");
+        fmt::println(" type check default false");
+
+        fmt::print("option name ");
         printOptionName("CuteChessWorkaround");
         fmt::println(" type check default false");
 
@@ -512,6 +516,12 @@ namespace stoat::protocol {
                 m_state.moveOverhead = moveOverhead;
             } else {
                 fmt::println(stderr, "Invalid move overhead '{}'", value);
+            }
+        } else if (name == "minimal") {
+            if (const auto newMinimal = util::tryParseBool(value)) {
+                m_state.searcher->setMinimal(*newMinimal);
+            } else {
+                fmt::println(stderr, "Invalid check value '{}'", value);
             }
         } else if (name == "cutechessworkaround") {
             if (const auto newCcWorkaround = util::tryParseBool(value)) {

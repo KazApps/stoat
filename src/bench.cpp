@@ -58,6 +58,8 @@ namespace stoat::bench {
 
     void run(i32 depth) {
         Searcher searcher{kTtSizeMib};
+
+        searcher.setMinimal(true);
         searcher.ensureReady();
 
         usize totalNodes{};

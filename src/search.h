@@ -60,6 +60,7 @@ namespace stoat {
         void setThreadCount(u32 threadCount);
         void setTtSize(usize mib);
         void setMultiPv(u32 multipv);
+        void setMinimal(bool minimal);
         void setCuteChessWorkaround(bool enabled);
 
         void setLimiter(std::unique_ptr<limit::ISearchLimiter> limiter);
@@ -96,6 +97,7 @@ namespace stoat {
         std::vector<std::unique_ptr<ThreadData>> m_threadData{};
 
         bool m_silent{};
+        bool m_minimal{};
         bool m_cuteChessWorkaround{};
 
         mutable std::mutex m_searchMutex{};
