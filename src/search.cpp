@@ -771,7 +771,7 @@ namespace stoat {
                 if (depth >= 6 && ttEntry.depth >= depth - 3 && ttEntry.flag != tt::Flag::kUpperBound
                     && !isDecisive(ttEntry.score))
                 {
-                    const auto sBeta = ttEntry.score - depth * 4 / 3;
+                    const auto sBeta = ttEntry.score - depth * 4 / 3 - 20 * pos.isCapture(move) * depth;
                     const auto sDepth = (depth - 1) / 2;
 
                     curr.excluded = move;
@@ -779,7 +779,7 @@ namespace stoat {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        if (!kPvNode && !pos.isCapture(move) && score < sBeta - 50) {
+                        if (!kPvNode && score < sBeta - 50) {
                             extension = 2;
                         } else {
                             extension = 1;
