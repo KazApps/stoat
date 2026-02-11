@@ -460,7 +460,7 @@ namespace stoat {
                     if (thread.isMainThread() && m_targetMultiPv == 1) {
                         const auto time = m_startTime.elapsed();
                         if (time >= kWideningReportDelay) {
-                            reportSingle(thread, thread.pvIdx, depth, time);
+                            // reportSingle(thread, thread.pvIdx, depth, time);
                         }
                     }
 
@@ -505,7 +505,7 @@ namespace stoat {
                     break;
                 }
 
-                report(thread, depth, m_startTime.elapsed());
+                // report(thread, depth, m_startTime.elapsed());
             }
         }
 
