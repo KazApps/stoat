@@ -768,7 +768,7 @@ namespace stoat {
             i32 extension{};
 
             if (!kRootNode && ply < thread.rootDepth * 2 && move == ttMove && !curr.excluded) {
-                if (depth >= 6 && ttEntry.depth >= depth - 3 && ttEntry.flag != tt::Flag::kUpperBound
+                if (depth >= 5 && ttEntry.depth >= depth - 3 && ttEntry.flag != tt::Flag::kUpperBound
                     && !isDecisive(ttEntry.score))
                 {
                     const auto sBeta = ttEntry.score - depth * 4 / 3;
