@@ -28,7 +28,7 @@ namespace stoat::limit {
 
         const auto remaining = std::max(limits.remaining - moveOverhead, 0.0);
         const auto extra = std::max(limits.byoyomi - moveOverhead, 0.0);
-        const auto moveCountFactor = std::sqrt(moveCount + 2) * std::log2(moveCount + 2);
+        const auto moveCountFactor = std::pow(moveCount + 1, 0.9);
 
         const auto baseTime =
             std::min(remaining * moveCountFactor / 1000 + limits.increment * moveCountFactor / 100, remaining) + extra;
