@@ -31,7 +31,7 @@ namespace stoat::limit {
         const auto moveCountFactor = std::sqrt(moveCount + 1);
 
         const auto baseTime =
-            std::min(remaining * moveCountFactor / 1000 + limits.increment * moveCountFactor / 100, remaining) + extra;
+            std::min(remaining * moveCountFactor / 100 + limits.increment * moveCountFactor / 10, remaining) + extra;
         const auto optTime = baseTime * 0.6;
 
         m_maxTime = remaining * 0.6 + extra;
