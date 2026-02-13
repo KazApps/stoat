@@ -792,11 +792,11 @@ namespace stoat {
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
-                        if (!kPvNode && !pos.isCapture(move) && score < sBeta - 25) {
-                            extension = 2;
-                        } else {
-                            extension = 1;
-                        }
+                        extension = std::clamp(
+                            (depth + (!kPvNode && !pos.isCapture(move) && score < sBeta - 25) * 6) / 8,
+                            1,
+                            3
+                        );
                     } else if (sBeta >= beta) {
                         return sBeta;
                     } else if (ttEntry.score >= beta) {
