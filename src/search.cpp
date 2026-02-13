@@ -692,7 +692,7 @@ namespace stoat {
                 return curr.staticEval;
             }
 
-            if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + 300 * depth <= alpha) {
+            if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + 200 * depth <= alpha) {
                 const auto score = qsearch(thread, pos, ply, alpha, alpha + 1);
                 if (score <= alpha) {
                     return score;
