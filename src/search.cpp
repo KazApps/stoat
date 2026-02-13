@@ -859,7 +859,7 @@ namespace stoat {
                     r -= 1 + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
                 }
 
-                if (move.isDrop()) {
+                if (move.isDrop() && !curr.excluded) {
                     r -= dist < 3 && !pos.attackersTo(move.to(), pos.stm()).empty();
                     r -= (attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
                           & pos.colorBb(pos.stm().flip()))
