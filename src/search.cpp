@@ -851,19 +851,21 @@ namespace stoat {
                 r -= history / 8192;
                 r += expectedCutnode * 3;
 
-                if (pos.isInCheck()) {
-                    r -= 1 + (dist == 1);
-                }
+                if (!curr.excluded) {
+                    if (pos.isInCheck()) {
+                        r -= 1 + (dist == 1);
+                    }
 
-                if (pos.isCapture(move)) {
-                    r -= 1 + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
-                }
+                    if (pos.isCapture(move)) {
+                        r -= 1 + (see::pieceValue(pos.pieceOn(move.to()).type()) + 150) / 250;
+                    }
 
-                if (move.isDrop()) {
-                    r -= dist < 3 && !pos.attackersTo(move.to(), pos.stm()).empty();
-                    r -= (attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
-                          & pos.colorBb(pos.stm().flip()))
-                             .popcount();
+                    if (move.isDrop()) {
+                        r -= dist < 3 && !pos.attackersTo(move.to(), pos.stm()).empty();
+                        r -= (attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
+                              & pos.colorBb(pos.stm().flip()))
+                                 .popcount();
+                    }
                 }
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
