@@ -170,11 +170,17 @@ namespace stoat::tt {
 
     void TTable::clear(u32 threadCount) {
         assert(!m_pendingInit);
+        assert(threadCount > 0);
+
+        m_age = 0;
+
+        if (threadCount == 1) {
+            std::memset(m_entries, 0, m_entryCount * sizeof(Entry));
+            return;
+        }
 
         std::vector<std::thread> threads{};
         threads.reserve(threadCount);
-
-        fmt::println("info string Clearing the TT with {} threads", threadCount);
 
         const auto chunkSize = (m_entryCount + threadCount - 1) / threadCount;
 
@@ -188,8 +194,6 @@ namespace stoat::tt {
                 std::memset(&m_entries[start], 0, count * sizeof(Entry));
             });
         }
-
-        m_age = 0;
 
         for (auto& thread : threads) {
             thread.join();

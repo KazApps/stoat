@@ -362,7 +362,7 @@ namespace stoat {
     }
 
     u32 Searcher::threadCount() const {
-        return m_threads.size();
+        return m_threadData.size();
     }
 
     Searcher::RootStatus Searcher::initRootMoves(movegen::MoveList& dst, const Position& pos) {
