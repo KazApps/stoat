@@ -820,8 +820,8 @@ namespace stoat {
                 r -= history / 8192;
                 r += expectedCutnode * 3;
 
-                if (std::abs(bestScore) < kScoreMaxMate) {
-                    r += alphaRaises / 2;
+                if (!isDecisive(bestScore)) {
+                    r += (alphaRaises + 1) / 2;
                 }
 
                 if (pos.isInCheck()) {
