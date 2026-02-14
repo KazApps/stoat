@@ -62,7 +62,7 @@ namespace stoat::movegen {
             }
         }
 
-        template <bool kCanPromote>
+        template <bool kCanPromote, bool kForcePromote = false>
         void generatePrecalculatedWithColorAndOcc(
             MoveList& dst,
             const Position& pos,
@@ -71,13 +71,13 @@ namespace stoat::movegen {
             Bitboard dstMask,
             Bitboard nonPromoMask = Bitboards::kAll
         ) {
-            const auto stm = pos.stm();
+            static_assert(kCanPromote || !kForcePromote);
 
+            const auto stm = pos.stm();
             const auto occ = pos.occupancy();
+            const auto promoArea = Bitboards::promoArea(stm);
 
             if constexpr (kCanPromote) {
-                const auto promoArea = Bitboards::promoArea(stm);
-
                 auto promotable = pieces;
                 while (!promotable.empty()) {
                     const auto piece = promotable.popLsb();
@@ -95,16 +95,16 @@ namespace stoat::movegen {
                 }
             }
 
-            auto movable = pieces;
+            auto movable = kForcePromote ? pieces & ~promoArea : pieces;
             while (!movable.empty()) {
                 const auto piece = movable.popLsb();
                 const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & nonPromoMask;
 
-                serializeNormals(dst, piece, attacks);
+                serializeNormals(dst, piece, kForcePromote ? attacks & ~promoArea : attacks);
             }
         }
 
-        template <bool kCanPromote>
+        template <bool kCanPromote, bool kForcePromote = false>
         void generatePrecalculatedWithColor(
             MoveList& dst,
             const Position& pos,
@@ -113,7 +113,7 @@ namespace stoat::movegen {
             Bitboard dstMask,
             Bitboard nonPromoMask = Bitboards::kAll
         ) {
-            generatePrecalculatedWithColorAndOcc<kCanPromote>(
+            generatePrecalculatedWithColorAndOcc<kCanPromote, kForcePromote>(
                 dst,
                 pos,
                 pieces,
@@ -123,7 +123,7 @@ namespace stoat::movegen {
             );
         }
 
-        template <bool kCanPromote>
+        template <bool kCanPromote, bool kForcePromote = false>
         void generatePrecalculatedWithOcc(
             MoveList& dst,
             const Position& pos,
@@ -132,7 +132,7 @@ namespace stoat::movegen {
             Bitboard dstMask,
             Bitboard nonPromoMask = Bitboards::kAll
         ) {
-            generatePrecalculatedWithColorAndOcc<kCanPromote>(
+            generatePrecalculatedWithColorAndOcc<kCanPromote, kForcePromote>(
                 dst,
                 pos,
                 pieces,
@@ -142,7 +142,7 @@ namespace stoat::movegen {
             );
         }
 
-        template <bool kCanPromote>
+        template <bool kCanPromote, bool kForcePromote = false>
         void generatePrecalculated(
             MoveList& dst,
             const Position& pos,
@@ -151,7 +151,7 @@ namespace stoat::movegen {
             Bitboard dstMask,
             Bitboard nonPromoMask = Bitboards::kAll
         ) {
-            generatePrecalculatedWithColorAndOcc<kCanPromote>(
+            generatePrecalculatedWithColorAndOcc<kCanPromote, kForcePromote>(
                 dst,
                 pos,
                 pieces,
@@ -161,6 +161,7 @@ namespace stoat::movegen {
             );
         }
 
+        template <bool kGenerateUnlikelyMove>
         void generatePawns(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto stm = pos.stm();
             const auto pawns = pos.pieceBb(PieceTypes::kPawn, stm);
@@ -168,7 +169,8 @@ namespace stoat::movegen {
             const auto shifted = pawns.shiftNorthRelative(stm) & dstMask;
 
             const auto promos = shifted & Bitboards::promoArea(stm);
-            const auto nonPromos = shifted & ~Bitboards::relativeRank(stm, 8);
+            const auto nonPromos =
+                shifted & (kGenerateUnlikelyMove ? ~Bitboards::relativeRank(stm, 8) : ~Bitboards::promoArea(stm));
 
             const auto offset = offsets::relativeOffset(stm, offsets::kNorth);
 
@@ -176,6 +178,7 @@ namespace stoat::movegen {
             serializeNormals(dst, offset, nonPromos);
         }
 
+        template <bool kGenerateUnlikelyMove>
         void generateLances(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto lances = pos.pieceBb(PieceTypes::kLance, pos.stm());
             generatePrecalculatedWithColorAndOcc<true>(
@@ -184,7 +187,8 @@ namespace stoat::movegen {
                 lances,
                 attacks::lanceAttacks,
                 dstMask,
-                ~Bitboards::relativeRank(pos.stm(), 8)
+                ~(Bitboards::relativeRank(pos.stm(), 8)
+                  | (kGenerateUnlikelyMove ? Bitboards::kEmpty : Bitboards::relativeRank(pos.stm(), 7)))
             );
         }
 
@@ -214,14 +218,22 @@ namespace stoat::movegen {
             generatePrecalculatedWithColor<false>(dst, pos, golds, attacks::goldAttacks, dstMask);
         }
 
+        template <bool kGenerateUnlikelyMove>
         void generateBishops(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto bishops = pos.pieceBb(PieceTypes::kBishop, pos.stm());
-            generatePrecalculatedWithOcc<true>(dst, pos, bishops, attacks::bishopAttacks, dstMask);
+            generatePrecalculatedWithOcc<true, !kGenerateUnlikelyMove>(
+                dst,
+                pos,
+                bishops,
+                attacks::bishopAttacks,
+                dstMask
+            );
         }
 
+        template <bool kGenerateUnlikelyMove>
         void generateRooks(MoveList& dst, const Position& pos, Bitboard dstMask) {
             const auto rooks = pos.pieceBb(PieceTypes::kRook, pos.stm());
-            generatePrecalculatedWithOcc<true>(dst, pos, rooks, attacks::rookAttacks, dstMask);
+            generatePrecalculatedWithOcc<true, !kGenerateUnlikelyMove>(dst, pos, rooks, attacks::rookAttacks, dstMask);
         }
 
         void generatePromotedBishops(MoveList& dst, const Position& pos, Bitboard dstMask) {
@@ -270,7 +282,7 @@ namespace stoat::movegen {
             generate(PieceTypes::kRook);
         }
 
-        template <bool kGenerateDrops>
+        template <bool kGenerateDrops, bool kGenerateUnlikelyMoves>
         void generate(MoveList& dst, const Position& pos, Bitboard dstMask) {
             generateKings(dst, pos, dstMask);
 
@@ -288,13 +300,13 @@ namespace stoat::movegen {
                 dropMask &= checkRay;
             }
 
-            generatePawns(dst, pos, dstMask);
-            generateLances(dst, pos, dstMask);
+            generatePawns<kGenerateUnlikelyMoves>(dst, pos, dstMask);
+            generateLances<kGenerateUnlikelyMoves>(dst, pos, dstMask);
             generateKnights(dst, pos, dstMask);
             generateSilvers(dst, pos, dstMask);
             generateGolds(dst, pos, dstMask);
-            generateBishops(dst, pos, dstMask);
-            generateRooks(dst, pos, dstMask);
+            generateBishops<kGenerateUnlikelyMoves>(dst, pos, dstMask);
+            generateRooks<kGenerateUnlikelyMoves>(dst, pos, dstMask);
             generatePromotedBishops(dst, pos, dstMask);
             generatePromotedRooks(dst, pos, dstMask);
 
@@ -304,26 +316,39 @@ namespace stoat::movegen {
         }
     } // namespace
 
+    template <bool kGenerateUnlikelyMoves>
     void generateAll(MoveList& dst, const Position& pos) {
         const auto dstMask = ~pos.colorBb(pos.stm());
-        generate<true>(dst, pos, dstMask);
+        generate<true, kGenerateUnlikelyMoves>(dst, pos, dstMask);
     }
 
+    template <bool kGenerateUnlikelyMoves>
     void generateCaptures(MoveList& dst, const Position& pos) {
         const auto dstMask = pos.colorBb(pos.stm().flip());
-        generate<false>(dst, pos, dstMask);
+        generate<false, kGenerateUnlikelyMoves>(dst, pos, dstMask);
     }
 
+    template <bool kGenerateUnlikelyMoves>
     void generateNonCaptures(MoveList& dst, const Position& pos) {
         const auto dstMask = ~pos.occupancy();
-        generate<true>(dst, pos, dstMask);
+        generate<true, kGenerateUnlikelyMoves>(dst, pos, dstMask);
     }
 
+    template <bool kGenerateUnlikelyMoves>
     void generateRecaptures(MoveList& dst, const Position& pos, Square captureSq) {
         assert(!pos.colorBb(pos.stm()).getSquare(captureSq));
         assert(pos.colorBb(pos.stm().flip()).getSquare(captureSq));
 
         const auto dstMask = Bitboard::fromSquare(captureSq);
-        generate<false>(dst, pos, dstMask);
+        generate<false, kGenerateUnlikelyMoves>(dst, pos, dstMask);
     }
+
+    template void generateAll<true>(MoveList&, const Position&);
+    template void generateAll<false>(MoveList&, const Position&);
+    template void generateCaptures<true>(MoveList&, const Position&);
+    template void generateCaptures<false>(MoveList&, const Position&);
+    template void generateNonCaptures<true>(MoveList&, const Position&);
+    template void generateNonCaptures<false>(MoveList&, const Position&);
+    template void generateRecaptures<true>(MoveList&, const Position&, Square);
+    template void generateRecaptures<false>(MoveList&, const Position&, Square);
 } // namespace stoat::movegen
