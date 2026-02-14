@@ -24,5 +24,5 @@
 
 namespace stoat::util::signal {
     using CtrlCHandler = std::function<void()>;
-    void setCtrlCHandler(CtrlCHandler handler);
+    bool setCtrlCHandler(CtrlCHandler handler);
 } // namespace stoat::util::signal

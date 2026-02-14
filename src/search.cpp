@@ -224,7 +224,6 @@ namespace stoat {
 
             thread->limiter = m_limiter;
             thread->maxDepth = maxDepth;
-            thread->stoppedSoft = false;
 
             thread->nnueState.reset(pos);
         }
@@ -300,12 +299,11 @@ namespace stoat {
     }
 
     void Searcher::runDatagenSearch() {
-        if (!m_limiter) {
-            fmt::println(stderr, "Missing limiter");
-            return;
-        }
-
         auto& thread = *m_threadData[0];
+
+        if (!thread.limiter) {
+            thread.limiter = m_limiter;
+        }
 
         if (initRootMoves(m_rootMoveList, thread.rootPos) == RootStatus::kNoLegalMoves) {
             return;
@@ -364,7 +362,7 @@ namespace stoat {
 
     void Searcher::signalThreadSoftStopped() {
         const auto stopped = ++m_softStoppedThreads;
-        const auto voteThreshold = (m_threadData.size() + 1) / 2;
+        const auto voteThreshold = (threadCount() + 1) / 2;
         if (stopped >= voteThreshold) {
             m_stop.store(true);
         }
@@ -397,6 +395,8 @@ namespace stoat {
             rootMove.pv.moves[0] = move;
             rootMove.pv.length = 1;
         }
+
+        thread.stoppedSoft = false;
 
         PvList rootPv{};
 

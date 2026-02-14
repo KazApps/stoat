@@ -30,14 +30,22 @@
     #include <signal.h>
 #endif
 
+#include <cstdio>
+
 namespace stoat::util::signal {
     namespace {
         CtrlCHandler s_handler{};
     }
 
-    void setCtrlCHandler(CtrlCHandler handler) {
-        assert(!s_handler);
-        assert(handler);
+    bool setCtrlCHandler(CtrlCHandler handler) {
+        if (s_handler) {
+            fmt::println(stderr, "attempted to reset ctrl+c handler");
+            return false;
+        }
+
+        if (!handler) {
+            return false;
+        }
 
         s_handler = std::move(handler);
 
@@ -56,6 +64,7 @@ namespace stoat::util::signal {
 
         if (!result) {
             fmt::println(stderr, "failed to set ctrl+c handler");
+            return false;
         }
 #else
         struct sigaction action{};
@@ -65,15 +74,20 @@ namespace stoat::util::signal {
 
         if (sigaction(SIGINT, &action, nullptr)) {
             fmt::println(stderr, "failed to set SIGINT handler");
+            return false;
         }
 
         if (sigaction(SIGTERM, &action, nullptr)) {
             fmt::println(stderr, "failed to set SIGTERM handler");
+            return false;
         }
 
         if (sigaction(SIGHUP, &action, nullptr)) {
             fmt::println(stderr, "failed to set SIGHUP handler");
+            return false;
         }
 #endif
+
+        return true;
     }
 } // namespace stoat::util::signal

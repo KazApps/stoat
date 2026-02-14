@@ -61,10 +61,6 @@ namespace stoat::datagen {
             return *s_errOut;
         }
 
-        void initCtrlCHandler() {
-            util::signal::setCtrlCHandler([] { s_stop.store(true); });
-        }
-
         // NOTE: this does not test for entering kings
         [[nodiscard]] Move selectRandomLegal(
             util::rng::Jsf64Rng& rng,
@@ -324,7 +320,9 @@ namespace stoat::datagen {
     } // namespace
 
     i32 run(std::string_view output, u32 threadCount) {
-        initCtrlCHandler();
+        if (!util::signal::setCtrlCHandler([] { s_stop.store(true); })) {
+            return 1;
+        }
 
         const auto outDir = std::filesystem::path{output};
 
