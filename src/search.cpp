@@ -821,7 +821,7 @@ namespace stoat {
                 r += expectedCutnode * 3;
 
                 if (!isDecisive(bestScore)) {
-                    r += (alphaRaises + 1) / 2;
+                    r += alphaRaises * 2 / 3;
                 }
 
                 if (pos.isInCheck()) {
