@@ -73,7 +73,7 @@ namespace stoat {
 
         void generateLegal(movegen::MoveList& dst, const Position& pos) {
             movegen::MoveList generated{};
-            movegen::generateAll(generated, pos);
+            movegen::generateAll<true>(generated, pos);
 
             for (const auto move : generated) {
                 if (pos.isLegal(move)) {
@@ -88,35 +88,6 @@ namespace stoat {
 
         [[nodiscard]] constexpr bool isDecisive(Score score) {
             return std::abs(score) > kScoreWin;
-        }
-
-        [[nodiscard]] bool isUnlikelyMove(const Position& pos, Move move) {
-            if (move.isDrop() || move.isPromo()) {
-                return false;
-            }
-
-            const auto pt = pos.pieceOn(move.from()).type();
-            const auto promoArea = Bitboards::promoArea(pos.stm());
-
-            if (pt != PieceTypes::kPawn && pt != PieceTypes::kLance && pt != PieceTypes::kBishop
-                && pt != PieceTypes::kRook)
-            {
-                return false;
-            }
-
-            if (promoArea.getSquare(move.from())) {
-                return true;
-            }
-
-            if (pt != PieceTypes::kLance && promoArea.getSquare(move.to())) {
-                return true;
-            }
-
-            if (pt == PieceTypes::kLance && move.to().relative(pos.stm()).rank() == 7) {
-                return true;
-            }
-
-            return false;
         }
     } // namespace
 
@@ -723,7 +694,8 @@ namespace stoat {
 
         auto ttFlag = tt::Flag::kUpperBound;
 
-        auto generator = MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply);
+        auto generator =
+            MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply, depth > 5 && alpha < -1500);
 
         util::StaticVector<Move, 64> capturesTried{};
         util::StaticVector<Move, 64> nonCapturesTried{};
@@ -743,10 +715,6 @@ namespace stoat {
                 }
                 assert(pos.isLegal(move));
             } else if (!pos.isLegal(move)) {
-                continue;
-            }
-
-            if (isUnlikelyMove(pos, move) && curr.staticEval - 500 <= alpha) {
                 continue;
             }
 
@@ -1071,14 +1039,14 @@ namespace stoat {
 
         auto ttFlag = tt::Flag::kUpperBound;
 
-        auto generator = MoveGenerator::qsearch(pos, thread.history, thread.conthist, ply);
+        auto generator = MoveGenerator::qsearch(pos, thread.history, thread.conthist, ply, alpha < -1500);
 
         u32 legalMoves{};
 
         while (const auto move = generator.next()) {
             assert(pos.isPseudolegal(move));
 
-            if (!pos.isLegal(move) || isUnlikelyMove(pos, move)) {
+            if (!pos.isLegal(move)) {
                 continue;
             }
 

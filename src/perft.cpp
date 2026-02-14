@@ -29,7 +29,7 @@ namespace stoat {
             }
 
             movegen::MoveList moves{};
-            movegen::generateAll(moves, pos);
+            movegen::generateAll<true>(moves, pos);
 
             usize total{};
 
@@ -58,7 +58,7 @@ namespace stoat {
         const auto start = util::Instant::now();
 
         movegen::MoveList moves{};
-        movegen::generateAll(moves, pos);
+        movegen::generateAll<true>(moves, pos);
 
         usize total{};
 

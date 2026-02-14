@@ -28,8 +28,15 @@ namespace stoat::movegen {
     constexpr usize kMoveListCapacity = 600;
     using MoveList = util::StaticVector<Move, kMoveListCapacity>;
 
+    template <bool kGenerateUnlikelyMoves>
     void generateAll(MoveList& dst, const Position& pos);
+
+    template <bool kGenerateUnlikelyMoves>
     void generateCaptures(MoveList& dst, const Position& pos);
+
+    template <bool kGenerateUnlikelyMoves>
     void generateNonCaptures(MoveList& dst, const Position& pos);
+
+    template <bool kGenerateUnlikelyMoves>
     void generateRecaptures(MoveList& dst, const Position& pos, Square captureSq);
 } // namespace stoat::movegen

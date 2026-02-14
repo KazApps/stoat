@@ -70,14 +70,16 @@ namespace stoat {
             Move ttMove,
             const HistoryTables& history,
             std::span<ContinuationSubtable* const> continuations,
-            i32 ply
+            i32 ply,
+            bool generateUnlikelyMoves
         );
 
         [[nodiscard]] static MoveGenerator qsearch(
             const Position& pos,
             const HistoryTables& history,
             std::span<ContinuationSubtable* const> continuations,
-            i32 ply
+            i32 ply,
+            bool generateUnlikelyMoves
         );
 
     private:
@@ -87,7 +89,8 @@ namespace stoat {
             Move ttMove,
             const HistoryTables& history,
             std::span<ContinuationSubtable* const> continuations,
-            i32 ply
+            i32 ply,
+            bool generateUnlikelyMoves
         );
 
         [[nodiscard]] i32 scoreCapture(Move move);
@@ -131,5 +134,7 @@ namespace stoat {
         usize m_end{};
 
         usize m_badCapturesEnd{};
+
+        bool m_generateUnlikelyMoves{false};
     };
 } // namespace stoat
