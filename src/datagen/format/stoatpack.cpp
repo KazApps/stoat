@@ -21,6 +21,20 @@
 #include <array>
 
 namespace stoat::datagen::format {
+    namespace {
+        [[nodiscard]] Move convertToOldFormat(Move move) {
+            if (!move.isDrop()) {
+                return move;
+            }
+
+            // new: P, L, N, S, B, R, G, K, +P, +L, +N, +S, +B, +R
+            // old: P, +P, L, N, +L, +N, S, +S, G, B, R, +B, +R, K
+            constexpr std::array kPieceTypeMap{0, 2, 3, 6, 9, 10, 8, 13, 1, 4, 5, 7, 11, 12};
+
+            return Move::makeDrop(PieceType::fromRaw(kPieceTypeMap[move.dropPiece().idx()]), move.to());
+        }
+    } // namespace
+
     Stoatpack::Stoatpack() {
         m_unscoredMoves.reserve(16);
         m_moves.reserve(256);
@@ -33,12 +47,12 @@ namespace stoat::datagen::format {
 
     void Stoatpack::pushUnscored(Move move) {
         assert(m_moves.empty());
-        m_unscoredMoves.push_back(move.raw());
+        m_unscoredMoves.push_back(convertToOldFormat(move).raw());
     }
 
     void Stoatpack::push(Move move, Score score) {
         assert(std::abs(score) <= kScoreInf);
-        m_moves.emplace_back(move.raw(), static_cast<i16>(score));
+        m_moves.emplace_back(convertToOldFormat(move).raw(), static_cast<i16>(score));
     }
 
     usize Stoatpack::writeAllWithOutcome(std::ostream& stream, Outcome outcome) {
