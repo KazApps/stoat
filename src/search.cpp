@@ -456,12 +456,12 @@ namespace stoat {
 
                         beta = (alpha + beta) / 2;
                         alpha = std::max(score - window, -kScoreInf);
+                        window += window;
                     } else { // score >= beta
                         reduction = std::min(reduction + 1, 3);
                         beta = std::min(score + window, kScoreInf);
+                        window += window / 2;
                     }
-
-                    window += window;
                 }
 
                 std::ranges::stable_sort(thread.rootMoves, [](const RootMove& a, const RootMove& b) {
