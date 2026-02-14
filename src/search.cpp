@@ -460,7 +460,7 @@ namespace stoat {
                     } else { // score >= beta
                         reduction = std::min(reduction + 1, 3);
                         beta = std::min(score + window, kScoreInf);
-                        window += window / 2;
+                        window += window * 3 / 4;
                     }
                 }
 
