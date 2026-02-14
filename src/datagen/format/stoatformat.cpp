@@ -62,14 +62,14 @@ namespace stoat::datagen::format {
         while (!blackPieces.empty()) {
             const auto sq = blackPieces.popLsb();
             const auto pt = pos.pieceOn(sq).type();
-            record.pieces[pieceIdx++] = pt.raw();
+            record.pieces[pieceIdx++] = kPieceTypeMap[pt.idx()];
         }
 
         auto whitePieces = pos.colorBb(Colors::kWhite);
         while (!whitePieces.empty()) {
             const auto sq = whitePieces.popLsb();
             const auto pt = pos.pieceOn(sq).type();
-            record.pieces[pieceIdx++] = pt.raw();
+            record.pieces[pieceIdx++] = kPieceTypeMap[pt.idx()];
         }
 
         record.score = senteScore;

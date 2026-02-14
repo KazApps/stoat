@@ -33,6 +33,10 @@ namespace stoat::datagen::format {
         kBlackWin,
     };
 
+    // new: P, L, N, S, B, R, G, K, +P, +L, +N, +S, +B, +R
+    // old: P, +P, L, N, +L, +N, S, +S, G, B, R, +B, +R, K
+    constexpr std::array kPieceTypeMap{0, 2, 3, 6, 9, 10, 8, 13, 1, 4, 5, 7, 11, 12};
+
     class IDataFormat {
     public:
         virtual ~IDataFormat() = default;
