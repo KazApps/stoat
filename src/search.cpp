@@ -821,7 +821,7 @@ namespace stoat {
                 r += expectedCutnode * 3;
 
                 if (std::abs(bestScore) < kScoreMaxMate) {
-                    r += alphaRaises;
+                    r += alphaRaises / 2;
                 }
 
                 if (pos.isInCheck()) {
