@@ -54,6 +54,7 @@ namespace stoat {
 
         updateCont(1);
         updateCont(2);
+        updateCont(3);
     }
 
     i32 CorrectionHistory::correction(const Position& pos, std::span<const u64> keyHistory) const {
@@ -66,14 +67,15 @@ namespace stoat {
         correction += 128 * tables.hand[pos.kingHandKey() % kEntries];
         correction += 128 * tables.kpr[pos.kprKey() % kEntries];
 
-        const auto applyCont = [&](const u64 offset) {
+        const auto applyCont = [&](const u64 offset, const i32 weight) {
             if (keyHistory.size() >= offset) {
-                correction += 128 * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
+                correction += weight * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
             }
         };
 
-        applyCont(1);
-        applyCont(2);
+        applyCont(1, 128);
+        applyCont(2, 128);
+        applyCont(3, 96);
 
         return correction / 2048;
     }
