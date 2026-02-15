@@ -29,10 +29,17 @@ namespace stoat::eval {
     [[nodiscard]] Score staticEval(const Position& pos, const nnue::NnueState& nnueState);
     [[nodiscard]] Score staticEvalOnce(const Position& pos);
 
-    [[nodiscard]] Score adjustEval(Score rawEval, const Position& pos, const CorrectionHistory& corrhist, i32 ply);
+    [[nodiscard]] Score adjustEval(
+        Score rawEval,
+        const Position& pos,
+        std::span<const u64> keyHistory,
+        const CorrectionHistory& corrhist,
+        i32 ply
+    );
 
     [[nodiscard]] Score adjustedEval(
         const Position& pos,
+        std::span<const u64> keyHistory,
         const nnue::NnueState& nnueState,
         const CorrectionHistory& corrhist,
         i32 ply
