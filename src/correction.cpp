@@ -53,6 +53,7 @@ namespace stoat {
         };
 
         updateCont(1);
+        updateCont(2);
     }
 
     i32 CorrectionHistory::correction(const Position& pos, std::span<const u64> keyHistory) const {
@@ -72,6 +73,7 @@ namespace stoat {
         };
 
         applyCont(1);
+        applyCont(2);
 
         return correction / 2048;
     }
