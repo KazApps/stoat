@@ -69,6 +69,6 @@ namespace stoat {
         };
 
         std::array<SidedTables, 2> m_tables{};
-        std::array<Entry, kEntries> m_cont{};
+        std::array<Entry, kEntries> m_contTable{};
     };
 } // namespace stoat
