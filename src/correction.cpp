@@ -23,10 +23,12 @@
 namespace stoat {
     void CorrectionHistory::clear() {
         std::memset(&m_tables, 0, sizeof(m_tables));
+        std::memset(&m_cont, 0, sizeof(m_cont));
     }
 
     void CorrectionHistory::update(
         const Position& pos,
+        std::span<const u64> keyHistory,
         i32 depth,
         Score searchScore,
         Score staticEval,
@@ -43,9 +45,17 @@ namespace stoat {
         tables.cavalry[pos.cavalryKey() % kEntries].update(bonus);
         tables.hand[pos.kingHandKey() % kEntries].update(bonus);
         tables.kpr[pos.kprKey() % kEntries].update(bonus);
+
+        const auto updateCont = [&](const u64 offset) {
+            if (keyHistory.size() >= offset) {
+                m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
+            }
+        };
+
+        updateCont(1);
     }
 
-    i32 CorrectionHistory::correction(const Position& pos) const {
+    i32 CorrectionHistory::correction(const Position& pos, std::span<const u64> keyHistory) const {
         const auto& tables = m_tables[pos.stm().idx()];
 
         i32 correction{};
@@ -54,6 +64,14 @@ namespace stoat {
         correction += 128 * tables.cavalry[pos.cavalryKey() % kEntries];
         correction += 128 * tables.hand[pos.kingHandKey() % kEntries];
         correction += 128 * tables.kpr[pos.kprKey() % kEntries];
+
+        const auto applyCont = [&](const u64 offset) {
+            if (keyHistory.size() >= offset) {
+                correction += 128 * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
+            }
+        };
+
+        applyCont(1);
 
         return correction / 2048;
     }

@@ -31,19 +31,26 @@ namespace stoat::eval {
         return std::clamp(nnue, -kScoreWin + 1, kScoreWin - 1);
     }
 
-    Score adjustEval(Score rawEval, const Position& pos, const CorrectionHistory& corrhist, i32 ply) {
+    Score adjustEval(
+        Score rawEval,
+        const Position& pos,
+        std::span<const u64> keyHistory,
+        const CorrectionHistory& corrhist,
+        i32 ply
+    ) {
         const auto scaledEval = rawEval * (1024 + ply) / 1024;
-        const auto correction = corrhist.correction(pos);
+        const auto correction = corrhist.correction(pos, keyHistory);
         return std::clamp(scaledEval + static_cast<Score>(correction), -kScoreWin + 1, kScoreWin - 1);
     }
 
     Score adjustedEval(
         const Position& pos,
+        std::span<const u64> keyHistory,
         const nnue::NnueState& nnueState,
         const CorrectionHistory& corrhist,
         i32 ply
     ) {
         const auto rawEval = staticEval(pos, nnueState);
-        return adjustEval(rawEval, pos, corrhist, ply);
+        return adjustEval(rawEval, pos, keyHistory, corrhist, ply);
     }
 } // namespace stoat::eval
