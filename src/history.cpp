@@ -82,7 +82,7 @@ namespace stoat {
     ) {
         const auto updateConthist = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {
-                return m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
+                m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
             }
         };
 
