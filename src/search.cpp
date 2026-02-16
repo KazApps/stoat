@@ -461,7 +461,7 @@ namespace stoat {
                         beta = std::min(score + window, kScoreInf);
                     }
 
-                    window += std::max<i32>(window - thread.id, window / 2);
+                    window += std::max<i32>(window + thread.id / 4 - thread.id, window / 2);
                 }
 
                 std::ranges::stable_sort(thread.rootMoves, [](const RootMove& a, const RootMove& b) {
