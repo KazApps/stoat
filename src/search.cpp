@@ -844,7 +844,11 @@ namespace stoat {
                     score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
                     if (!pos.isCapture(move) && score >= beta) {
                         const auto bonus = historyBonus(newDepth);
-                        thread.history.updateNonCaptureConthistScore(pos, thread.keyHistory, bonus);
+                        thread.history.updateNonCaptureConthistScore(
+                            pos,
+                            {thread.keyHistory.data(), thread.keyHistory.size() - 1},
+                            bonus
+                        );
                     }
                 }
             } else if (!kPvNode || legalMoves > 1) {
