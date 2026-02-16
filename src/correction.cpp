@@ -23,7 +23,7 @@
 namespace stoat {
     void CorrectionHistory::clear() {
         std::memset(&m_tables, 0, sizeof(m_tables));
-        std::memset(&m_cont, 0, sizeof(m_cont));
+        std::memset(&m_contTable, 0, sizeof(m_contTable));
     }
 
     void CorrectionHistory::update(
@@ -48,7 +48,7 @@ namespace stoat {
 
         const auto updateCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {
-                m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
+                m_contTable[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
             }
         };
 
@@ -68,7 +68,7 @@ namespace stoat {
 
         const auto applyCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {
-                correction += 128 * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
+                correction += 128 * m_contTable[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries];
             }
         };
 
