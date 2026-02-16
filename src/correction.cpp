@@ -32,7 +32,8 @@ namespace stoat {
         i32 depth,
         Score searchScore,
         Score staticEval,
-        i32 complexity
+        i32 complexity,
+        bool capture
     ) {
         auto& tables = m_tables[pos.stm().idx()];
 
@@ -47,7 +48,7 @@ namespace stoat {
         tables.kpr[pos.kprKey() % kEntries].update(bonus);
 
         const auto updateCont = [&](const u64 offset) {
-            if (keyHistory.size() >= offset) {
+            if (!capture && keyHistory.size() >= offset) {
                 m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
             }
         };
@@ -56,7 +57,7 @@ namespace stoat {
         updateCont(2);
     }
 
-    i32 CorrectionHistory::correction(const Position& pos, std::span<const u64> keyHistory) const {
+    i32 CorrectionHistory::correction(const Position& pos, std::span<const u64> keyHistory, bool capture) const {
         const auto& tables = m_tables[pos.stm().idx()];
 
         i32 correction{};
@@ -67,7 +68,7 @@ namespace stoat {
         correction += 128 * tables.kpr[pos.kprKey() % kEntries];
 
         const auto applyCont = [&](const u64 offset) {
-            if (keyHistory.size() >= offset) {
+            if (!capture && keyHistory.size() >= offset) {
                 correction += 128 * m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries];
             }
         };

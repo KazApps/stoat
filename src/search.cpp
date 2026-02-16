@@ -576,13 +576,21 @@ namespace stoat {
             thread.updateSeldepth(ply + 1);
         }
 
-        if (ply >= kMaxDepth) {
-            return pos.isInCheck() ? 0
-                                   : eval::adjustedEval(pos, thread.keyHistory, thread.nnueState, thread.corrhist, ply);
-        }
-
         auto& curr = thread.stack[ply];
         const auto* parent = kRootNode ? nullptr : &thread.stack[ply - 1];
+        const auto parentCapture = parent ? parent->capture : false;
+
+        if (ply >= kMaxDepth) {
+            return pos.isInCheck() ? 0
+                                   : eval::adjustedEval(
+                                         pos,
+                                         thread.keyHistory,
+                                         thread.nnueState,
+                                         thread.corrhist,
+                                         ply,
+                                         parentCapture
+                                     );
+        }
 
         tt::ProbedEntry ttEntry{};
         bool ttHit = false;
@@ -621,7 +629,8 @@ namespace stoat {
                     }
                 }
 
-                curr.staticEval = eval::adjustEval(rawEval, pos, thread.keyHistory, thread.corrhist, ply);
+                curr.staticEval =
+                    eval::adjustEval(rawEval, pos, thread.keyHistory, thread.corrhist, ply, parentCapture);
             }
         }
 
@@ -960,7 +969,7 @@ namespace stoat {
                     || (ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval)))
             {
-                thread.corrhist.update(pos, thread.keyHistory, depth, bestScore, curr.staticEval, complexity);
+                thread.corrhist.update(pos, thread.keyHistory, depth, bestScore, curr.staticEval, complexity, parentCapture);
             }
 
             if (!kRootNode || thread.pvIdx == 0) {
@@ -992,9 +1001,18 @@ namespace stoat {
             thread.updateSeldepth(ply + 1);
         }
 
+        const auto parentCapture = ply > 0 ? thread.stack[ply - 1].capture : false;
+
         if (ply >= kMaxDepth) {
             return pos.isInCheck() ? 0
-                                   : eval::adjustedEval(pos, thread.keyHistory, thread.nnueState, thread.corrhist, ply);
+                                   : eval::adjustedEval(
+                                         pos,
+                                         thread.keyHistory,
+                                         thread.nnueState,
+                                         thread.corrhist,
+                                         ply,
+                                         parentCapture
+                                     );
         }
 
         tt::ProbedEntry ttEntry{};
@@ -1025,7 +1043,7 @@ namespace stoat {
                 }
             }
 
-            staticEval = eval::adjustEval(rawEval, pos, thread.keyHistory, thread.corrhist, ply);
+            staticEval = eval::adjustEval(rawEval, pos, thread.keyHistory, thread.corrhist, ply, parentCapture);
 
             if (staticEval >= beta) {
                 return staticEval;

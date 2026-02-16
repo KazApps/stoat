@@ -34,7 +34,8 @@ namespace stoat::eval {
         const Position& pos,
         std::span<const u64> keyHistory,
         const CorrectionHistory& corrhist,
-        i32 ply
+        i32 ply,
+        bool capture
     );
 
     [[nodiscard]] Score adjustedEval(
@@ -42,6 +43,7 @@ namespace stoat::eval {
         std::span<const u64> keyHistory,
         const nnue::NnueState& nnueState,
         const CorrectionHistory& corrhist,
-        i32 ply
+        i32 ply,
+        bool capture
     );
 } // namespace stoat::eval

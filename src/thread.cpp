@@ -42,6 +42,7 @@ namespace stoat {
 
     std::pair<Position, ThreadPosGuard<true>> ThreadData::applyMove(i32 ply, const Position& pos, Move move) {
         stack[ply].move = move;
+        stack[ply].capture = pos.isCapture(move);
         conthist[ply] = &history.contTable(pos, move);
 
         keyHistory.push_back(pos.key());
@@ -55,6 +56,7 @@ namespace stoat {
 
     std::pair<Position, ThreadPosGuard<false>> ThreadData::applyNullMove(i32 ply, const Position& pos) {
         stack[ply].move = kNullMove;
+        stack[ply].capture = false;
         conthist[ply] = nullptr;
 
         keyHistory.push_back(pos.key());

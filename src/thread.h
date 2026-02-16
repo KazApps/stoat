@@ -76,6 +76,7 @@ namespace stoat {
     struct StackFrame {
         PvList pv{};
         Move move{};
+        bool capture{};
         Score staticEval{};
         Move excluded{};
         i32 reduction{};

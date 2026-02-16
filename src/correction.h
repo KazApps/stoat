@@ -38,10 +38,11 @@ namespace stoat {
             i32 depth,
             Score searchScore,
             Score staticEval,
-            i32 complexity
+            i32 complexity,
+            bool capture
         );
 
-        [[nodiscard]] i32 correction(const Position& pos, std::span<const u64> keyHistory) const;
+        [[nodiscard]] i32 correction(const Position& pos, std::span<const u64> keyHistory, bool capture) const;
 
     private:
         static constexpr usize kEntries = 16384;
