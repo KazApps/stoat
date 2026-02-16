@@ -52,32 +52,6 @@ namespace stoat {
         }
     };
 
-    class ContinuationSubtable {
-    public:
-        //TODO take two args when c++23 is usable
-        inline HistoryScore operator[](std::pair<const Position&, Move> ctx) const {
-            const auto [pos, move] = ctx;
-            if (move.isDrop()) {
-                return m_data[true][move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
-            } else {
-                return m_data[false][pos.pieceOn(move.from()).idx()][move.to().idx()];
-            }
-        }
-
-        inline HistoryEntry& operator[](std::pair<const Position&, Move> ctx) {
-            const auto [pos, move] = ctx;
-            if (move.isDrop()) {
-                return m_data[true][move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
-            } else {
-                return m_data[false][pos.pieceOn(move.from()).idx()][move.to().idx()];
-            }
-        }
-
-    private:
-        // [drop][piece][to]
-        util::MultiArray<HistoryEntry, 2, Pieces::kCount, Squares::kCount> m_data{};
-    };
-
     [[nodiscard]] constexpr HistoryScore historyBonus(i32 depth) {
         return static_cast<HistoryScore>(std::clamp(static_cast<i32>(depth * 823 - 300), 0, 2500));
     }
@@ -86,60 +60,28 @@ namespace stoat {
     public:
         void clear();
 
-        [[nodiscard]] inline const ContinuationSubtable& contTable(const Position& pos, Move move) const {
-            if (move.isDrop()) {
-                return m_continuation[true][move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
-            } else {
-                return m_continuation[false][pos.pieceOn(move.from()).idx()][move.to().idx()];
-            }
-        }
-
-        [[nodiscard]] inline ContinuationSubtable& contTable(const Position& pos, Move move) {
-            if (move.isDrop()) {
-                return m_continuation[true][move.dropPiece().withColor(pos.stm()).idx()][move.to().idx()];
-            } else {
-                return m_continuation[false][pos.pieceOn(move.from()).idx()][move.to().idx()];
-            }
-        }
-
         [[nodiscard]] i32 mainNonCaptureScore(const Position& pos, Move move) const;
 
-        [[nodiscard]] i32 nonCaptureScore(
-            std::span<ContinuationSubtable* const> continuations,
-            i32 ply,
-            const Position& pos,
-            Move move
-        ) const;
+        [[nodiscard]] i32 nonCaptureScore(const Position& pos, std::span<const u64> keyHistory, Move move) const;
 
-        void updateNonCaptureScore(
-            std::span<ContinuationSubtable*> continuations,
-            i32 ply,
-            const Position& pos,
-            Move move,
-            HistoryScore bonus
-        );
+        void updateNonCaptureScore(const Position& pos, std::span<const u64> keyHistory, Move move, HistoryScore bonus);
 
-        void updateNonCaptureConthistScore(
-            std::span<ContinuationSubtable*> continuations,
-            i32 ply,
-            const Position& pos,
-            Move move,
-            HistoryScore bonus
-        );
+        void updateNonCaptureConthistScore(const Position& pos, std::span<const u64> keyHistory, HistoryScore bonus);
 
         [[nodiscard]] i32 captureScore(Move move, PieceType captured) const;
         void updateCaptureScore(Move move, PieceType captured, HistoryScore bonus);
 
     private:
+        static constexpr usize kContEntries = 66536;
+
         // [stm][promo][from][to]
         util::MultiArray<HistoryEntry, Colors::kCount, 2, Squares::kCount, Squares::kCount> m_nonCaptureNonDrop{};
         // [dropped piece][drop square]
         util::MultiArray<HistoryEntry, Pieces::kCount, Squares::kCount> m_drop{};
 
-        // [drop][prev piece][to]
-        util::MultiArray<ContinuationSubtable, 2, Pieces::kCount, Squares::kCount> m_continuation{};
-
         // [promo][from][to][captured]
         util::MultiArray<HistoryEntry, 2, Squares::kCount, Squares::kCount, PieceTypes::kCount> m_capture{};
+
+        std::array<HistoryEntry, kContEntries> m_cont{};
     };
 } // namespace stoat

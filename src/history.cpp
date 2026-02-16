@@ -21,48 +21,11 @@
 #include <cstring>
 
 namespace stoat {
-    namespace {
-        inline void updateConthist(
-            std::span<ContinuationSubtable*> continuations,
-            i32 ply,
-            const Position& pos,
-            Move move,
-            HistoryScore bonus,
-            i32 offset
-        ) {
-            if (offset > ply) {
-                return;
-            }
-
-            if (auto* ptr = continuations[ply - offset]) {
-                (*ptr)[{pos, move}].update(bonus);
-            }
-        }
-
-        inline HistoryScore conthistScore(
-            std::span<ContinuationSubtable* const> continuations,
-            i32 ply,
-            const Position& pos,
-            Move move,
-            i32 offset
-        ) {
-            if (offset > ply) {
-                return 0;
-            }
-
-            if (const auto* ptr = continuations[ply - offset]) {
-                return (*ptr)[{pos, move}];
-            }
-
-            return 0;
-        }
-    } // namespace
-
     void HistoryTables::clear() {
         std::memset(m_nonCaptureNonDrop.data(), 0, sizeof(m_nonCaptureNonDrop));
         std::memset(m_drop.data(), 0, sizeof(m_drop));
-        std::memset(m_continuation.data(), 0, sizeof(m_continuation));
         std::memset(m_capture.data(), 0, sizeof(m_capture));
+        std::memset(m_cont.data(), 0, sizeof(m_cont));
     }
 
     i32 HistoryTables::mainNonCaptureScore(const Position& pos, Move move) const {
@@ -73,12 +36,7 @@ namespace stoat {
         }
     }
 
-    i32 HistoryTables::nonCaptureScore(
-        std::span<ContinuationSubtable* const> continuations,
-        i32 ply,
-        const Position& pos,
-        Move move
-    ) const {
+    i32 HistoryTables::nonCaptureScore(const Position& pos, std::span<const u64> keyHistory, Move move) const {
         i32 score{};
 
         if (move.isDrop()) {
@@ -87,17 +45,24 @@ namespace stoat {
             score += m_nonCaptureNonDrop[pos.stm().idx()][move.isPromo()][move.from().idx()][move.to().idx()];
         }
 
-        score += conthistScore(continuations, ply, pos, move, 1);
-        score += conthistScore(continuations, ply, pos, move, 2);
-        score += conthistScore(continuations, ply, pos, move, 3);
+        const auto conthistScore = [&](const u64 offset) {
+            if (keyHistory.size() >= offset) {
+                return m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].value;
+            } else {
+                return static_cast<HistoryScore>(0);
+            }
+        };
+
+        score += conthistScore(1);
+        score += conthistScore(2);
+        score += conthistScore(3);
 
         return score;
     }
 
     void HistoryTables::updateNonCaptureScore(
-        std::span<ContinuationSubtable*> continuations,
-        i32 ply,
         const Position& pos,
+        std::span<const u64> keyHistory,
         Move move,
         HistoryScore bonus
     ) {
@@ -107,19 +72,23 @@ namespace stoat {
             m_nonCaptureNonDrop[pos.stm().idx()][move.isPromo()][move.from().idx()][move.to().idx()].update(bonus);
         }
 
-        updateNonCaptureConthistScore(continuations, ply, pos, move, bonus);
+        updateNonCaptureConthistScore(pos, keyHistory, bonus);
     }
 
     void HistoryTables::updateNonCaptureConthistScore(
-        std::span<ContinuationSubtable*> continuations,
-        i32 ply,
         const Position& pos,
-        Move move,
+        std::span<const u64> keyHistory,
         HistoryScore bonus
     ) {
-        updateConthist(continuations, ply, pos, move, bonus, 1);
-        updateConthist(continuations, ply, pos, move, bonus, 2);
-        updateConthist(continuations, ply, pos, move, bonus, 3);
+        const auto updateConthist = [&](const u64 offset) {
+            if (keyHistory.size() >= offset) {
+                return m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
+            }
+        };
+
+        updateConthist(1);
+        updateConthist(2);
+        updateConthist(3);
     }
 
     i32 HistoryTables::captureScore(Move move, PieceType captured) const {

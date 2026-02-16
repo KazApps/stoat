@@ -696,7 +696,7 @@ namespace stoat {
         auto ttFlag = tt::Flag::kUpperBound;
 
         auto generator =
-            MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply, depth > 5 && alpha < -1500);
+            MoveGenerator::main(pos, thread.keyHistory, ttMove, thread.history, depth > 5 && alpha < -1500);
 
         util::StaticVector<Move, 64> capturesTried{};
         util::StaticVector<Move, 64> nonCapturesTried{};
@@ -844,7 +844,7 @@ namespace stoat {
                     score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
                     if (!pos.isCapture(move) && score >= beta) {
                         const auto bonus = historyBonus(newDepth);
-                        thread.history.updateNonCaptureConthistScore(thread.conthist, ply, pos, move, bonus);
+                        thread.history.updateNonCaptureConthistScore(pos, thread.keyHistory, bonus);
                     }
                 }
             } else if (!kPvNode || legalMoves > 1) {
@@ -934,10 +934,10 @@ namespace stoat {
             const auto bonus = historyBonus(historyDepth);
 
             if (!pos.isCapture(bestMove)) {
-                thread.history.updateNonCaptureScore(thread.conthist, ply, pos, bestMove, bonus);
+                thread.history.updateNonCaptureScore(pos, thread.keyHistory, bestMove, bonus);
 
                 for (const auto prevNonCapture : nonCapturesTried) {
-                    thread.history.updateNonCaptureScore(thread.conthist, ply, pos, prevNonCapture, -bonus);
+                    thread.history.updateNonCaptureScore(pos, thread.keyHistory, prevNonCapture, -bonus);
                 }
             } else {
                 const auto captured = pos.pieceOn(bestMove.to()).type();
@@ -1041,7 +1041,7 @@ namespace stoat {
 
         auto ttFlag = tt::Flag::kUpperBound;
 
-        auto generator = MoveGenerator::qsearch(pos, thread.history, thread.conthist, ply, alpha < -1500);
+        auto generator = MoveGenerator::qsearch(pos, thread.keyHistory, thread.history, alpha < -1500);
 
         u32 legalMoves{};
 

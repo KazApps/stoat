@@ -191,44 +191,40 @@ namespace stoat {
 
     MoveGenerator MoveGenerator::main(
         const Position& pos,
+        std::span<const u64> keyHistory,
         Move ttMove,
         const HistoryTables& history,
-        std::span<ContinuationSubtable* const> continuations,
-        i32 ply,
         bool generateUnlikelyMoves
     ) {
         assert(continuations.size() == kMaxDepth + 1);
-        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, history, continuations, ply, generateUnlikelyMoves};
+        return MoveGenerator{MovegenStage::kTtMove, pos, keyHistory, ttMove, history, generateUnlikelyMoves};
     }
 
     MoveGenerator MoveGenerator::qsearch(
         const Position& pos,
+        std::span<const u64> keyHistory,
         const HistoryTables& history,
-        std::span<ContinuationSubtable* const> continuations,
-        i32 ply,
         bool generateUnlikelyMoves
     ) {
         assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
             pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
-        return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply, generateUnlikelyMoves};
+        return MoveGenerator{initialStage, pos, keyHistory, kNullMove, history, generateUnlikelyMoves};
     }
 
     MoveGenerator::MoveGenerator(
         MovegenStage initialStage,
         const Position& pos,
+        std::span<const u64> keyHistory,
         Move ttMove,
         const HistoryTables& history,
-        std::span<ContinuationSubtable* const> continuations,
-        i32 ply,
         bool generateUnlikelyMoves
     ) :
             m_stage{initialStage},
             m_pos{pos},
+            m_keyHistory{keyHistory},
             m_ttMove{ttMove},
             m_history{history},
-            m_continuations{continuations},
-            m_ply{ply},
             m_generateUnlikelyMoves{generateUnlikelyMoves} {}
 
     i32 MoveGenerator::scoreCapture(Move move) {
@@ -243,7 +239,7 @@ namespace stoat {
     }
 
     i32 MoveGenerator::scoreNonCapture(Move move) {
-        return m_history.nonCaptureScore(m_continuations, m_ply, m_pos, move);
+        return m_history.nonCaptureScore(m_pos, m_keyHistory, move);
     }
 
     void MoveGenerator::scoreNonCaptures() {

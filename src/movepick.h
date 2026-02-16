@@ -67,18 +67,16 @@ namespace stoat {
 
         [[nodiscard]] static MoveGenerator main(
             const Position& pos,
+            std::span<const u64> keyHistory,
             Move ttMove,
             const HistoryTables& history,
-            std::span<ContinuationSubtable* const> continuations,
-            i32 ply,
             bool generateUnlikelyMoves
         );
 
         [[nodiscard]] static MoveGenerator qsearch(
             const Position& pos,
+            std::span<const u64> keyHistory,
             const HistoryTables& history,
-            std::span<ContinuationSubtable* const> continuations,
-            i32 ply,
             bool generateUnlikelyMoves
         );
 
@@ -86,10 +84,9 @@ namespace stoat {
         MoveGenerator(
             MovegenStage initialStage,
             const Position& pos,
+            std::span<const u64> keyHistory,
             Move ttMove,
             const HistoryTables& history,
-            std::span<ContinuationSubtable* const> continuations,
-            i32 ply,
             bool generateUnlikelyMoves
         );
 
@@ -119,14 +116,13 @@ namespace stoat {
 
         const Position& m_pos;
 
+        std::span<const u64> m_keyHistory;
+
         movegen::MoveList m_moves{};
         std::array<i32, movegen::kMoveListCapacity> m_scores{};
 
         Move m_ttMove;
         const HistoryTables& m_history;
-
-        std::span<ContinuationSubtable* const> m_continuations;
-        i32 m_ply{};
 
         bool m_skipNonCaptures{false};
 
