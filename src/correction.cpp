@@ -18,9 +18,59 @@
 
 #include "correction.h"
 
+#include "attacks/attacks.h"
+
 #include <cmath>
 
 namespace stoat {
+    namespace {
+        u64 splitMix64(u64 x) {
+            x += 0x9e3779b97f4a7c15;
+            x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9;
+            x = (x ^ (x >> 27)) * 0x94d049bb133111eb;
+
+            return x ^ (x >> 31);
+        }
+
+        u64 getHashKey(Bitboard bb) {
+            const auto [high, low] = fromU128(bb.raw());
+            return splitMix64(high) ^ splitMix64(low);
+        }
+
+        std::pair<u64, u64> getAttackKey(const Position& pos) {
+            u64 blackAttackKey{}, whiteAttackKey{};
+
+            auto blackBishops = pos.pieceBb(Pieces::kBlackBishop) | pos.pieceBb(Pieces::kBlackPromotedBishop);
+            auto blackRooks = pos.pieceBb(Pieces::kBlackRook) | pos.pieceBb(Pieces::kBlackPromotedRook);
+            auto whiteBishops = pos.pieceBb(Pieces::kWhiteBishop) | pos.pieceBb(Pieces::kWhitePromotedBishop);
+            auto whiteRooks = pos.pieceBb(Pieces::kWhiteRook) | pos.pieceBb(Pieces::kWhitePromotedRook);
+
+            const auto occ = pos.occupancy();
+
+            while (!blackBishops.empty()) {
+                const auto sq = blackBishops.popLsb();
+                blackAttackKey ^= getHashKey(attacks::bishopAttacks(sq, occ));
+            }
+
+            while (!blackRooks.empty()) {
+                const auto sq = blackRooks.popLsb();
+                blackAttackKey ^= getHashKey(attacks::rookAttacks(sq, occ));
+            }
+
+            while (!whiteBishops.empty()) {
+                const auto sq = whiteBishops.popLsb();
+                whiteAttackKey ^= getHashKey(attacks::bishopAttacks(sq, occ));
+            }
+
+            while (!whiteRooks.empty()) {
+                const auto sq = whiteRooks.popLsb();
+                whiteAttackKey ^= getHashKey(attacks::rookAttacks(sq, occ));
+            }
+
+            return {blackAttackKey, whiteAttackKey};
+        }
+    } // namespace
+
     void CorrectionHistory::clear() {
         std::memset(&m_tables, 0, sizeof(m_tables));
         std::memset(&m_cont, 0, sizeof(m_cont));
@@ -46,6 +96,11 @@ namespace stoat {
         tables.hand[pos.kingHandKey() % kEntries].update(bonus);
         tables.kpr[pos.kprKey() % kEntries].update(bonus);
 
+        const auto [blackAttack, whiteAttack] = getAttackKey(pos);
+
+        tables.blackAttack[blackAttack % kEntries].update(bonus);
+        tables.whiteAttack[whiteAttack % kEntries].update(bonus);
+
         const auto updateCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {
                 m_cont[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kEntries].update(bonus);
@@ -65,6 +120,11 @@ namespace stoat {
         correction += 128 * tables.cavalry[pos.cavalryKey() % kEntries];
         correction += 128 * tables.hand[pos.kingHandKey() % kEntries];
         correction += 128 * tables.kpr[pos.kprKey() % kEntries];
+
+        const auto [blackAttack, whiteAttack] = getAttackKey(pos);
+
+        correction += 128 * tables.blackAttack[blackAttack % kEntries];
+        correction += 128 * tables.whiteAttack[whiteAttack % kEntries];
 
         const auto applyCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {
