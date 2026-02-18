@@ -587,7 +587,7 @@ namespace stoat {
     }
 
     bool Position::isUchifuzume(Move move) const {
-        assert(pieceOn(move.from()).type() == PieceTypes::kPawn);
+        assert(move.dropPiece() == PieceTypes::kPawn);
 
         const auto stm = this->stm();
         const auto nstm = this->stm().flip();
