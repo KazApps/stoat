@@ -22,7 +22,10 @@
 
 namespace stoat {
     void CorrectionHistory::clear() {
-        std::memset(&m_tables, 0, sizeof(m_tables));
+        std::memset(&m_castle, 0, sizeof(m_castle));
+        std::memset(&m_cavalry, 0, sizeof(m_cavalry));
+        std::memset(&m_hand, 0, sizeof(m_hand));
+        std::memset(&m_kpr, 0, sizeof(m_kpr));
         std::memset(&m_cont, 0, sizeof(m_cont));
     }
 
@@ -34,17 +37,16 @@ namespace stoat {
         Score staticEval,
         i32 complexity
     ) {
-        auto& tables = m_tables[pos.stm().idx()];
-
         const double factor = 1.0 + std::log2(complexity + 1) / 10.0;
 
         const auto bonus =
             std::clamp(static_cast<i32>((searchScore - staticEval) * depth / 8 * factor), -kMaxBonus, kMaxBonus);
+        const auto black_bonus = pos.stm() == Colors::kBlack ? bonus : -bonus;
 
-        tables.castle[pos.castleKey() % kEntries].update(bonus);
-        tables.cavalry[pos.cavalryKey() % kEntries].update(bonus);
-        tables.hand[pos.kingHandKey() % kEntries].update(bonus);
-        tables.kpr[pos.kprKey() % kEntries].update(bonus);
+        m_castle[pos.castleKey() % kEntries].update(black_bonus);
+        m_cavalry[pos.cavalryKey() % kEntries].update(black_bonus);
+        m_hand[pos.kingHandKey() % kEntries].update(black_bonus);
+        m_kpr[pos.kprKey() % kEntries].update(black_bonus);
 
         const auto updateCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {
@@ -57,14 +59,14 @@ namespace stoat {
     }
 
     i32 CorrectionHistory::correction(const Position& pos, std::span<const u64> keyHistory) const {
-        const auto& tables = m_tables[pos.stm().idx()];
-
         i32 correction{};
 
-        correction += 128 * tables.castle[pos.castleKey() % kEntries];
-        correction += 128 * tables.cavalry[pos.cavalryKey() % kEntries];
-        correction += 128 * tables.hand[pos.kingHandKey() % kEntries];
-        correction += 128 * tables.kpr[pos.kprKey() % kEntries];
+        correction += 128 * m_castle[pos.castleKey() % kEntries];
+        correction += 128 * m_cavalry[pos.cavalryKey() % kEntries];
+        correction += 128 * m_hand[pos.kingHandKey() % kEntries];
+        correction += 128 * m_kpr[pos.kprKey() % kEntries];
+
+        correction = pos.stm() == Colors::kBlack ? correction : -correction;
 
         const auto applyCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {

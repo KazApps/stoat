@@ -61,14 +61,10 @@ namespace stoat {
             }
         };
 
-        struct SidedTables {
-            std::array<Entry, kEntries> castle{};
-            std::array<Entry, kEntries> cavalry{};
-            std::array<Entry, kEntries> hand{};
-            std::array<Entry, kEntries> kpr{};
-        };
-
-        std::array<SidedTables, 2> m_tables{};
+        std::array<Entry, kEntries> m_castle{};
+        std::array<Entry, kEntries> m_cavalry{};
+        std::array<Entry, kEntries> m_hand{};
+        std::array<Entry, kEntries> m_kpr{};
         std::array<Entry, kEntries> m_cont{};
     };
 } // namespace stoat
