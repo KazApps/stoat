@@ -44,7 +44,7 @@ namespace stoat {
         [[nodiscard]] i32 correction(const Position& pos, std::span<const u64> keyHistory) const;
 
     private:
-        static constexpr usize kEntries = 16384;
+        static constexpr usize kEntries = 32768;
 
         static constexpr i32 kLimit = 1024;
         static constexpr i32 kMaxBonus = kLimit / 4;
