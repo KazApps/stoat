@@ -600,40 +600,43 @@ namespace stoat {
             return false;
         }
 
-        if (attackersTo(sq, stm).empty()) {
+        const auto getAttackers = [this](Square sq, Color attacker) {
+            const auto defender = attacker.flip();
+
+            Bitboard attackers{};
+            const auto occ = occupancy();
+
+            const auto horses = pieceBb(PieceTypes::kPromotedBishop, attacker);
+            const auto dragons = pieceBb(PieceTypes::kPromotedRook, attacker);
+
+            const auto knights = pieceBb(PieceTypes::kKnight, attacker);
+            attackers |= knights & attacks::knightAttacks(sq, defender);
+
+            const auto silvers = pieceBb(PieceTypes::kSilver, attacker);
+            attackers |= silvers & attacks::silverAttacks(sq, defender);
+
+            const auto golds = pieceBb(PieceTypes::kGold, attacker) | pieceBb(PieceTypes::kPromotedPawn, attacker)
+                             | pieceBb(PieceTypes::kPromotedLance, attacker)
+                             | pieceBb(PieceTypes::kPromotedKnight, attacker)
+                             | pieceBb(PieceTypes::kPromotedSilver, attacker);
+            attackers |= golds & attacks::goldAttacks(sq, defender);
+
+            const auto bishops = horses | pieceBb(PieceTypes::kBishop, attacker);
+            attackers |= bishops & attacks::bishopAttacks(sq, occ);
+
+            const auto rooks = dragons | pieceBb(PieceTypes::kRook, attacker);
+            attackers |= rooks & attacks::rookAttacks(sq, occ);
+
+            return attackers;
+        };
+
+        if (getAttackers(sq, stm).empty()) {
             return false;
         }
 
-        const auto defenders = [&] {
-            Bitboard defenders{};
-            const auto occ = occupancy();
-
-            const auto horses = pieceBb(PieceTypes::kPromotedBishop, nstm);
-            const auto dragons = pieceBb(PieceTypes::kPromotedRook, nstm);
-
-            const auto knights = pieceBb(PieceTypes::kKnight, nstm);
-            defenders |= knights & attacks::knightAttacks(sq, stm);
-
-            const auto silvers = pieceBb(PieceTypes::kSilver, nstm);
-            defenders |= silvers & attacks::silverAttacks(sq, stm);
-
-            const auto golds = pieceBb(PieceTypes::kGold, nstm) | pieceBb(PieceTypes::kPromotedPawn, nstm)
-                             | pieceBb(PieceTypes::kPromotedLance, nstm) | pieceBb(PieceTypes::kPromotedKnight, nstm)
-                             | pieceBb(PieceTypes::kPromotedSilver, nstm);
-            defenders |= golds & attacks::goldAttacks(sq, stm);
-
-            const auto bishops = horses | pieceBb(PieceTypes::kBishop, nstm);
-            defenders |= bishops & attacks::bishopAttacks(sq, occ);
-
-            const auto rooks = dragons | pieceBb(PieceTypes::kRook, nstm);
-            defenders |= rooks & attacks::rookAttacks(sq, occ);
-
-            return defenders;
-        }();
-
         const auto pinned = this->pinned(nstm);
 
-        if (!(defenders & (~pinned | Bitboards::kFiles[sq.file()])).empty()) {
+        if (!(getAttackers(sq, nstm) & (~pinned | Bitboards::kFiles[sq.file()])).empty()) {
             return false;
         }
 
