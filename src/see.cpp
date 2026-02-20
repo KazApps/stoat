@@ -26,8 +26,8 @@
 namespace stoat::see {
     namespace {
         [[nodiscard]] i32 scaledPieceValue(const Position& pos, Piece pc) {
-            return pieceValue(pc.typeOrNone()) * pos.materialValue(pc.color())
-                 / std::max<i32>(pos.materialValue(pc.color().flip()), 1);
+            const auto material = pos.materialValue(pc.color().flip());
+            return pieceValue(pc.typeOrNone()) * (material + 128) / material;
         }
 
         [[nodiscard]] i32 gain(const Position& pos, Move move) {
