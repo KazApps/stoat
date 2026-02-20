@@ -25,6 +25,11 @@
 
 namespace stoat::see {
     namespace {
+        [[nodiscard]] i32 scaledPieceValue(const Position& pos, Piece pc) {
+            return pieceValue(pc.typeOrNone()) * pos.materialValue(pc.color())
+                 / std::max<i32>(pos.materialValue(pc.color().flip()), 1);
+        }
+
         [[nodiscard]] i32 gain(const Position& pos, Move move) {
             // perhaps unintuitively, dropping a piece does not actually
             // change the material balance, so it does not gain anything
@@ -33,12 +38,12 @@ namespace stoat::see {
             }
 
             const auto captured = pos.pieceOn(move.to());
-            auto gain = pieceValue(captured.typeOrNone());
+            auto gain = scaledPieceValue(pos, captured);
 
             return gain;
         }
 
-        [[nodiscard]] PieceType popLeastValuable(const Position& pos, Bitboard& occ, Bitboard attackers, Color c) {
+        [[nodiscard]] Piece popLeastValuable(const Position& pos, Bitboard& occ, Bitboard attackers, Color c) {
             assert(c);
 
             // sort pieces into ascending order of value, tiebreaking by piece id order
@@ -57,11 +62,11 @@ namespace stoat::see {
                 const auto ptAttackers = attackers & pos.pieceBb(pt, c);
                 if (!ptAttackers.empty()) {
                     occ ^= ptAttackers.isolateLsb();
-                    return pt;
+                    return pt.withColor(c);
                 }
             }
 
-            return PieceTypes::kNone;
+            return Pieces::kNone;
         }
 
         [[nodiscard]] constexpr bool canMoveDiagonally(PieceType pt) {
@@ -85,9 +90,9 @@ namespace stoat::see {
             return false;
         }
 
-        auto next = move.isDrop() ? move.dropPiece() : pos.pieceOn(move.from()).type();
+        auto next = move.isDrop() ? move.dropPiece().withColor(stm) : pos.pieceOn(move.from());
 
-        score -= pieceValue(next);
+        score -= scaledPieceValue(pos, next);
 
         if (score >= 0) {
             return true;
@@ -125,11 +130,11 @@ namespace stoat::see {
 
             next = popLeastValuable(pos, occ, attackers, curr);
 
-            if (canMoveDiagonally(next)) {
+            if (canMoveDiagonally(next.type())) {
                 attackers |= attacks::bishopAttacks(sq, occ) & bishops;
             }
 
-            if (canMoveOrthogonally(next)) {
+            if (canMoveOrthogonally(next.type())) {
                 const auto rookAttacks = attacks::rookAttacks(sq, occ);
 
                 attackers |= rookAttacks & Bitboards::kFiles[sq.file()] & lances;
@@ -138,11 +143,11 @@ namespace stoat::see {
 
             attackers &= occ;
 
-            score = -score - 1 - pieceValue(next);
+            score = -score - 1 - scaledPieceValue(pos, next);
             curr = curr.flip();
 
             if (score >= 0) {
-                if (next == PieceTypes::kKing && !(attackers & pos.colorBb(curr)).empty()) {
+                if (next.type() == PieceTypes::kKing && !(attackers & pos.colorBb(curr)).empty()) {
                     curr = curr.flip();
                 }
                 break;

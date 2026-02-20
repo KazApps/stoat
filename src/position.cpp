@@ -26,6 +26,7 @@
 #include "keys.h"
 #include "movegen.h"
 #include "rays.h"
+#include "see.h"
 #include "util/parse.h"
 #include "util/split.h"
 
@@ -836,6 +837,8 @@ namespace stoat {
         if (piece.type() == PieceTypes::kKing) {
             m_kingSquares.squares[piece.color().idx()] = sq;
         }
+
+        m_materialValue[piece.color().idx()] += see::pieceValue(piece.type());
     }
 
     template <bool kUpdateNnue>
@@ -860,6 +863,9 @@ namespace stoat {
             m_keys.switchHandCount(piece.color(), handPt, newCount - 1, newCount);
 
             m_keys.flipPiece(captured, to);
+
+            m_materialValue[captured.color().idx()] -= see::pieceValue(captured.type());
+            m_materialValue[captured.color().flip().idx()] -= see::pieceValue(handPt);
 
             if constexpr (kUpdateNnue) {
                 nnueUpdates.pushCapture(m_kingSquares, to, captured, newCount - 1);
@@ -910,6 +916,9 @@ namespace stoat {
 
             m_keys.flipPiece(captured, to);
 
+            m_materialValue[captured.color().idx()] -= see::pieceValue(captured.type());
+            m_materialValue[captured.color().flip().idx()] -= see::pieceValue(handPt);
+
             if constexpr (kUpdateNnue) {
                 nnueUpdates.pushCapture(m_kingSquares, to, captured, newCount - 1);
             }
@@ -927,6 +936,8 @@ namespace stoat {
 
         m_keys.flipPiece(piece, from);
         m_keys.flipPiece(promoted, to);
+
+        m_materialValue[piece.color().idx()] += see::pieceValue(promoted.type()) - see::pieceValue(piece.type());
 
         // kings cannot promote
 

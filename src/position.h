@@ -226,6 +226,11 @@ namespace stoat {
             return m_kingSquares;
         }
 
+        [[nodiscard]] inline u16 materialValue(Color c) const {
+            assert(c);
+            return m_materialValue[c.idx()];
+        }
+
         [[nodiscard]] SennichiteStatus testSennichite(
             bool cuteChessWorkaround,
             std::span<const u64> keyHistory,
@@ -274,6 +279,8 @@ namespace stoat {
         std::array<Hand, Colors::kCount> m_hands{};
 
         std::array<u16, Colors::kCount> m_consecutiveChecks{};
+
+        std::array<u16, Colors::kCount> m_materialValue{};
 
         PositionKeys m_keys{};
 

@@ -57,7 +57,6 @@ namespace stoat::tt {
         void put(u64 key, Score score, Score staticEval, Move move, i32 depth, i32 ply, Flag flag, bool pv);
 
         inline void putStaticEval(u64 key, Score staticEval, bool pv) {
-            static constexpr i32 kStaticEvalDepth = -kDepthOffset + 1;
             put(key, kScoreNone, staticEval, kNullMove, kStaticEvalDepth, 0, Flag::kNone, pv);
         }
 
@@ -75,6 +74,7 @@ namespace stoat::tt {
 
     private:
         static constexpr i32 kDepthOffset = 7;
+        static constexpr i32 kStaticEvalDepth = -kDepthOffset + 1;
 
         struct __attribute__((packed)) Entry {
             static constexpr u32 kAgeBits = 5;
