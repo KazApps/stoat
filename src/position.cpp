@@ -865,7 +865,7 @@ namespace stoat {
             m_keys.flipPiece(captured, to);
 
             m_materialValue[captured.color().idx()] -= see::pieceValue(captured.type());
-            m_materialValue[captured.color().flip().idx()] -= see::pieceValue(handPt);
+            m_materialValue[captured.color().flip().idx()] += see::pieceValue(handPt);
 
             if constexpr (kUpdateNnue) {
                 nnueUpdates.pushCapture(m_kingSquares, to, captured, newCount - 1);
@@ -917,7 +917,7 @@ namespace stoat {
             m_keys.flipPiece(captured, to);
 
             m_materialValue[captured.color().idx()] -= see::pieceValue(captured.type());
-            m_materialValue[captured.color().flip().idx()] -= see::pieceValue(handPt);
+            m_materialValue[captured.color().flip().idx()] += see::pieceValue(handPt);
 
             if constexpr (kUpdateNnue) {
                 nnueUpdates.pushCapture(m_kingSquares, to, captured, newCount - 1);
