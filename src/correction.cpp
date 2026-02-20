@@ -72,7 +72,7 @@ namespace stoat {
         };
 
         applyCont(1, 128);
-        applyCont(2, 192);
+        applyCont(2, 128);
 
         return correction / 2048;
     }
