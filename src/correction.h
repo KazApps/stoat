@@ -66,9 +66,9 @@ namespace stoat {
             std::array<Entry, kEntries> cavalry{};
             std::array<Entry, kEntries> hand{};
             std::array<Entry, kEntries> kpr{};
+            std::array<Entry, kEntries> cont{};
         };
 
         std::array<SidedTables, 2> m_tables{};
-        std::array<Entry, kEntries> m_cont{};
     };
 } // namespace stoat
