@@ -276,9 +276,9 @@ namespace stoat {
             return;
         }
 
-        const auto currLimiter = m_limiter;
+        const auto currLimiter = thread.limiter;
 
-        m_limiter = limit::SearchLimiter{util::Instant::now()};
+        thread.limiter = limit::SearchLimiter{util::Instant::now()};
 
         m_multiPv = 1;
         m_infinite = false;
@@ -295,7 +295,7 @@ namespace stoat {
         info.time = m_startTime.elapsed();
         info.nodes = thread.loadNodes();
 
-        m_limiter = currLimiter;
+        thread.limiter = currLimiter;
     }
 
     void Searcher::runDatagenSearch() {
