@@ -955,7 +955,7 @@ namespace stoat {
         }
 
         if (!curr.excluded) {
-            if (!pos.isInCheck() && (bestMove.isNull())
+            if (!pos.isInCheck()
                 && (ttFlag == tt::Flag::kExact                                          //
                     || (ttFlag == tt::Flag::kUpperBound && bestScore < curr.staticEval) //
                     || (ttFlag == tt::Flag::kLowerBound && bestScore > curr.staticEval)))
