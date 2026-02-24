@@ -35,10 +35,9 @@ namespace stoat {
     ) {
         auto& tables = m_tables[pos.stm().idx()];
 
-        const double factor = 1.0 + std::log2(complexity + 1) / 10.0;
+        const auto factor = 1.0 + std::log2(complexity + 1) / 10.0;
 
-        const auto bonus =
-            std::clamp(static_cast<i32>((searchScore - staticEval) * depth / 8 * factor), -kMaxBonus, kMaxBonus);
+        const auto bonus = static_cast<i32>(std::tanh((searchScore - staticEval) * depth / 8 * factor / kMaxBonus) * kMaxBonus);
 
         tables.castle[pos.castleKey() % kEntries].update(bonus);
         tables.cavalry[pos.cavalryKey() % kEntries].update(bonus);
