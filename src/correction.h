@@ -25,6 +25,7 @@
 
 #include "core.h"
 #include "position.h"
+#include "stats.h"
 #include "util/multi_array.h"
 
 namespace stoat {
@@ -46,14 +47,13 @@ namespace stoat {
     private:
         static constexpr usize kEntries = 16384;
 
-        static constexpr i32 kLimit = 1024;
-        static constexpr i32 kMaxBonus = kLimit / 4;
+        static constexpr i32 kMaxBonus = 256;
 
         struct Entry {
             i16 value{};
 
             inline void update(i32 bonus) {
-                value += bonus - value * std::abs(bonus) / kLimit;
+                value += bonus;
             }
 
             [[nodiscard]] inline operator i32() const {
