@@ -93,6 +93,7 @@ namespace stoat {
 
         for (i32 aIdx = 0; aIdx < Squares::kCount; ++aIdx) {
             const auto aSq = Square::fromRaw(aIdx);
+            const auto aMask = Bitboard::fromSquare(aSq);
 
             const auto rookAttacks = attacks::sliders::kEmptyBoardRookAttacks[aSq.idx()];
             const auto bishopAttacks = attacks::sliders::kEmptyBoardBishopAttacks[aSq.idx()];
@@ -106,11 +107,11 @@ namespace stoat {
                 const auto bMask = Bitboard::fromSquare(bSq);
 
                 if (rookAttacks.getSquare(bSq)) {
-                    dst[aSq.idx()][bSq.idx()] = attacks::rookAttacks(aSq, Bitboards::kEmpty)
-                                              & (bMask | attacks::rookAttacks(bSq, Bitboards::kEmpty));
+                    dst[aSq.idx()][bSq.idx()] =
+                        attacks::rookAttacks(aSq, Bitboards::kEmpty) & (bMask | attacks::rookAttacks(bSq, aMask));
                 } else if (bishopAttacks.getSquare(bSq)) {
-                    dst[aSq.idx()][bSq.idx()] = attacks::bishopAttacks(aSq, Bitboards::kEmpty)
-                                              & (bMask | attacks::bishopAttacks(bSq, Bitboards::kEmpty));
+                    dst[aSq.idx()][bSq.idx()] =
+                        attacks::bishopAttacks(aSq, Bitboards::kEmpty) & (bMask | attacks::bishopAttacks(bSq, aMask));
                 }
             }
         }
