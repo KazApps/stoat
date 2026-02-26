@@ -544,6 +544,18 @@ namespace stoat::protocol {
         }
         fmt::println("");
 
+        auto blackPinners = m_state.pos.pinners(Colors::kBlack);
+        auto whitePinners = m_state.pos.pinners(Colors::kWhite);
+        fmt::print("Black pinners:");
+        while (!blackPinners.empty()) {
+            fmt::print(" {}", blackPinners.popLsb());
+        }
+        fmt::println("");
+        fmt::print("White pinners:");
+        while (!whitePinners.empty()) {
+            fmt::print(" {}", whitePinners.popLsb());
+        }
+
         auto blackPinned = m_state.pos.pinned(Colors::kBlack);
         auto whitePinned = m_state.pos.pinned(Colors::kWhite);
         fmt::print("Black pinned:");

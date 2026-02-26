@@ -205,6 +205,10 @@ namespace stoat {
             return m_checkers;
         }
 
+        [[nodiscard]] inline Bitboard pinners(Color color) const {
+            return m_pinners[color.idx()];
+        }
+
         [[nodiscard]] inline Bitboard pinned(Color color) const {
             return m_pinned[color.idx()];
         }
@@ -278,6 +282,7 @@ namespace stoat {
         PositionKeys m_keys{};
 
         Bitboard m_checkers{};
+        std::array<Bitboard, 2> m_pinners{};
         std::array<Bitboard, 2> m_pinned{};
 
         KingPair m_kingSquares{};

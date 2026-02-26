@@ -974,6 +974,7 @@ namespace stoat {
     void Position::updateSidedSlidingCheckersAndPins(Color defender) {
         const auto attacker = defender.flip();
 
+        m_pinners[attacker.idx()] = Bitboards::kEmpty;
         m_pinned[defender.idx()] = Bitboards::kEmpty;
 
         const auto defenderKing = kingSq(defender);
@@ -996,6 +997,7 @@ namespace stoat {
             if (defender == stm() && maybePinned.empty()) {
                 m_checkers |= potentialAttacker.bit();
             } else if (maybePinned.one()) {
+                m_pinners[attacker.idx()] |= potentialAttacker.bit();
                 m_pinned[defender.idx()] |= maybePinned;
             }
         }
