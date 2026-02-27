@@ -753,7 +753,7 @@ namespace stoat {
                 if (depth >= 6 && ttEntry.depth >= depth - 3 && ttEntry.flag != tt::Flag::kUpperBound
                     && !isDecisive(ttEntry.score))
                 {
-                    const auto sBeta = ttEntry.score - depth * 4 / 3;
+                    const auto sBeta = ttEntry.score - depth * 2 / 3;
                     const auto sDepth = (depth - 1) / 2;
 
                     curr.excluded = move;
