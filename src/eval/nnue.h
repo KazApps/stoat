@@ -42,16 +42,43 @@ namespace stoat::eval::nnue {
         return kingSq.file() > 4 ? sq.flipFile() : sq;
     }
 
+    [[nodiscard]] constexpr u32 kingBucket(Square kingSq) {
+        constexpr std::array kBuckets = {
+            0,  1,  2,  3,  4,  0, 0, 0, 0, //
+            5,  6,  7,  8,  9,  0, 0, 0, 0, //
+            10, 11, 12, 13, 14, 0, 0, 0, 0, //
+            15, 16, 17, 18, 19, 0, 0, 0, 0, //
+            20, 21, 22, 23, 24, 0, 0, 0, 0, //
+            25, 26, 27, 28, 29, 0, 0, 0, 0, //
+            30, 31, 32, 33, 34, 0, 0, 0, 0, //
+            35, 36, 37, 38, 39, 0, 0, 0, 0, //
+            40, 41, 42, 43, 44, 0, 0, 0, 0, //
+        };
+        return kBuckets[transformRelativeSquare(kingSq, kingSq).idx()];
+    }
+
+    [[nodiscard]] constexpr u32 inputBucketIndex(Square kingSq) {
+        return kFtSize * kingBucket(kingSq);
+    }
+
     [[nodiscard]] constexpr u32 psqtFeatureIndex(Color perspective, KingPair kings, Piece piece, Square sq) {
         sq = sq.relative(perspective);
         sq = transformRelativeSquare(kings.relativeKingSq(perspective), sq);
-        return kColorStride * (piece.color() != perspective) + kPieceStride * piece.type().idx() + sq.idx();
+        return inputBucketIndex(kings.relativeKingSq(perspective)) + kColorStride * (piece.color() != perspective)
+             + kPieceStride * piece.type().idx() + sq.idx();
     }
 
-    [[nodiscard]] constexpr u32 handFeatureIndex(Color perspective, PieceType pt, Color handColor, u32 countMinusOne) {
+    [[nodiscard]] constexpr u32 handFeatureIndex(
+        Color perspective,
+        KingPair kings,
+        PieceType pt,
+        Color handColor,
+        u32 countMinusOne
+    ) {
         constexpr std::array kPieceOffsets = {0, 18, 22, 26, 30, 32, 34};
 
-        return kColorStride * (handColor != perspective) + kHandOffset + kPieceOffsets[pt.idx()] + countMinusOne;
+        return inputBucketIndex(kings.relativeKingSq(perspective)) + kColorStride * (handColor != perspective)
+             + kHandOffset + kPieceOffsets[pt.idx()] + countMinusOne;
     }
 
     struct NnueUpdates {
@@ -74,24 +101,24 @@ namespace stoat::eval::nnue {
             subs.push({blackFeature, whiteFeature});
         }
 
-        inline void pushHandIncrement(Color c, PieceType pt, u32 countAfter) {
+        inline void pushHandIncrement(Color c, KingPair kings, PieceType pt, u32 countAfter) {
             assert(c);
             assert(pt);
             assert(countAfter > 0);
 
-            const auto blackHandFeature = handFeatureIndex(Colors::kBlack, pt, c, countAfter - 1);
-            const auto whiteHandFeature = handFeatureIndex(Colors::kWhite, pt, c, countAfter - 1);
+            const auto blackHandFeature = handFeatureIndex(Colors::kBlack, kings, pt, c, countAfter - 1);
+            const auto whiteHandFeature = handFeatureIndex(Colors::kWhite, kings, pt, c, countAfter - 1);
 
             adds.push({blackHandFeature, whiteHandFeature});
         }
 
-        inline void pushHandDecrement(Color c, PieceType pt, u32 countAfter) {
+        inline void pushHandDecrement(Color c, KingPair kings, PieceType pt, u32 countAfter) {
             assert(c);
             assert(pt);
             assert(countAfter < maxPiecesInHand(pt));
 
-            const auto blackHandFeature = handFeatureIndex(Colors::kBlack, pt, c, countAfter);
-            const auto whiteHandFeature = handFeatureIndex(Colors::kWhite, pt, c, countAfter);
+            const auto blackHandFeature = handFeatureIndex(Colors::kBlack, kings, pt, c, countAfter);
+            const auto whiteHandFeature = handFeatureIndex(Colors::kWhite, kings, pt, c, countAfter);
 
             subs.push({blackHandFeature, whiteHandFeature});
         }
@@ -123,8 +150,8 @@ namespace stoat::eval::nnue {
         void pieceMoved(const Position& pos, Piece piece, Square src, Square dst);
         void piecePromoted(const Position& pos, Piece oldPiece, Square src, Piece newPiece, Square dst);
 
-        void pieceAddedToHand(Color c, PieceType pt, u32 countAfter);
-        void pieceRemovedFromHand(Color c, PieceType pt, u32 countAfter);
+        void pieceAddedToHand(const Position& pos, Color c, PieceType pt, u32 countAfter);
+        void pieceRemovedFromHand(const Position& pos, Color c, PieceType pt, u32 countAfter);
 
         void finalize(const Position& pos);
     };
@@ -211,14 +238,11 @@ namespace stoat::eval::nnue {
 
     [[nodiscard]] i32 evaluateOnce(const Position& pos);
 
-    [[nodiscard]] constexpr bool requiresRefresh(Color c, Square kingSq, Square prevKingSq) {
+    [[nodiscard]] constexpr bool requiresRefresh([[maybe_unused]] Color c, Square kingSq, Square prevKingSq) {
         assert(prevKingSq);
         assert(kingSq);
 
-        const bool flip = kingSq.relative(c).file() > 4;
-        const bool prevFlip = prevKingSq.relative(c).file() > 4;
-
-        return flip != prevFlip;
+        return kingSq != prevKingSq;
     }
 
     inline void BoardObserver::prepareKingMove(Color c, Square src, Square dst) {
@@ -256,12 +280,12 @@ namespace stoat::eval::nnue {
         ctx.updates.pushPieceAdded(pos.kingSquares(), newPiece, dst);
     }
 
-    inline void BoardObserver::pieceAddedToHand(Color c, PieceType pt, u32 countAfter) {
-        ctx.updates.pushHandIncrement(c, pt, countAfter);
+    inline void BoardObserver::pieceAddedToHand(const Position& pos, Color c, PieceType pt, u32 countAfter) {
+        ctx.updates.pushHandIncrement(c, pos.kingSquares(), pt, countAfter);
     }
 
-    inline void BoardObserver::pieceRemovedFromHand(Color c, PieceType pt, u32 countAfter) {
-        ctx.updates.pushHandDecrement(c, pt, countAfter);
+    inline void BoardObserver::pieceRemovedFromHand(const Position& pos, Color c, PieceType pt, u32 countAfter) {
+        ctx.updates.pushHandDecrement(c, pos.kingSquares(), pt, countAfter);
     }
 
     inline void BoardObserver::finalize(const Position& pos) {

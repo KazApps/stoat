@@ -155,12 +155,12 @@ namespace stoat {
             ST_UNUSED(pos, oldPiece, src, newPiece, dst);
         }
 
-        void pieceAddedToHand(Color c, PieceType pt, u32 countAfter) {
-            ST_UNUSED(c, pt, countAfter);
+        void pieceAddedToHand(const Position& pos, Color c, PieceType pt, u32 countAfter) {
+            ST_UNUSED(pos, c, pt, countAfter);
         }
 
-        void pieceRemovedFromHand(Color c, PieceType pt, u32 countAfter) {
-            ST_UNUSED(c, pt, countAfter);
+        void pieceRemovedFromHand(const Position& pos, Color c, PieceType pt, u32 countAfter) {
+            ST_UNUSED(pos, c, pt, countAfter);
         }
 
         void finalize([[maybe_unused]] const Position& pos) {

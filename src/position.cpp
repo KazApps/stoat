@@ -866,7 +866,7 @@ namespace stoat {
 
             const auto newCount = m_hands[captured.color().flip().idx()].increment(handPt);
             m_keys.switchHandCount(piece.color(), handPt, newCount - 1, newCount);
-            observer.pieceAddedToHand(piece.color(), handPt, newCount);
+            observer.pieceAddedToHand(*this, piece.color(), handPt, newCount);
 
             m_keys.flipPiece(captured, to);
         } else {
@@ -919,7 +919,7 @@ namespace stoat {
 
             const auto newCount = m_hands[captured.color().flip().idx()].increment(handPt);
             m_keys.switchHandCount(piece.color(), handPt, newCount - 1, newCount);
-            observer.pieceAddedToHand(piece.color(), handPt, newCount);
+            observer.pieceAddedToHand(*this, piece.color(), handPt, newCount);
 
             m_keys.flipPiece(captured, to);
         } else {
@@ -950,7 +950,7 @@ namespace stoat {
 
         const auto newCount = hand.decrement(piece.type());
         m_keys.switchHandCount(piece.color(), piece.type(), newCount + 1, newCount);
-        observer.pieceRemovedFromHand(piece.color(), piece.type(), newCount);
+        observer.pieceRemovedFromHand(*this, piece.color(), piece.type(), newCount);
     }
 
     void Position::updateAttacks() {
