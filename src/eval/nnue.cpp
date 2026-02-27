@@ -323,45 +323,45 @@ namespace stoat::eval::nnue {
             }
         }
 
-        void applyUpdates(const Position& pos, const NnueUpdates& updates, const Accumulator& src, Accumulator& dst) {
+        void refresh(Color c, UpdatableAccumulator& acc, const Position& pos) {
+            acc.acc.reset(pos, c);
+            acc.setUpdated(c);
+        }
+
+        void applyUpdates(Color c, const NnueUpdates& updates, const Accumulator& src, UpdatableAccumulator& dst) {
             const auto addCount = updates.adds.size();
             const auto subCount = updates.subs.size();
 
-            for (const auto c : {Colors::kBlack, Colors::kWhite}) {
-                if (updates.requiresRefresh(c)) {
-                    dst.reset(pos, c);
-                    continue;
-                }
-
-                if (addCount == 1 && subCount == 1) {
-                    const auto add = updates.adds[0][c.idx()];
-                    const auto sub = updates.subs[0][c.idx()];
-                    addSub(src.color(c), dst.color(c), add, sub);
-                } else if (addCount == 2 && subCount == 2) {
-                    const auto add1 = updates.adds[0][c.idx()];
-                    const auto add2 = updates.adds[1][c.idx()];
-                    const auto sub1 = updates.subs[0][c.idx()];
-                    const auto sub2 = updates.subs[1][c.idx()];
-                    addAddSubSub(src.color(c), dst.color(c), add1, add2, sub1, sub2);
-                } else {
-                    fmt::println(stderr, "??");
-                    assert(false);
-                    std::terminate();
-                }
+            if (addCount == 1 && subCount == 1) {
+                const auto add = updates.adds[0][c.idx()];
+                const auto sub = updates.subs[0][c.idx()];
+                addSub(src.color(c), dst.acc.color(c), add, sub);
+            } else if (addCount == 2 && subCount == 2) {
+                const auto add1 = updates.adds[0][c.idx()];
+                const auto add2 = updates.adds[1][c.idx()];
+                const auto sub1 = updates.subs[0][c.idx()];
+                const auto sub2 = updates.subs[1][c.idx()];
+                addAddSubSub(src.color(c), dst.acc.color(c), add1, add2, sub1, sub2);
+            } else {
+                fmt::println(stderr, "??");
+                assert(false);
+                std::terminate();
             }
+
+            dst.setUpdated(c);
         }
     } // namespace
 
     void Accumulator::activate(Color c, u32 feature) {
-        auto& acc = color(c);
+        auto acc = color(c);
         for (u32 i = 0; i < kL1Size; ++i) {
             acc[i] += s_network.ftWeights[feature][i];
         }
     }
 
     void Accumulator::activate(u32 blackFeature, u32 whiteFeature) {
-        auto& black = this->black();
-        auto& white = this->white();
+        auto black = this->black();
+        auto white = this->white();
 
         for (u32 i = 0; i < kL1Size; ++i) {
             black[i] += s_network.ftWeights[blackFeature][i];
@@ -448,30 +448,71 @@ namespace stoat::eval::nnue {
     }
 
     void NnueState::reset(const Position& pos) {
-        m_curr = &m_accStacc[0];
-        m_curr->reset(pos);
+        m_top = &m_accStacc[0];
+        m_top->acc.reset(pos);
     }
 
-    void NnueState::push(const Position& pos, const NnueUpdates& updates) {
-        assert(m_curr < &m_accStacc[kMaxDepth]);
-        auto next = m_curr + 1;
-        applyUpdates(pos, updates, *m_curr, *next);
-        m_curr = next;
+    BoardObserver NnueState::push() {
+        assert(m_top < &m_accStacc[kMaxDepth]);
+
+        ++m_top;
+
+        m_top->ctx = {};
+        m_top->setDirty();
+
+        return BoardObserver{m_top->ctx};
     }
 
     void NnueState::pop() {
-        assert(m_curr > &m_accStacc[0]);
-        --m_curr;
+        assert(m_top > &m_accStacc[0]);
+        --m_top;
     }
 
-    void NnueState::applyInPlace(const Position& pos, const NnueUpdates& updates) {
-        assert(m_curr);
-        applyUpdates(pos, updates, *m_curr, *m_curr);
+    void NnueState::applyImmediately(const UpdateContext& ctx, const Position& pos) {
+        assert(m_top);
+        assert(m_top != &m_accStacc[0]);
+        for (const auto c : {Colors::kBlack, Colors::kWhite}) {
+            if (m_top->ctx.updates.requiresRefresh(c)) {
+                m_top->acc.reset(pos, c);
+            } else {
+                applyUpdates(c, ctx.updates, m_top->acc, *m_top);
+            }
+            m_top->setUpdated(c);
+        }
     }
 
-    i32 NnueState::evaluate(Color stm) const {
-        assert(m_curr);
-        return forward(*m_curr, stm);
+    i32 NnueState::evaluate(const Position& pos) {
+        assert(m_top);
+        ensureUpToDate(pos);
+        return forward(m_top->acc, pos.stm());
+    }
+
+    void NnueState::ensureUpToDate(const Position& pos) {
+        for (const auto c : {Colors::kBlack, Colors::kWhite}) {
+            if (!m_top->isDirty(c)) {
+                continue;
+            }
+
+            if (m_top->ctx.updates.requiresRefresh(c)) {
+                refresh(c, *m_top, pos);
+                continue;
+            }
+
+            auto* curr = m_top - 1;
+            while (curr->isDirty(c) && !curr->ctx.updates.requiresRefresh(c)) {
+                --curr;
+            }
+
+            if (curr->ctx.updates.requiresRefresh(c)) {
+                refresh(c, *m_top, pos);
+                continue;
+            }
+
+            do {
+                const auto& prev = *curr++;
+                applyUpdates(c, curr->ctx.updates, prev.acc, *curr);
+            } while (curr != m_top);
+        }
     }
 
     i32 evaluateOnce(const Position& pos) {

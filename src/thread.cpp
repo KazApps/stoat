@@ -48,7 +48,7 @@ namespace stoat {
 
         return std::pair<Position, ThreadPosGuard<true>>{
             std::piecewise_construct,
-            std::forward_as_tuple(pos.applyMove<NnueUpdateAction::kPush>(move, &nnueState)),
+            std::forward_as_tuple(pos.applyMove(move, nnueState.push())),
             std::forward_as_tuple(keyHistory, nnueState)
         };
     }
