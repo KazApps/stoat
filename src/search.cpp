@@ -625,19 +625,6 @@ namespace stoat {
             }
         }
 
-        const auto complexity = [&] {
-            if (ttEntry.flag == tt::Flag::kExact                                               //
-                || (ttEntry.flag == tt::Flag::kUpperBound && ttEntry.score <= curr.staticEval) //
-                || (ttEntry.flag == tt::Flag::kLowerBound && ttEntry.score >= curr.staticEval))
-            {
-                return std::abs(curr.staticEval - ttEntry.score);
-            }
-            return 0;
-        }();
-
-        const auto ttMove =
-            (kRootNode && thread.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
-
         const bool improving = [&] {
             if (pos.isInCheck()) {
                 return false;
@@ -650,6 +637,23 @@ namespace stoat {
             }
             return false;
         }();
+
+        if (!curr.excluded && improving) {
+            curr.staticEval += 16;
+        }
+
+        const auto complexity = [&] {
+            if (ttEntry.flag == tt::Flag::kExact                                               //
+                || (ttEntry.flag == tt::Flag::kUpperBound && ttEntry.score <= curr.staticEval) //
+                || (ttEntry.flag == tt::Flag::kLowerBound && ttEntry.score >= curr.staticEval))
+            {
+                return std::abs(curr.staticEval - ttEntry.score);
+            }
+            return 0;
+        }();
+
+        const auto ttMove =
+            (kRootNode && thread.rootDepth > 1) ? thread.rootMoves[thread.pvIdx].pv.moves[0] : ttEntry.move;
 
         if (!ttPv && !pos.isInCheck() && !curr.excluded && complexity <= 20) {
             if (parent && depth >= 2 && parent->reduction >= 1 && curr.staticEval + parent->staticEval >= 200) {
