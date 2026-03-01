@@ -803,8 +803,8 @@ namespace stoat {
                 goto skipSearch;
             }
 
-            if (extension == 0 && givesCheck) {
-                extension = 1;
+            if (givesCheck) {
+                extension += 1;
             }
 
             newDepth += extension;
