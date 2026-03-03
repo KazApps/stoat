@@ -34,11 +34,7 @@ namespace stoat {
             }
 
             case MovegenStage::kGenerateCaptures: {
-                if (m_generateUnlikelyMoves) {
-                    movegen::generateCaptures<true>(m_moves, m_pos);
-                } else {
-                    movegen::generateCaptures<false>(m_moves, m_pos);
-                }
+                movegen::generateCaptures(m_moves, m_pos);
 
                 m_end = m_moves.size();
 
@@ -70,11 +66,7 @@ namespace stoat {
 
             case MovegenStage::kGenerateNonCaptures: {
                 if (!m_skipNonCaptures) {
-                    if (m_generateUnlikelyMoves) {
-                        movegen::generateNonCaptures<true>(m_moves, m_pos);
-                    } else {
-                        movegen::generateNonCaptures<false>(m_moves, m_pos);
-                    }
+                    movegen::generateNonCaptures(m_moves, m_pos);
 
                     m_end = m_moves.size();
                 }
@@ -109,11 +101,7 @@ namespace stoat {
             }
 
             case MovegenStage::kQsearchGenerateCaptures: {
-                if (m_generateUnlikelyMoves) {
-                    movegen::generateCaptures<true>(m_moves, m_pos);
-                } else {
-                    movegen::generateCaptures<false>(m_moves, m_pos);
-                }
+                movegen::generateCaptures(m_moves, m_pos);
 
                 m_end = m_moves.size();
 
@@ -133,11 +121,7 @@ namespace stoat {
             }
 
             case MovegenStage::kQsearchEvasionsGenerateCaptures: {
-                if (m_generateUnlikelyMoves) {
-                    movegen::generateCaptures<true>(m_moves, m_pos);
-                } else {
-                    movegen::generateCaptures<false>(m_moves, m_pos);
-                }
+                movegen::generateCaptures(m_moves, m_pos);
 
                 m_end = m_moves.size();
 
@@ -158,11 +142,7 @@ namespace stoat {
 
             case MovegenStage::kQsearchEvasionsGenerateNonCaptures: {
                 if (!m_skipNonCaptures) {
-                    if (m_generateUnlikelyMoves) {
-                        movegen::generateNonCaptures<true>(m_moves, m_pos);
-                    } else {
-                        movegen::generateNonCaptures<false>(m_moves, m_pos);
-                    }
+                    movegen::generateNonCaptures(m_moves, m_pos);
 
                     m_end = m_moves.size();
                 }
@@ -194,24 +174,22 @@ namespace stoat {
         Move ttMove,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
-        i32 ply,
-        bool generateUnlikelyMoves
+        i32 ply
     ) {
         assert(continuations.size() == kMaxDepth + 1);
-        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, history, continuations, ply, generateUnlikelyMoves};
+        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, history, continuations, ply};
     }
 
     MoveGenerator MoveGenerator::qsearch(
         const Position& pos,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
-        i32 ply,
-        bool generateUnlikelyMoves
+        i32 ply
     ) {
         assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
             pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
-        return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply, generateUnlikelyMoves};
+        return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply};
     }
 
     MoveGenerator::MoveGenerator(
@@ -220,16 +198,14 @@ namespace stoat {
         Move ttMove,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
-        i32 ply,
-        bool generateUnlikelyMoves
+        i32 ply
     ) :
             m_stage{initialStage},
             m_pos{pos},
             m_ttMove{ttMove},
             m_history{history},
             m_continuations{continuations},
-            m_ply{ply},
-            m_generateUnlikelyMoves{generateUnlikelyMoves} {}
+            m_ply{ply} {}
 
     i32 MoveGenerator::scoreCapture(Move move) {
         const auto captured = m_pos.pieceOn(move.to()).type();

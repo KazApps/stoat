@@ -547,7 +547,7 @@ namespace stoat {
                     assert(newPos.checkers().getSquare(move.to()));
 
                     movegen::MoveList newMoves{};
-                    movegen::generateAll<false>(newMoves, newPos);
+                    movegen::generateAll(newMoves, newPos);
 
                     return std::ranges::any_of(newMoves, [&](Move newMove) { return newPos.isLegal(newMove); });
                 }

@@ -114,7 +114,7 @@ namespace stoat::datagen {
 
                 for (usize i = 0; i < count; ++i) {
                     moves.clear();
-                    movegen::generateAll<true>(moves, pos);
+                    movegen::generateAll(moves, pos);
 
                     const auto move = selectRandomLegal(rng, pos, keyHistory, moves);
 

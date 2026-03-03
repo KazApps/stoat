@@ -73,7 +73,7 @@ namespace stoat {
 
         void generateLegal(movegen::MoveList& dst, const Position& pos) {
             movegen::MoveList generated{};
-            movegen::generateAll<true>(generated, pos);
+            movegen::generateAll(generated, pos);
 
             for (const auto move : generated) {
                 if (pos.isLegal(move)) {
@@ -696,7 +696,7 @@ namespace stoat {
         auto ttFlag = tt::Flag::kUpperBound;
 
         auto generator =
-            MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply, depth > 5 && alpha < -1500);
+            MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply);
 
         util::StaticVector<Move, 64> capturesTried{};
         util::StaticVector<Move, 64> nonCapturesTried{};
@@ -1037,7 +1037,7 @@ namespace stoat {
 
         auto ttFlag = tt::Flag::kUpperBound;
 
-        auto generator = MoveGenerator::qsearch(pos, thread.history, thread.conthist, ply, alpha < -1500);
+        auto generator = MoveGenerator::qsearch(pos, thread.history, thread.conthist, ply);
 
         u32 legalMoves{};
 
