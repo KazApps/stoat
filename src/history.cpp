@@ -47,7 +47,7 @@ namespace stoat {
 
         const auto contScore = [&](const u64 offset) -> i32 {
             if (keyHistory.size() >= offset) {
-                return m_continuation[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries];
+                return m_continuation[(pos.keyAfter(move) ^ keyHistory[keyHistory.size() - offset]) % kContEntries];
             } else {
                 return 0;
             }
@@ -72,17 +72,18 @@ namespace stoat {
             m_nonCaptureNonDrop[pos.stm().idx()][move.isPromo()][move.from().idx()][move.to().idx()].update(bonus);
         }
 
-        updateNonCaptureConthistScore(pos, keyHistory, bonus);
+        updateNonCaptureConthistScore(pos, keyHistory, move, bonus);
     }
 
     void HistoryTables::updateNonCaptureConthistScore(
         const Position& pos,
         std::span<const u64> keyHistory,
+        Move move,
         HistoryScore bonus
     ) {
         const auto updateCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {
-                m_continuation[(pos.key() ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
+                m_continuation[(pos.keyAfter(move) ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
             }
         };
 

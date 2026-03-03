@@ -66,13 +66,18 @@ namespace stoat {
 
         void updateNonCaptureScore(const Position& pos, std::span<const u64> keyHistory, Move move, HistoryScore bonus);
 
-        void updateNonCaptureConthistScore(const Position& pos, std::span<const u64> keyHistory, HistoryScore bonus);
+        void updateNonCaptureConthistScore(
+            const Position& pos,
+            std::span<const u64> keyHistory,
+            Move move,
+            HistoryScore bonus
+        );
 
         [[nodiscard]] i32 captureScore(Move move, PieceType captured) const;
         void updateCaptureScore(Move move, PieceType captured, HistoryScore bonus);
 
     private:
-        static constexpr usize kContEntries = 16777216;
+        static constexpr usize kContEntries = 131072;
 
         // [stm][promo][from][to]
         util::MultiArray<HistoryEntry, Colors::kCount, 2, Squares::kCount, Squares::kCount> m_nonCaptureNonDrop{};

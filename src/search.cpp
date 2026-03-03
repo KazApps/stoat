@@ -843,6 +843,7 @@ namespace stoat {
                         thread.history.updateNonCaptureConthistScore(
                             pos,
                             {thread.keyHistory.data(), thread.keyHistory.size() - 1},
+                            move,
                             bonus
                         );
                     }
