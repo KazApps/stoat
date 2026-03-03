@@ -47,7 +47,9 @@ namespace stoat {
 
         const auto contScore = [&](const u64 offset) -> i32 {
             if (keyHistory.size() >= offset) {
-                return m_continuation[(pos.keyAfter(move) ^ keyHistory[keyHistory.size() - offset]) % kContEntries];
+                return m_continuation
+                    [(pos.keyAfter(move) ^ (offset == 1 ? pos.key() : keyHistory[keyHistory.size() - offset + 1]))
+                     % kContEntries];
             } else {
                 return 0;
             }
@@ -83,7 +85,10 @@ namespace stoat {
     ) {
         const auto updateCont = [&](const u64 offset) {
             if (keyHistory.size() >= offset) {
-                m_continuation[(pos.keyAfter(move) ^ keyHistory[keyHistory.size() - offset]) % kContEntries].update(bonus);
+                m_continuation
+                    [(pos.keyAfter(move) ^ (offset == 1 ? pos.key() : keyHistory[keyHistory.size() - offset + 1]))
+                     % kContEntries]
+                        .update(bonus);
             }
         };
 
