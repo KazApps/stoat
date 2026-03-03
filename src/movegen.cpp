@@ -51,6 +51,7 @@ namespace stoat::movegen {
         void serializePromotions(MoveList& dst, Square from, Bitboard attacks) {
             while (!attacks.empty()) {
                 const auto to = attacks.popLsb();
+                dst.push(Move::makeNormal(from, to));
                 dst.push(Move::makePromotion(from, to));
             }
         }
@@ -76,7 +77,7 @@ namespace stoat::movegen {
             const auto promoArea = Bitboards::promoArea(stm);
 
             if constexpr (kCanPromote) {
-                auto promotable = pieces;
+                auto promotable = pieces & ~promoArea;
                 while (!promotable.empty()) {
                     const auto piece = promotable.popLsb();
                     const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & promoArea;
@@ -87,16 +88,17 @@ namespace stoat::movegen {
                 promotable = pieces & promoArea;
                 while (!promotable.empty()) {
                     const auto piece = promotable.popLsb();
-                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & ~promoArea;
+                    const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask;
 
                     serializePromotions(dst, piece, attacks);
                 }
             }
 
-            auto movable = pieces;
+            auto movable = kCanPromote ? pieces & ~promoArea : pieces;
             while (!movable.empty()) {
                 const auto piece = movable.popLsb();
-                const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & nonPromoMask;
+                const auto attacks = attackGetter(piece, pos.stm(), occ) & dstMask & nonPromoMask
+                                   & (kCanPromote ? ~promoArea : Bitboards::kAll);
 
                 serializeNormals(dst, piece, attacks);
             }
