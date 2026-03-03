@@ -77,7 +77,7 @@ namespace stoat {
         void updateCaptureScore(Move move, PieceType captured, HistoryScore bonus);
 
     private:
-        static constexpr usize kContEntries = 131072;
+        static constexpr usize kContEntries = 1048576;
 
         // [stm][promo][from][to]
         util::MultiArray<HistoryEntry, Colors::kCount, 2, Squares::kCount, Squares::kCount> m_nonCaptureNonDrop{};
