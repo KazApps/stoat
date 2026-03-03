@@ -196,7 +196,6 @@ namespace stoat {
         const HistoryTables& history,
         bool generateUnlikelyMoves
     ) {
-        assert(continuations.size() == kMaxDepth + 1);
         return MoveGenerator{MovegenStage::kTtMove, pos, keyHistory, ttMove, history, generateUnlikelyMoves};
     }
 
@@ -206,7 +205,6 @@ namespace stoat {
         const HistoryTables& history,
         bool generateUnlikelyMoves
     ) {
-        assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
             pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
         return MoveGenerator{initialStage, pos, keyHistory, kNullMove, history, generateUnlikelyMoves};
