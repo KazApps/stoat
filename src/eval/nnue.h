@@ -238,11 +238,18 @@ namespace stoat::eval::nnue {
 
     [[nodiscard]] i32 evaluateOnce(const Position& pos);
 
-    [[nodiscard]] constexpr bool requiresRefresh([[maybe_unused]] Color c, Square kingSq, Square prevKingSq) {
+    [[nodiscard]] constexpr bool requiresRefresh(Color c, Square kingSq, Square prevKingSq) {
         assert(prevKingSq);
         assert(kingSq);
 
-        return kingSq != prevKingSq;
+        const bool flip = kingSq.relative(c).file() > 4;
+        const bool prevFlip = prevKingSq.relative(c).file() > 4;
+
+        if (flip != prevFlip) {
+            return true;
+        }
+
+        return kingBucket(kingSq.relative(c)) != kingBucket(prevKingSq.relative(c));
     }
 
     inline void BoardObserver::prepareKingMove(Color c, Square src, Square dst) {
