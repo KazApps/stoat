@@ -81,7 +81,7 @@ namespace stoat::datagen {
                 const auto sennichite = newPos.testSennichite(false, keyHistory);
                 keyHistory.pop_back();
 
-                if (sennichite != SennichiteStatus::kWin) {
+                if (sennichite != SennichiteStatus::kLose && sennichite != SennichiteStatus::kWin) {
                     return move;
                 }
 
@@ -243,12 +243,16 @@ namespace stoat::datagen {
                     if (sennichite == SennichiteStatus::kDraw) {
                         outcome = format::Outcome::kDraw;
                         break;
-                    } else if (sennichite == SennichiteStatus::kWin) {
+                    } else if (sennichite == SennichiteStatus::kLose || sennichite == SennichiteStatus::kWin) {
                         const std::scoped_lock lock{s_printMutex};
 
                         auto& errStream = getErrStream(outDir);
 
-                        fmt::println(errStream, "thread {}: illegal perpetual as best move?", id);
+                        if (sennichite == SennichiteStatus::kLose) {
+                            fmt::println(errStream, "thread {}: illegal perpetual as best move?", id);
+                        } else {
+                            fmt::println(errStream, "thread {}: opponent illegal perpetual completed?", id);
+                        }
 
                         fmt::print(errStream, "Keys:");
                         for (usize i = 0; i < keyHistory.size() - 1; ++i) {

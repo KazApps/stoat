@@ -791,10 +791,14 @@ namespace stoat {
 
             Score score;
 
-            if (sennichite == SennichiteStatus::kWin) {
-                // illegal perpetual
+            if (sennichite == SennichiteStatus::kLose) {
+                // lost by giving perpetual check
                 --legalMoves;
                 continue;
+            } else if (sennichite == SennichiteStatus::kWin) {
+                // opponent's perpetual check was completed by our check evasion
+                score = kScoreMate - ply - 1;
+                goto skipSearch;
             } else if (sennichite == SennichiteStatus::kDraw) {
                 score = drawScore(thread.loadNodes());
                 goto skipSearch;
@@ -1072,9 +1076,13 @@ namespace stoat {
 
             Score score;
 
-            if (sennichite == SennichiteStatus::kWin) {
-                // illegal perpetual
+            if (sennichite == SennichiteStatus::kLose) {
+                // lost by giving perpetual check
+                --legalMoves;
                 continue;
+            } else if (sennichite == SennichiteStatus::kWin) {
+                // opponent's perpetual check was completed by our check evasion
+                score = kScoreMate - ply - 1;
             } else if (sennichite == SennichiteStatus::kDraw) {
                 score = drawScore(thread.loadNodes());
             } else {

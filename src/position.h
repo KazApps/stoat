@@ -104,7 +104,8 @@ namespace stoat {
     enum class SennichiteStatus {
         kNone = 0,
         kDraw,
-        kWin, // perpetual check by opponent
+        kLose, // lost by giving perpetual check
+        kWin,  // opponent's perpetual check was completed by our check evasion
     };
 
     namespace eval::nnue {
