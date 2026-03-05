@@ -791,15 +791,15 @@ namespace stoat {
 
             Score score;
 
-            if (sennichite == SennichiteStatus::kLose) {
+            if (sennichite == RepetitionStatus::kLoss) {
                 // lost by giving perpetual check
                 --legalMoves;
                 continue;
-            } else if (sennichite == SennichiteStatus::kWin) {
+            } else if (sennichite == RepetitionStatus::kWin) {
                 // opponent's perpetual check was completed by our check evasion
                 score = kScoreMate - ply - 1;
                 goto skipSearch;
-            } else if (sennichite == SennichiteStatus::kDraw) {
+            } else if (sennichite == RepetitionStatus::kDraw) {
                 score = drawScore(thread.loadNodes());
                 goto skipSearch;
             } else if (pos.isEnteringKingsWin()) {
@@ -1076,14 +1076,14 @@ namespace stoat {
 
             Score score;
 
-            if (sennichite == SennichiteStatus::kLose) {
+            if (sennichite == RepetitionStatus::kLoss) {
                 // lost by giving perpetual check
                 --legalMoves;
                 continue;
-            } else if (sennichite == SennichiteStatus::kWin) {
+            } else if (sennichite == RepetitionStatus::kWin) {
                 // opponent's perpetual check was completed by our check evasion
                 score = kScoreMate - ply - 1;
-            } else if (sennichite == SennichiteStatus::kDraw) {
+            } else if (sennichite == RepetitionStatus::kDraw) {
                 score = drawScore(thread.loadNodes());
             } else {
                 score = -qsearch<kPvNode>(thread, newPos, ply + 1, -beta, -alpha);

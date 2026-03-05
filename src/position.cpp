@@ -354,7 +354,7 @@ namespace stoat {
         return key;
     }
 
-    SennichiteStatus Position::testSennichite(
+    RepetitionStatus Position::testSennichite(
         bool cuteChessWorkaround,
         std::span<const u64> keyHistory,
         i32 limit
@@ -370,21 +370,21 @@ namespace stoat {
                     // Older cutechess versions do not handle perpetuals
                     // properly - work around that to avoid illegal moves
                     if (cuteChessWorkaround) {
-                        return isInCheck() ? SennichiteStatus::kWin : SennichiteStatus::kDraw;
+                        return isInCheck() ? RepetitionStatus::kWin : RepetitionStatus::kDraw;
                     } else {
                         if (i / 2 <= m_consecutiveChecks[stm().idx()]) {
-                            return SennichiteStatus::kLose;
+                            return RepetitionStatus::kLoss;
                         } else if (i / 2 == m_consecutiveChecks[stm().flip().idx()]) {
-                            return SennichiteStatus::kWin;
+                            return RepetitionStatus::kWin;
                         } else {
-                            return SennichiteStatus::kDraw;
+                            return RepetitionStatus::kDraw;
                         }
                     }
                 }
             }
         }
 
-        return SennichiteStatus::kNone;
+        return RepetitionStatus::kNone;
     }
 
     bool Position::isEnteringKingsWin() const {

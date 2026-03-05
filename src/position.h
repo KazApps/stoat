@@ -101,10 +101,10 @@ namespace stoat {
         kApplyInPlace,
     };
 
-    enum class SennichiteStatus {
+    enum class RepetitionStatus {
         kNone = 0,
         kDraw,
-        kLose, // lost by giving perpetual check
+        kLoss, // lost by giving perpetual check
         kWin,  // opponent's perpetual check was completed by our check evasion
     };
 
@@ -271,7 +271,7 @@ namespace stoat {
             return m_kingSquares;
         }
 
-        [[nodiscard]] SennichiteStatus testSennichite(
+        [[nodiscard]] RepetitionStatus testSennichite(
             bool cuteChessWorkaround,
             std::span<const u64> keyHistory,
             i32 limit = 16
