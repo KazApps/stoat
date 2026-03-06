@@ -399,6 +399,7 @@ namespace stoat {
         thread.stoppedSoft = false;
 
         PvList rootPv{};
+        movegen::MoveList buffer{};
 
         for (i32 depth = 1;; ++depth) {
             thread.rootDepth = depth;
@@ -428,7 +429,8 @@ namespace stoat {
                 while (true) {
                     const auto rootDepth = std::max(depth - reduction, 1);
 
-                    score = search<true, true>(thread, thread.rootPos, rootPv, rootDepth, 0, alpha, beta, false);
+                    score =
+                        search<true, true>(buffer, thread, thread.rootPos, rootPv, rootDepth, 0, alpha, beta, false);
 
                     std::stable_sort(
                         thread.rootMoves.begin() + thread.pvIdx,
@@ -529,6 +531,7 @@ namespace stoat {
 
     template <bool kPvNode, bool kRootNode>
     Score Searcher::search(
+        movegen::MoveList& buffer,
         ThreadData& thread,
         const Position& pos,
         PvList& pv,
@@ -567,7 +570,7 @@ namespace stoat {
         }
 
         if (depth <= 0) {
-            return qsearch<kPvNode>(thread, pos, ply, alpha, beta);
+            return qsearch<kPvNode>(buffer, thread, pos, ply, alpha, beta);
         }
 
         thread.incNodes();
@@ -665,7 +668,7 @@ namespace stoat {
             }
 
             if (depth <= 4 && std::abs(alpha) < 2000 && curr.staticEval + 300 * depth <= alpha) {
-                const auto score = qsearch(thread, pos, ply, alpha, alpha + 1);
+                const auto score = qsearch(buffer, thread, pos, ply, alpha, alpha + 1);
                 if (score <= alpha) {
                     return score;
                 }
@@ -676,7 +679,7 @@ namespace stoat {
 
                 const auto [newPos, guard] = thread.applyNullMove(ply, pos);
                 const auto score =
-                    -search(thread, newPos, curr.pv, depth - r, ply + 1, -beta, -beta + 1, !expectedCutnode);
+                    -search(buffer, thread, newPos, curr.pv, depth - r, ply + 1, -beta, -beta + 1, !expectedCutnode);
 
                 if (score >= beta) {
                     return score > kScoreWin ? beta : score;
@@ -695,8 +698,12 @@ namespace stoat {
 
         auto ttFlag = tt::Flag::kUpperBound;
 
+        buffer.clear();
+
         auto generator =
-            MoveGenerator::main(pos, ttMove, thread.history, thread.conthist, ply, depth > 5 && alpha < -1500);
+            MoveGenerator::main(buffer, pos, ttMove, thread.history, thread.conthist, ply, depth > 5 && alpha < -1500);
+
+        movegen::MoveList nextBuffer{};
 
         util::StaticVector<Move, 64> capturesTried{};
         util::StaticVector<Move, 64> nonCapturesTried{};
@@ -757,7 +764,8 @@ namespace stoat {
                     const auto sDepth = (depth - 1) / 2;
 
                     curr.excluded = move;
-                    const auto score = search(thread, pos, curr.pv, sDepth, ply, sBeta - 1, sBeta, expectedCutnode);
+                    const auto score =
+                        search(nextBuffer, thread, pos, curr.pv, sDepth, ply, sBeta - 1, sBeta, expectedCutnode);
                     curr.excluded = kNullMove;
 
                     if (score < sBeta) {
@@ -833,22 +841,42 @@ namespace stoat {
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
                 curr.reduction = newDepth - reduced;
-                score = -search(thread, newPos, curr.pv, reduced, ply + 1, -alpha - 1, -alpha, true);
+                score = -search(nextBuffer, thread, newPos, curr.pv, reduced, ply + 1, -alpha - 1, -alpha, true);
                 curr.reduction = 0;
 
                 if (score > alpha && reduced < newDepth) {
-                    score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
+                    score = -search(
+                        nextBuffer,
+                        thread,
+                        newPos,
+                        curr.pv,
+                        newDepth,
+                        ply + 1,
+                        -alpha - 1,
+                        -alpha,
+                        !expectedCutnode
+                    );
                     if (!pos.isCapture(move) && score >= beta) {
                         const auto bonus = historyBonus(newDepth);
                         thread.history.updateNonCaptureConthistScore(thread.conthist, ply, pos, move, bonus);
                     }
                 }
             } else if (!kPvNode || legalMoves > 1) {
-                score = -search(thread, newPos, curr.pv, newDepth, ply + 1, -alpha - 1, -alpha, !expectedCutnode);
+                score = -search(
+                    nextBuffer,
+                    thread,
+                    newPos,
+                    curr.pv,
+                    newDepth,
+                    ply + 1,
+                    -alpha - 1,
+                    -alpha,
+                    !expectedCutnode
+                );
             }
 
             if (kPvNode && (legalMoves == 1 || score > alpha)) {
-                score = -search<true>(thread, newPos, curr.pv, newDepth, ply + 1, -beta, -alpha, false);
+                score = -search<true>(nextBuffer, thread, newPos, curr.pv, newDepth, ply + 1, -beta, -alpha, false);
             }
 
         skipSearch:
@@ -968,12 +996,21 @@ namespace stoat {
     }
 
     template <bool kPvNode>
-    Score Searcher::qsearch(ThreadData& thread, const Position& pos, i32 ply, Score alpha, Score beta) {
+    Score Searcher::qsearch(
+        movegen::MoveList& buffer,
+        ThreadData& thread,
+        const Position& pos,
+        i32 ply,
+        Score alpha,
+        Score beta
+    ) {
         assert(ply >= 0 && ply <= kMaxDepth);
 
         if (hasStopped()) {
             return 0;
         }
+
+        buffer.clear();
 
         if (thread.isMainThread() && thread.rootDepth > 1) {
             if (thread.limiter->stopHard(thread.loadNodes())) {
@@ -1037,7 +1074,11 @@ namespace stoat {
 
         auto ttFlag = tt::Flag::kUpperBound;
 
-        auto generator = MoveGenerator::qsearch(pos, thread.history, thread.conthist, ply, alpha < -1500);
+        buffer.clear();
+
+        auto generator = MoveGenerator::qsearch(buffer, pos, thread.history, thread.conthist, ply, alpha < -1500);
+
+        movegen::MoveList nextBuffer{};
 
         u32 legalMoves{};
 
@@ -1078,7 +1119,7 @@ namespace stoat {
             } else if (sennichite == SennichiteStatus::kDraw) {
                 score = drawScore(thread.loadNodes());
             } else {
-                score = -qsearch<kPvNode>(thread, newPos, ply + 1, -beta, -alpha);
+                score = -qsearch<kPvNode>(nextBuffer, thread, newPos, ply + 1, -beta, -alpha);
             }
 
             if (hasStopped()) {

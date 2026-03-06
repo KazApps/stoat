@@ -146,6 +146,7 @@ namespace stoat {
 
         template <bool kPvNode = false, bool kRootNode = false>
         Score search(
+            movegen::MoveList& movegenBuffer,
             ThreadData& thread,
             const Position& pos,
             PvList& pv,
@@ -158,6 +159,7 @@ namespace stoat {
 
         template <>
         Score search<false, true>(
+            movegen::MoveList& buffer,
             ThreadData& thread,
             const Position& pos,
             PvList& pv,
@@ -169,7 +171,14 @@ namespace stoat {
         ) = delete;
 
         template <bool kPvNode = false>
-        Score qsearch(ThreadData& thread, const Position& pos, i32 ply, Score alpha, Score beta);
+        Score qsearch(
+            movegen::MoveList& buffer,
+            ThreadData& thread,
+            const Position& pos,
+            i32 ply,
+            Score alpha,
+            Score beta
+        );
 
         void reportSingle(const ThreadData& bestThread, u32 pvIdx, i32 depth, f64 time) const;
 

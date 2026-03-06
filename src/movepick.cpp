@@ -190,6 +190,7 @@ namespace stoat {
     }
 
     MoveGenerator MoveGenerator::main(
+        movegen::MoveList& buffer,
         const Position& pos,
         Move ttMove,
         const HistoryTables& history,
@@ -198,10 +199,20 @@ namespace stoat {
         bool generateUnlikelyMoves
     ) {
         assert(continuations.size() == kMaxDepth + 1);
-        return MoveGenerator{MovegenStage::kTtMove, pos, ttMove, history, continuations, ply, generateUnlikelyMoves};
+        return MoveGenerator{
+            buffer,
+            MovegenStage::kTtMove,
+            pos,
+            ttMove,
+            history,
+            continuations,
+            ply,
+            generateUnlikelyMoves
+        };
     }
 
     MoveGenerator MoveGenerator::qsearch(
+        movegen::MoveList& buffer,
         const Position& pos,
         const HistoryTables& history,
         std::span<ContinuationSubtable* const> continuations,
@@ -211,10 +222,11 @@ namespace stoat {
         assert(continuations.size() == kMaxDepth + 1);
         const auto initialStage =
             pos.isInCheck() ? MovegenStage::kQsearchEvasionsGenerateCaptures : MovegenStage::kQsearchGenerateCaptures;
-        return MoveGenerator{initialStage, pos, kNullMove, history, continuations, ply, generateUnlikelyMoves};
+        return MoveGenerator{buffer, initialStage, pos, kNullMove, history, continuations, ply, generateUnlikelyMoves};
     }
 
     MoveGenerator::MoveGenerator(
+        movegen::MoveList& buffer,
         MovegenStage initialStage,
         const Position& pos,
         Move ttMove,
@@ -223,6 +235,7 @@ namespace stoat {
         i32 ply,
         bool generateUnlikelyMoves
     ) :
+            m_moves{buffer},
             m_stage{initialStage},
             m_pos{pos},
             m_ttMove{ttMove},
