@@ -815,7 +815,7 @@ namespace stoat {
 
                 r += !ttPv;
                 r += !improving;
-                r -= givesCheck;
+                r -= givesCheck * 2;
                 r -= history / 8192;
                 r += expectedCutnode * 3;
 
