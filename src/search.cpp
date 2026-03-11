@@ -824,10 +824,16 @@ namespace stoat {
                 }
 
                 if (move.isDrop()) {
-                    r -= dist < 3 && !pos.attackersTo(move.to(), pos.stm()).empty();
-                    r -= (attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy())
-                          & pos.colorBb(pos.stm().flip()))
-                             .popcount();
+                    r -= dist < 3 && pos.isAttacked(move.to(), pos.stm());
+
+                    const auto pt = move.dropPiece();
+                    const auto attacks = attacks::pieceAttacks(move.dropPiece(), move.to(), pos.stm(), pos.occupancy());
+
+                    if (pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
+                        r -= attacks.popcount() / 4;
+                    } else {
+                        r -= (attacks & pos.colorBb(pos.stm().flip())).popcount();
+                    }
                 }
 
                 const auto reduced = std::min(std::max(newDepth - r, 1), newDepth - 1) + kPvNode;
