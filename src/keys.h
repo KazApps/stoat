@@ -28,7 +28,6 @@
 namespace stoat::keys {
     namespace sizes {
         constexpr usize kPieceSquares = Pieces::kCount * Squares::kCount;
-        constexpr usize kStm = 1;
         constexpr usize kPawnsInHand = (maxPiecesInHand(PieceTypes::kPawn) + 1) * Colors::kCount;
         constexpr usize kLancesInHand = (maxPiecesInHand(PieceTypes::kLance) + 1) * Colors::kCount;
         constexpr usize kKnightsInHand = (maxPiecesInHand(PieceTypes::kKnight) + 1) * Colors::kCount;
@@ -37,14 +36,13 @@ namespace stoat::keys {
         constexpr usize kRooksInHand = (maxPiecesInHand(PieceTypes::kRook) + 1) * Colors::kCount;
         constexpr usize kGoldsInHand = (maxPiecesInHand(PieceTypes::kGold) + 1) * Colors::kCount;
 
-        constexpr auto kTotal = kPieceSquares + kStm + kPawnsInHand + kLancesInHand + kKnightsInHand + kSilversInHand
+        constexpr auto kTotal = kPieceSquares + kPawnsInHand + kLancesInHand + kKnightsInHand + kSilversInHand
                               + kBishopsInHand + kRooksInHand + kGoldsInHand;
     } // namespace sizes
 
     namespace offsets {
         constexpr usize kPieceSquares = 0;
-        constexpr auto kStm = kPieceSquares + sizes::kPieceSquares;
-        constexpr auto kPawnsInHand = kStm + sizes::kStm;
+        constexpr auto kPawnsInHand = kPieceSquares + sizes::kPieceSquares;
         constexpr auto kLancesInHand = kPawnsInHand + sizes::kPawnsInHand;
         constexpr auto kKnightsInHand = kLancesInHand + sizes::kLancesInHand;
         constexpr auto kSilversInHand = kKnightsInHand + sizes::kKnightsInHand;
@@ -61,7 +59,7 @@ namespace stoat::keys {
         util::rng::Jsf64Rng rng{Seed};
 
         for (auto& key : keys) {
-            key = rng.nextU64();
+            key = rng.nextU64() << 1;
         }
 
         return keys;
@@ -75,7 +73,7 @@ namespace stoat::keys {
     }
 
     [[nodiscard]] constexpr u64 stm() {
-        return kKeys[offsets::kStm];
+        return 0b1;
     }
 
     [[nodiscard]] constexpr u64 pieceInHand(Color c, PieceType pt, u32 count) {
