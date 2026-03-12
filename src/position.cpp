@@ -420,6 +420,7 @@ namespace stoat {
         assert(!move.isNull());
 
         const auto stm = this->stm();
+        const auto stmKing = kingSq(stm);
 
         const auto occ = occupancy();
 
@@ -466,6 +467,16 @@ namespace stoat {
                 }
             }
 
+            if (isInCheck()) {
+                const auto checker = m_checkers.lsb();
+                const auto checkRay = rayBetween(stmKing, checker);
+
+                // a drop must block the check
+                if (!checkRay.getSquare(move.to())) {
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -478,8 +489,8 @@ namespace stoat {
 
         const auto captured = pieceOn(move.to());
 
-        // can't capture our own piece, or a king
-        if (captured && (captured.color() == stm || captured.type() == PieceTypes::kKing)) {
+        // can't capture our own piece
+        if (captured && captured.color() == stm) {
             return false;
         }
 
@@ -497,6 +508,17 @@ namespace stoat {
         } else {
             const auto promoRequiredZone = getPromoRequiredZone(moving.type());
             if (promoRequiredZone.getSquare(move.to())) {
+                return false;
+            }
+        }
+
+        if (moving.type() != PieceTypes::kKing && isInCheck()) {
+            const auto checker = m_checkers.lsb();
+            // includes the checker
+            const auto checkRay = rayBetween(stmKing, checker) | checker.bit();
+
+            // must either block the check or capture the checker
+            if (!checkRay.getSquare(move.to())) {
                 return false;
             }
         }
@@ -520,20 +542,7 @@ namespace stoat {
         const auto stmKing = kingSq(stm);
 
         if (move.isDrop()) {
-            if (isInCheck()) {
-                // multiple checks can only be evaded with a king move
-                if (m_checkers.multiple()) {
-                    return false;
-                }
-
-                const auto checker = m_checkers.lsb();
-                const auto checkRay = rayBetween(stmKing, checker);
-
-                // a drop must block the check
-                if (!checkRay.getSquare(move.to())) {
-                    return false;
-                }
-            }
+            assert(!m_checkers.multiple());
 
             // pawn drop mate rule (delivering mate by dropping a pawn is illegal)
             if (move.dropPiece() == PieceTypes::kPawn) {
@@ -561,25 +570,11 @@ namespace stoat {
             // remove the king to account for moving away from the checker
             const auto kinglessOcc = occupancy() ^ pieceBb(PieceTypes::kKing, stm);
             return !isAttacked(move.to(), nstm, kinglessOcc);
-        } else if (m_checkers.multiple()) {
-            // multiple checks can only be evaded with a king move
-            return false;
         }
 
         if (pinned(stm).getSquare(move.from())) {
             const auto pinRay = rayIntersecting(move.from(), stmKing);
             if (!pinRay.getSquare(move.to())) {
-                return false;
-            }
-        }
-
-        if (isInCheck()) {
-            const auto checker = m_checkers.lsb();
-            // includes the checker
-            const auto checkRay = rayBetween(stmKing, checker) | checker.bit();
-
-            // must either block the check or capture the checker
-            if (!checkRay.getSquare(move.to())) {
                 return false;
             }
         }
