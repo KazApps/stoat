@@ -32,6 +32,7 @@
 #include "../movegen.h"
 #include "../search.h"
 #include "../util/ctrlc.h"
+#include "../util/numa/numa.h"
 #include "../util/rng.h"
 #include "../util/static_vector.h"
 #include "../util/timer.h"
@@ -144,6 +145,8 @@ namespace stoat::datagen {
         }
 
         void runThread(u32 id, u64 seed, const std::filesystem::path& outDir) {
+            numa::bindThread(id);
+
             const auto filename = fmt::format("{}.spk", id);
             const auto outFile = outDir / filename;
 
@@ -166,7 +169,7 @@ namespace stoat::datagen {
             std::vector<u64> keyHistory{};
             keyHistory.reserve(1024);
 
-            auto& thread = searcher.take();
+            auto& thread = searcher.take(id);
 
             thread.maxDepth = kMaxDepth;
             thread.datagen = true;

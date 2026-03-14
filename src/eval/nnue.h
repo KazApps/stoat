@@ -54,6 +54,11 @@ namespace stoat::eval::nnue {
         return kColorStride * (handColor != perspective) + kHandOffset + kPieceOffsets[pt.idx()] + countMinusOne;
     }
 
+    struct Network;
+
+    void init();
+    const Network* getNetwork(u32 numaId);
+
     struct NnueUpdates {
         using Update = std::array<u32, 2>;
 
@@ -162,11 +167,11 @@ namespace stoat::eval::nnue {
             return accs[c.idx()].values;
         }
 
-        void activate(Color c, u32 feature);
-        void activate(u32 blackFeature, u32 whiteFeature);
+        void activate(const Network& network, Color c, u32 feature);
+        void activate(const Network& network, u32 blackFeature, u32 whiteFeature);
 
-        void reset(const Position& pos, Color c);
-        void reset(const Position& pos);
+        void reset(const Network& network, const Position& pos, Color c);
+        void reset(const Network& network, const Position& pos);
     };
 
     struct UpdatableAccumulator {
@@ -193,6 +198,8 @@ namespace stoat::eval::nnue {
     public:
         NnueState();
 
+        void setNetwork(const Network& network);
+
         void reset(const Position& pos);
 
         BoardObserver push();
@@ -203,6 +210,8 @@ namespace stoat::eval::nnue {
         [[nodiscard]] i32 evaluate(const Position& pos);
 
     private:
+        const Network* m_network{nullptr};
+
         std::vector<UpdatableAccumulator> m_accStacc{};
         UpdatableAccumulator* m_top{nullptr};
 

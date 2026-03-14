@@ -24,15 +24,25 @@
 
 #include "bench.h"
 #include "datagen/datagen.h"
+#include "eval/nnue.h"
 #include "protocol/handler.h"
-#include "util/ctrlc.h"
+#include "util/numa/numa.h"
 #include "util/parse.h"
 #include "util/split.h"
 
 namespace stoat {
     namespace {
-        void init() {
+        bool init() {
             std::setvbuf(stdout, nullptr, _IONBF, 0);
+
+            if (!numa::init()) {
+                fmt::println(stderr, "Failed to initialize NUMA support");
+                return false;
+            }
+
+            eval::nnue::init();
+
+            return true;
         }
 
         i32 runDatagen(std::span<const std::string_view> args) {
@@ -65,7 +75,9 @@ namespace stoat {
     } // namespace protocol
 
     i32 main(std::span<const std::string_view> args) {
-        init();
+        if (!init()) {
+            return 1;
+        }
 
         protocol::EngineState state{};
 

@@ -38,24 +38,30 @@
 
 #include "../util/multi_array.h"
 
+#ifdef ST_USE_LIBNUMA
+    #include <memory>
+
+    #include "../util/numa/numa.h"
+#endif
+
 namespace {
     INCBIN(std::byte, defaultNet, ST_NETWORK_FILE);
 }
 
 namespace stoat::eval::nnue {
-    namespace {
-        struct Network {
-            alignas(64) util::MultiArray<i16, kFtSize, kL1Size> ftWeights;
-            alignas(64) util::MultiArray<i16, kL1Size> ftBiases;
-            alignas(64) util::MultiArray<i8, kL1Size * kL2Size> l1Weights;
-            alignas(64) util::MultiArray<i32, kL2Size> l1Biases;
-            alignas(64) util::MultiArray<i32, kL2Size * 2, kL3Size> l2Weights;
-            alignas(64) util::MultiArray<i32, kL3Size> l2Biases;
-            alignas(64) util::MultiArray<i32, kL3Size> l3Weights;
-            alignas(64) i32 l3Bias;
-        };
+    struct Network {
+        alignas(64) util::MultiArray<i16, kFtSize, kL1Size> ftWeights;
+        alignas(64) util::MultiArray<i16, kL1Size> ftBiases;
+        alignas(64) util::MultiArray<i8, kL1Size * kL2Size> l1Weights;
+        alignas(64) util::MultiArray<i32, kL2Size> l1Biases;
+        alignas(64) util::MultiArray<i32, kL2Size * 2, kL3Size> l2Weights;
+        alignas(64) util::MultiArray<i32, kL3Size> l2Biases;
+        alignas(64) util::MultiArray<i32, kL3Size> l3Weights;
+        alignas(64) i32 l3Bias;
+    };
 
-        const Network& s_network = *reinterpret_cast<const Network*>(g_defaultNetData);
+    namespace {
+        const Network& s_embeddedNetwork = *reinterpret_cast<const Network*>(g_defaultNetData);
 
         [[nodiscard]] inline __m256i load(const void* ptr) {
             return _mm256_load_si256(reinterpret_cast<const __m256i*>(ptr));
@@ -86,7 +92,7 @@ namespace stoat::eval::nnue {
             return _mm_cvtsi128_si32(sum32);
         }
 
-        [[nodiscard]] i32 forward(const Accumulator& acc, Color stm) {
+        [[nodiscard]] i32 forward(const Network& network, const Accumulator& acc, Color stm) {
             static constexpr auto kChunkSize8 = sizeof(__m256i) / sizeof(i8);
             static constexpr auto kChunkSize16 = sizeof(__m256i) / sizeof(i16);
             static constexpr auto kChunkSize32 = sizeof(__m256i) / sizeof(i32);
@@ -176,14 +182,10 @@ namespace stoat::eval::nnue {
                 for (usize outputIdx = 0; outputIdx < kL2Size; outputIdx += kChunkSize32) {
                     auto& v = intermediate[outputIdx / kChunkSize32];
 
-                    const auto w_0 =
-                        load(&s_network.l1Weights[weightsStart + k32ChunkSize8 * (outputIdx + kL2Size * 0)]);
-                    const auto w_1 =
-                        load(&s_network.l1Weights[weightsStart + k32ChunkSize8 * (outputIdx + kL2Size * 1)]);
-                    const auto w_2 =
-                        load(&s_network.l1Weights[weightsStart + k32ChunkSize8 * (outputIdx + kL2Size * 2)]);
-                    const auto w_3 =
-                        load(&s_network.l1Weights[weightsStart + k32ChunkSize8 * (outputIdx + kL2Size * 3)]);
+                    const auto w_0 = load(&network.l1Weights[weightsStart + k32ChunkSize8 * (outputIdx + kL2Size * 0)]);
+                    const auto w_1 = load(&network.l1Weights[weightsStart + k32ChunkSize8 * (outputIdx + kL2Size * 1)]);
+                    const auto w_2 = load(&network.l1Weights[weightsStart + k32ChunkSize8 * (outputIdx + kL2Size * 2)]);
+                    const auto w_3 = load(&network.l1Weights[weightsStart + k32ChunkSize8 * (outputIdx + kL2Size * 3)]);
 
                     v[0] = dpbusd(v[0], i_0, w_0);
                     v[1] = dpbusd(v[1], i_1, w_1);
@@ -193,7 +195,7 @@ namespace stoat::eval::nnue {
             }
 
             for (usize i = 0; i < kL2Size; i += kChunkSize32) {
-                const auto biases = load(&s_network.l1Biases[i]);
+                const auto biases = load(&network.l1Biases[i]);
 
                 const auto& v = intermediate[i / kChunkSize32];
 
@@ -219,16 +221,16 @@ namespace stoat::eval::nnue {
                 store(&l1Out[i + kL2Size], screlu);
             }
 
-            std::ranges::copy(s_network.l2Biases, l2Out.begin());
+            std::ranges::copy(network.l2Biases, l2Out.begin());
 
             for (usize inputIdx = 0; inputIdx < kL2Size * 2; ++inputIdx) {
                 const auto input = _mm256_set1_epi32(l1Out[inputIdx]);
 
                 for (usize outputIdx = 0; outputIdx < kL3Size; outputIdx += kChunkSize32 * 4) {
-                    const auto w_0 = load(&s_network.l2Weights[inputIdx][outputIdx + kChunkSize32 * 0]);
-                    const auto w_1 = load(&s_network.l2Weights[inputIdx][outputIdx + kChunkSize32 * 1]);
-                    const auto w_2 = load(&s_network.l2Weights[inputIdx][outputIdx + kChunkSize32 * 2]);
-                    const auto w_3 = load(&s_network.l2Weights[inputIdx][outputIdx + kChunkSize32 * 3]);
+                    const auto w_0 = load(&network.l2Weights[inputIdx][outputIdx + kChunkSize32 * 0]);
+                    const auto w_1 = load(&network.l2Weights[inputIdx][outputIdx + kChunkSize32 * 1]);
+                    const auto w_2 = load(&network.l2Weights[inputIdx][outputIdx + kChunkSize32 * 2]);
+                    const auto w_3 = load(&network.l2Weights[inputIdx][outputIdx + kChunkSize32 * 3]);
 
                     auto out_0 = load(&l2Out[outputIdx + kChunkSize32 * 0]);
                     auto out_1 = load(&l2Out[outputIdx + kChunkSize32 * 1]);
@@ -263,10 +265,10 @@ namespace stoat::eval::nnue {
                 auto i_2 = load(&l2Out[inputIdx + kChunkSize32 * 2]);
                 auto i_3 = load(&l2Out[inputIdx + kChunkSize32 * 3]);
 
-                const auto w_0 = load(&s_network.l3Weights[inputIdx + kChunkSize32 * 0]);
-                const auto w_1 = load(&s_network.l3Weights[inputIdx + kChunkSize32 * 1]);
-                const auto w_2 = load(&s_network.l3Weights[inputIdx + kChunkSize32 * 2]);
-                const auto w_3 = load(&s_network.l3Weights[inputIdx + kChunkSize32 * 3]);
+                const auto w_0 = load(&network.l3Weights[inputIdx + kChunkSize32 * 0]);
+                const auto w_1 = load(&network.l3Weights[inputIdx + kChunkSize32 * 1]);
+                const auto w_2 = load(&network.l3Weights[inputIdx + kChunkSize32 * 2]);
+                const auto w_3 = load(&network.l3Weights[inputIdx + kChunkSize32 * 3]);
 
                 i_0 = _mm256_max_epi32(i_0, zero);
                 i_1 = _mm256_max_epi32(i_1, zero);
@@ -294,7 +296,7 @@ namespace stoat::eval::nnue {
 
             const auto s = _mm256_add_epi32(s0, s1);
 
-            auto out = s_network.l3Bias + hsum32(s);
+            auto out = network.l3Bias + hsum32(s);
 
             out /= kQ;
             out *= kScale;
@@ -303,13 +305,20 @@ namespace stoat::eval::nnue {
             return out;
         }
 
-        inline void addSub(std::span<const i16, kL1Size> src, std::span<i16, kL1Size> dst, u32 add, u32 sub) {
+        inline void addSub(
+            const Network& network,
+            std::span<const i16, kL1Size> src,
+            std::span<i16, kL1Size> dst,
+            u32 add,
+            u32 sub
+        ) {
             for (u32 i = 0; i < kL1Size; ++i) {
-                dst[i] = src[i] + s_network.ftWeights[add][i] - s_network.ftWeights[sub][i];
+                dst[i] = src[i] + network.ftWeights[add][i] - network.ftWeights[sub][i];
             }
         }
 
         inline void addAddSubSub(
+            const Network& network,
             std::span<const i16, kL1Size> src,
             std::span<i16, kL1Size> dst,
             u32 add1,
@@ -318,30 +327,36 @@ namespace stoat::eval::nnue {
             u32 sub2
         ) {
             for (u32 i = 0; i < kL1Size; ++i) {
-                dst[i] = src[i] + s_network.ftWeights[add1][i] - s_network.ftWeights[sub1][i]
-                       + s_network.ftWeights[add2][i] - s_network.ftWeights[sub2][i];
+                dst[i] = src[i] + network.ftWeights[add1][i] - network.ftWeights[sub1][i] + network.ftWeights[add2][i]
+                       - network.ftWeights[sub2][i];
             }
         }
 
-        void refresh(Color c, UpdatableAccumulator& acc, const Position& pos) {
-            acc.acc.reset(pos, c);
+        void refresh(const Network& network, Color c, UpdatableAccumulator& acc, const Position& pos) {
+            acc.acc.reset(network, pos, c);
             acc.setUpdated(c);
         }
 
-        void applyUpdates(Color c, const NnueUpdates& updates, const Accumulator& src, UpdatableAccumulator& dst) {
+        void applyUpdates(
+            const Network& network,
+            Color c,
+            const NnueUpdates& updates,
+            const Accumulator& src,
+            UpdatableAccumulator& dst
+        ) {
             const auto addCount = updates.adds.size();
             const auto subCount = updates.subs.size();
 
             if (addCount == 1 && subCount == 1) {
                 const auto add = updates.adds[0][c.idx()];
                 const auto sub = updates.subs[0][c.idx()];
-                addSub(src.color(c), dst.acc.color(c), add, sub);
+                addSub(network, src.color(c), dst.acc.color(c), add, sub);
             } else if (addCount == 2 && subCount == 2) {
                 const auto add1 = updates.adds[0][c.idx()];
                 const auto add2 = updates.adds[1][c.idx()];
                 const auto sub1 = updates.subs[0][c.idx()];
                 const auto sub2 = updates.subs[1][c.idx()];
-                addAddSubSub(src.color(c), dst.acc.color(c), add1, add2, sub1, sub2);
+                addAddSubSub(network, src.color(c), dst.acc.color(c), add1, add2, sub1, sub2);
             } else {
                 fmt::println(stderr, "??");
                 assert(false);
@@ -350,30 +365,55 @@ namespace stoat::eval::nnue {
 
             dst.setUpdated(c);
         }
+
+#ifdef ST_USE_LIBNUMA
+        std::unique_ptr<numa::NumaUniqueAllocation<Network>> s_networks{};
+#endif
     } // namespace
 
-    void Accumulator::activate(Color c, u32 feature) {
+    void init() {
+#ifdef ST_USE_LIBNUMA
+        s_networks = std::make_unique<numa::NumaUniqueAllocation<Network>>();
+
+        const auto nodeCount = numa::nodeCount();
+        for (i32 node = 0; node < nodeCount; ++node) {
+            auto* target = s_networks->get(node);
+            std::memcpy(target, &s_embeddedNetwork, sizeof(Network));
+        }
+#endif
+    }
+
+    const Network* getNetwork(u32 numaId) {
+#ifdef ST_USE_LIBNUMA
+        return s_networks->get(numaId);
+#else
+        ST_UNUSED(numaId);
+        return &s_embeddedNetwork;
+#endif
+    }
+
+    void Accumulator::activate(const Network& network, Color c, u32 feature) {
         auto acc = color(c);
         for (u32 i = 0; i < kL1Size; ++i) {
-            acc[i] += s_network.ftWeights[feature][i];
+            acc[i] += network.ftWeights[feature][i];
         }
     }
 
-    void Accumulator::activate(u32 blackFeature, u32 whiteFeature) {
+    void Accumulator::activate(const Network& network, u32 blackFeature, u32 whiteFeature) {
         auto black = this->black();
         auto white = this->white();
 
         for (u32 i = 0; i < kL1Size; ++i) {
-            black[i] += s_network.ftWeights[blackFeature][i];
+            black[i] += network.ftWeights[blackFeature][i];
         }
 
         for (u32 i = 0; i < kL1Size; ++i) {
-            white[i] += s_network.ftWeights[whiteFeature][i];
+            white[i] += network.ftWeights[whiteFeature][i];
         }
     }
 
-    void Accumulator::reset(const Position& pos, Color c) {
-        std::ranges::copy(s_network.ftBiases, color(c).begin());
+    void Accumulator::reset(const Network& network, const Position& pos, Color c) {
+        std::ranges::copy(network.ftBiases, color(c).begin());
 
         const auto kings = pos.kingSquares();
 
@@ -383,7 +423,7 @@ namespace stoat::eval::nnue {
             const auto piece = pos.pieceOn(sq);
 
             const auto feature = psqtFeatureIndex(c, kings, piece, sq);
-            activate(c, feature);
+            activate(network, c, feature);
         }
 
         const auto activateHand = [&](Color handColor) {
@@ -397,7 +437,7 @@ namespace stoat::eval::nnue {
                 const auto count = hand.count(pt);
                 for (u32 featureCount = 0; featureCount < count; ++featureCount) {
                     const auto feature = handFeatureIndex(c, pt, handColor, featureCount);
-                    activate(c, feature);
+                    activate(network, c, feature);
                 }
             }
         };
@@ -406,9 +446,9 @@ namespace stoat::eval::nnue {
         activateHand(Colors::kWhite);
     }
 
-    void Accumulator::reset(const Position& pos) {
-        std::ranges::copy(s_network.ftBiases, black().begin());
-        std::ranges::copy(s_network.ftBiases, white().begin());
+    void Accumulator::reset(const Network& network, const Position& pos) {
+        std::ranges::copy(network.ftBiases, black().begin());
+        std::ranges::copy(network.ftBiases, white().begin());
 
         const auto kings = pos.kingSquares();
 
@@ -419,7 +459,7 @@ namespace stoat::eval::nnue {
 
             const auto blackFeature = psqtFeatureIndex(Colors::kBlack, kings, piece, sq);
             const auto whiteFeature = psqtFeatureIndex(Colors::kWhite, kings, piece, sq);
-            activate(blackFeature, whiteFeature);
+            activate(network, blackFeature, whiteFeature);
         }
 
         const auto activateHand = [&](Color c) {
@@ -434,7 +474,7 @@ namespace stoat::eval::nnue {
                 for (u32 featureCount = 0; featureCount < count; ++featureCount) {
                     const auto blackFeature = handFeatureIndex(Colors::kBlack, pt, c, featureCount);
                     const auto whiteFeature = handFeatureIndex(Colors::kWhite, pt, c, featureCount);
-                    activate(blackFeature, whiteFeature);
+                    activate(network, blackFeature, whiteFeature);
                 }
             }
         };
@@ -447,12 +487,18 @@ namespace stoat::eval::nnue {
         m_accStacc.resize(kMaxDepth + 1);
     }
 
+    void NnueState::setNetwork(const Network& network) {
+        m_network = &network;
+    }
+
     void NnueState::reset(const Position& pos) {
+        assert(m_network);
         m_top = &m_accStacc[0];
-        m_top->acc.reset(pos);
+        m_top->acc.reset(*m_network, pos);
     }
 
     BoardObserver NnueState::push() {
+        assert(m_network);
         assert(m_top < &m_accStacc[kMaxDepth]);
 
         ++m_top;
@@ -469,32 +515,36 @@ namespace stoat::eval::nnue {
     }
 
     void NnueState::applyImmediately(const UpdateContext& ctx, const Position& pos) {
+        assert(m_network);
         assert(m_top);
         assert(m_top != &m_accStacc[0]);
         for (const auto c : {Colors::kBlack, Colors::kWhite}) {
             if (m_top->ctx.updates.requiresRefresh(c)) {
-                m_top->acc.reset(pos, c);
+                m_top->acc.reset(*m_network, pos, c);
             } else {
-                applyUpdates(c, ctx.updates, m_top->acc, *m_top);
+                applyUpdates(*m_network, c, ctx.updates, m_top->acc, *m_top);
             }
             m_top->setUpdated(c);
         }
     }
 
     i32 NnueState::evaluate(const Position& pos) {
+        assert(m_network);
         assert(m_top);
         ensureUpToDate(pos);
-        return forward(m_top->acc, pos.stm());
+        return forward(*m_network, m_top->acc, pos.stm());
     }
 
     void NnueState::ensureUpToDate(const Position& pos) {
+        assert(m_network);
+
         for (const auto c : {Colors::kBlack, Colors::kWhite}) {
             if (!m_top->isDirty(c)) {
                 continue;
             }
 
             if (m_top->ctx.updates.requiresRefresh(c)) {
-                refresh(c, *m_top, pos);
+                refresh(*m_network, c, *m_top, pos);
                 continue;
             }
 
@@ -504,20 +554,23 @@ namespace stoat::eval::nnue {
             }
 
             if (curr->ctx.updates.requiresRefresh(c)) {
-                refresh(c, *m_top, pos);
+                refresh(*m_network, c, *m_top, pos);
                 continue;
             }
 
             do {
                 const auto& prev = *curr++;
-                applyUpdates(c, curr->ctx.updates, prev.acc, *curr);
+                applyUpdates(*m_network, c, curr->ctx.updates, prev.acc, *curr);
             } while (curr != m_top);
         }
     }
 
     i32 evaluateOnce(const Position& pos) {
+        const auto& network = *getNetwork(0);
+
         Accumulator acc{};
-        acc.reset(pos);
-        return forward(acc, pos.stm());
+        acc.reset(network, pos);
+
+        return forward(network, acc, pos.stm());
     }
 } // namespace stoat::eval::nnue

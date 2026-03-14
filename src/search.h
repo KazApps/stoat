@@ -76,7 +76,7 @@ namespace stoat {
 
         // Clears all threads, and reallocates main thread data on the current NUMA node.
         // Makes this object unusable for normal searches, just for benching or datagen
-        [[nodiscard]] ThreadData& take();
+        [[nodiscard]] ThreadData& take(u32 numaId = 0);
 
         void runBenchSearch(BenchInfo& info);
         void runDatagenSearch();

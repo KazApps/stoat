@@ -24,6 +24,7 @@
 #include "position.h"
 #include "search.h"
 #include "stats.h"
+#include "util/numa/numa.h"
 
 namespace stoat::bench {
     namespace {
@@ -57,6 +58,8 @@ namespace stoat::bench {
     } // namespace
 
     void run(i32 depth) {
+        numa::bindThread(0);
+
         Searcher searcher{kTtSizeMib};
 
         searcher.setMinimal(true);
