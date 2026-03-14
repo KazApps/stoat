@@ -107,6 +107,12 @@ namespace stoat {
             };
         }
 
+        [[nodiscard]] static constexpr Move makeDropUnchecked(PieceType piece, Square to) {
+            return Move{
+                static_cast<u16>((to.raw() << kToShift) | (piece.raw() << kDropPieceShift) | (1 << kDropFlagShift))
+            };
+        }
+
         [[nodiscard]] static constexpr util::Result<Move, InvalidMoveError> fromStr(std::string_view str) {
             if (str.size() < 4 || str.size() > 5) {
                 return util::err<InvalidMoveError>();

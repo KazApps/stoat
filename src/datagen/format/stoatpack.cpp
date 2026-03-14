@@ -32,7 +32,7 @@ namespace stoat::datagen::format {
             // king and promoted pieces are ignored
             constexpr std::array kPieceTypeMap{0, 2, 3, 6, 9, 10, 8};
 
-            return Move::makeDrop(PieceType::fromRaw(kPieceTypeMap[move.dropPiece().idx()]), move.to());
+            return Move::makeDropUnchecked(PieceType::fromRaw(kPieceTypeMap[move.dropPiece().idx()]), move.to());
         }
     } // namespace
 
