@@ -31,6 +31,7 @@
 #include "see.h"
 #include "stats.h"
 #include "util/multi_array.h"
+#include "util/numa/numa.h"
 
 namespace stoat {
     namespace {
@@ -251,7 +252,7 @@ namespace stoat {
         m_stop.store(false);
     }
 
-    ThreadData& Searcher::take() {
+    ThreadData& Searcher::take(u32 numaId) {
         stopThreads();
 
         m_resetBarrier.reset(1);
@@ -263,9 +264,16 @@ namespace stoat {
         m_threadData.resize(1);
         m_threadData.shrink_to_fit();
 
-        m_threadData[0] = std::make_unique<ThreadData>();
+        auto& thread = m_threadData[0];
 
-        return *m_threadData[0];
+        thread = std::make_unique<ThreadData>();
+
+        thread->id = 0;
+        thread->numaId = numaId;
+
+        thread->nnueState.setNetwork(*eval::nnue::getNetwork(numaId));
+
+        return *thread;
     }
 
     void Searcher::runBenchSearch(BenchInfo& info) {
@@ -341,10 +349,16 @@ namespace stoat {
     }
 
     void Searcher::runThread(u32 id) {
+        numa::bindThread(id);
+
         m_threadData[id] = std::make_unique<ThreadData>();
 
         auto& thread = *m_threadData[id];
+
         thread.id = id;
+        thread.numaId = id;
+
+        thread.nnueState.setNetwork(*eval::nnue::getNetwork(id));
 
         m_initBarrier.arriveAndWait();
 

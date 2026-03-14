@@ -85,6 +85,7 @@ namespace stoat {
         ThreadData();
 
         u32 id{};
+        u32 numaId{};
 
         std::optional<limit::SearchLimiter> limiter{};
         i32 maxDepth{};

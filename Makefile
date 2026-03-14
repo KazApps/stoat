@@ -13,6 +13,8 @@ endif
 
 TYPE = native
 
+USE_LIBNUMA = off
+
 # https://stackoverflow.com/a/1825832
 rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
@@ -108,6 +110,11 @@ $(foreach dir,$(sort $(dir $(OBJECTS))),$(eval $(call create_mkdir_target,$(dir)
 
 ifeq ($(COMMIT_HASH),on)
     CXXFLAGS += -DST_COMMIT_HASH=$(shell git log -1 --pretty=format:%h)
+endif
+
+ifeq ($(USE_LIBNUMA),on)
+    CXXFLAGS += -DST_USE_LIBNUMA
+    LDFLAGS += -lnuma
 endif
 
 all: $(OUTFILE)
