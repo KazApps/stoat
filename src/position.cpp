@@ -227,10 +227,6 @@ namespace stoat {
 
         all ^= key;
         hand ^= key;
-
-        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
-            cavalry ^= key;
-        }
     }
 
     void PositionKeys::switchHandCount(Color c, PieceType pt, u32 before, u32 after) {
@@ -243,10 +239,6 @@ namespace stoat {
 
         all ^= key;
         hand ^= key;
-
-        if (pt == PieceTypes::kKnight || pt == PieceTypes::kBishop || pt == PieceTypes::kRook) {
-            cavalry ^= key;
-        }
     }
 
     using NnueObserver = eval::nnue::BoardObserver;
