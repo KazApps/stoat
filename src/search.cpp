@@ -754,7 +754,7 @@ namespace stoat {
                     && !isDecisive(ttEntry.score))
                 {
                     const auto sBeta = ttEntry.score - depth * 4 / 3;
-                    const auto sDepth = (depth - 1) / 2;
+                    const auto sDepth = (depth - 1) * (2 + pos.isCapture(move)) / 4;
 
                     curr.excluded = move;
                     const auto score = search(thread, pos, curr.pv, sDepth, ply, sBeta - 1, sBeta, expectedCutnode);
