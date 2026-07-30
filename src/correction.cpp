@@ -68,9 +68,9 @@ namespace stoat {
 
         i32 correction{};
 
-        correction += 128 * tables.castle[pos.castleKey() % kEntries];
-        correction += 128 * tables.cavalry[pos.cavalryKey() % kEntries];
-        correction += 128 * tables.hand[pos.kingHandKey() % kEntries];
+        correction += 162 * tables.castle[pos.castleKey() % kEntries];
+        correction += 162 * tables.cavalry[pos.cavalryKey() % kEntries];
+        correction += 145 * tables.hand[pos.kingHandKey() % kEntries];
         correction += 128 * tables.kpr[pos.kprKey() % kEntries];
 
         const auto applyCont = [&](u64 base, u64 target, const i32 weight) {
@@ -85,10 +85,10 @@ namespace stoat {
             }
         };
 
-        applyCont(0, 1, 128);
+        applyCont(0, 1, 162);
         applyCont(0, 2, 192);
-        applyCont(1, 2, 128);
-        applyCont(1, 3, 192);
+        applyCont(1, 2, 145);
+        applyCont(1, 3, 162);
 
         return correction / 2048;
     }
