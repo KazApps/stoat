@@ -45,6 +45,7 @@ namespace stoat {
 
     private:
         static constexpr usize kEntries = 16384;
+        static constexpr usize kContEntries = 32768;
 
         static constexpr i32 kLimit = 1024;
         static constexpr i32 kMaxBonus = kLimit / 4;
@@ -66,9 +67,9 @@ namespace stoat {
             std::array<Entry, kEntries> cavalry{};
             std::array<Entry, kEntries> hand{};
             std::array<Entry, kEntries> kpr{};
-            std::array<Entry, kEntries> cont{};
         };
 
+        std::array<Entry, kContEntries> m_cont{};
         std::array<SidedTables, 2> m_tables{};
     };
 } // namespace stoat

@@ -23,6 +23,7 @@
 namespace stoat {
     void CorrectionHistory::clear() {
         std::memset(&m_tables, 0, sizeof(m_tables));
+        std::memset(&m_tables, 0, sizeof(m_cont));
     }
 
     void CorrectionHistory::update(
@@ -53,7 +54,7 @@ namespace stoat {
             const auto targetKey = keyHistory[size - target];
 
             if (keyHistory.size() >= target) {
-                tables.cont[(baseKey ^ targetKey) % kEntries].update(bonus);
+                m_cont[(baseKey ^ targetKey) % kContEntries].update(bonus);
             }
         };
 
@@ -81,7 +82,7 @@ namespace stoat {
             const auto targetKey = keyHistory[size - target];
 
             if (keyHistory.size() >= target) {
-                correction += weight * tables.cont[(baseKey ^ targetKey) % kEntries];
+                correction += weight * m_cont[(baseKey ^ targetKey) % kContEntries];
             }
         };
 
