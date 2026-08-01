@@ -53,7 +53,7 @@ namespace stoat {
             const auto targetKey = keyHistory[size - target];
 
             if (keyHistory.size() >= target) {
-                tables.cont[(baseKey ^ targetKey) % kEntries].update(bonus);
+                tables.cont[(baseKey ^ targetKey) % kContEntries].update(bonus);
             }
         };
 
@@ -81,7 +81,7 @@ namespace stoat {
             const auto targetKey = keyHistory[size - target];
 
             if (keyHistory.size() >= target) {
-                correction += weight * tables.cont[(baseKey ^ targetKey) % kEntries];
+                correction += weight * tables.cont[(baseKey ^ targetKey) % kContEntries];
             }
         };
 
