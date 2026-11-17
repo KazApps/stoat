@@ -45,22 +45,28 @@ namespace stoat {
         tables.hand[pos.kingHandKey() % kEntries].update(bonus);
         tables.kpr[pos.kprKey() % kEntries].update(bonus);
 
-        const auto updateCont = [&](u64 base, u64 target) {
-            assert(base < target);
+        const auto updateCont = [&](std::initializer_list<u64> offsets) {
+            u64 index{};
 
-            const auto size = keyHistory.size();
+            for (const auto offset : offsets) {
+                if (offset <= keyHistory.size()) {
+                    index ^= offset == 0 ? pos.key() : keyHistory[keyHistory.size() - offset];
+                } else {
+                    index = 0;
+                    break;
+                }
+            }
 
-            if (size >= target) {
-                const auto baseKey = base == 0 ? pos.key() : keyHistory[size - base];
-                const auto targetKey = keyHistory[size - target];
-                tables.cont[(baseKey ^ targetKey) % kEntries].update(bonus);
+            if (index) {
+                tables.cont[index % kEntries].update(bonus);
             }
         };
 
-        updateCont(0, 1);
-        updateCont(0, 2);
-        updateCont(1, 2);
-        updateCont(1, 3);
+        updateCont({0, 1});
+        updateCont({0, 2});
+        updateCont({1, 2});
+        updateCont({1, 3});
+        updateCont({0, 1, 3, 4});
     }
 
     i32 CorrectionHistory::correction(const Position& pos, std::span<const u64> keyHistory) const {
@@ -73,23 +79,28 @@ namespace stoat {
         correction += 128 * tables.hand[pos.kingHandKey() % kEntries];
         correction += 128 * tables.kpr[pos.kprKey() % kEntries];
 
-        const auto applyCont = [&](u64 base, u64 target, const i32 weight) {
-            assert(base < target);
+        const auto applyCont = [&](std::initializer_list<u64> offsets, const i32 weight) {
+            u64 index{};
 
-            const auto size = keyHistory.size();
+            for (const auto offset : offsets) {
+                if (offset <= keyHistory.size()) {
+                    index ^= offset == 0 ? pos.key() : keyHistory[keyHistory.size() - offset];
+                } else {
+                    index = 0;
+                    break;
+                }
+            }
 
-            if (size >= target) {
-                const auto baseKey = base == 0 ? pos.key() : keyHistory[size - base];
-                const auto targetKey = keyHistory[size - target];
-
-                correction += weight * tables.cont[(baseKey ^ targetKey) % kEntries];
+            if (index) {
+                correction += weight * tables.cont[index % kEntries];
             }
         };
 
-        applyCont(0, 1, 128);
-        applyCont(0, 2, 192);
-        applyCont(1, 2, 128);
-        applyCont(1, 3, 192);
+        applyCont({0, 1}, 128);
+        applyCont({0, 2}, 192);
+        applyCont({1, 2}, 128);
+        applyCont({1, 3}, 192);
+        applyCont({0, 1, 3, 4}, 192);
 
         return correction / 2048;
     }
