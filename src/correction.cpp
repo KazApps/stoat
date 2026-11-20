@@ -55,7 +55,7 @@ namespace stoat {
                 const auto baseKey = base == 0 ? pos.key() : keyHistory[size - base];
                 const auto targetKey = keyHistory[size - target];
 
-                m_cont[(baseKey ^ targetKey) % kEntries].update(bonus);
+                m_cont[(baseKey ^ targetKey) % kContEntries].update(bonus);
             }
         };
 
@@ -84,7 +84,7 @@ namespace stoat {
                 const auto baseKey = base == 0 ? pos.key() : keyHistory[size - base];
                 const auto targetKey = keyHistory[size - target];
 
-                correction += weight * m_cont[(baseKey ^ targetKey) % kEntries];
+                correction += weight * m_cont[(baseKey ^ targetKey) % kContEntries];
             }
         };
 
